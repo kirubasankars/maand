@@ -43,4 +43,14 @@ elif [ "$OPERATION" == "bootstrap" ]; then
   python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation update
 elif [ "$OPERATION" == "sync" ]; then
   python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation update
+elif [ "$OPERATION" == "deploy_jobs" ]; then
+  python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation deploy_jobs
+elif [ "$OPERATION" == "force_deploy_jobs" ]; then
+  python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation force_deploy_jobs
+elif [ "$OPERATION" == "stop_jobs" ]; then
+  python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation stop_jobs
+elif [ "$OPERATION" == "restart_jobs" ]; then
+  python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation stop_jobs
+elif [ "$OPERATION" == "rolling_upgrade" ]; then
+  python3 /scripts/system_manager.py --concurrency "1" --operation rolling_upgrade
 fi

@@ -5,7 +5,7 @@ action.auto_create_index: true
 
 node.name: $NODE_NAME
 network.host: 0.0.0.0
-cluster.name: test-cluster
+cluster.name: $CLUSTER_ID
 network.publish_host: $NODE_IP
 node.roles: [cluster_manager,data]
 
