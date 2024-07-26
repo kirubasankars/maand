@@ -1,0 +1,3 @@
+192.168.1.110 opensearch
+192.168.1.119 opensearch
+192.168.1.134 opensearch

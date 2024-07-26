@@ -1,0 +1,17 @@
+{
+  "name": "opensearch",
+  "roles": ["opensearch"],
+  "certificates": [
+    {
+      "admin": {
+        "subject": "/CN=opensearch-node.service.consul"
+      },
+      "api": {
+        "subject": "/CN=opensearch-node.service.consul"
+      },
+      "node": {
+        "subject": "/CN=opensearch-node.service.consul"
+      }
+    }
+  ]
+}

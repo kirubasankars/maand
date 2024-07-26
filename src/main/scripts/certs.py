@@ -5,8 +5,8 @@ def generate_ca_private():
     command_local("openssl genrsa -out /workspace/ca.key 4096")
 
 
-def generate_ca_public(common_name):
-    command_local(f"openssl req -new -x509 -sha256 -days 3560 -subj /CN={common_name} -key "
+def generate_ca_public(common_name, ttl):
+    command_local(f"openssl req -new -x509 -sha256 -days {ttl} -subj /CN={common_name} -key "
                   "/workspace/ca.key -out /workspace/ca.crt")
 
 
@@ -19,10 +19,15 @@ def generate_site_csr(name, common_name):
                   f"-out /opt/agent/certs/{name}.csr")
 
 
-def generate_site_public(name, san):
+def generate_private_pem_pkcs_8(name):
+    command_local(f"openssl pkcs8 -inform PEM -outform PEM -in /opt/agent/certs/{name}.key -topk8 -nocrypt "
+                  f"-v1 PBE-SHA1-3DES -out /opt/agent/certs/{name}.pem")
+
+
+def generate_site_public(name, san, ttl):
     with open("/tmp/extfile.conf", "w") as f:
         f.writelines(f"subjectAltName={san}")
-    command_local(f"openssl x509 -req -sha256 -days 3560 -in /opt/agent/certs/{name}.csr "
+    command_local(f"openssl x509 -req -sha256 -days {ttl} -in /opt/agent/certs/{name}.csr "
                   f"-CA /workspace/ca.crt -CAkey /workspace/ca.key "
                   f"-out /opt/agent/certs/{name}.crt -extfile /tmp/extfile.conf -CAcreateserial 2> /dev/null")
 

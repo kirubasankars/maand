@@ -10,6 +10,7 @@ source /workspace/variables.env
 export OPERATION=$1
 export CLUSTER_ID=${CLUSTER_ID:-"undefined"}
 export NETWORK_INTERFACE_NAME=${NETWORK_INTERFACE_NAME:-"eth0"}
+export UPDATE_CERTS=${UPDATE_CERTS:-0}
 export SSH_USER=${SSH_USER:-""}
 export SSH_KEY=${SSH_KEY:-""}
 export IMAGE_NAME=$(docker inspect --format='{{.Config.Image}}' "$HOSTNAME")
@@ -40,14 +41,6 @@ if [ "$OPERATION" == "run_command" ]; then
 elif [ "$OPERATION" == "bootstrap" ]; then
   python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation linux_setup
   python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation update
-elif [ "$OPERATION" == "linux_patching" ]; then
-  python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation linux_patching
 elif [ "$OPERATION" == "sync" ]; then
   python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation update
-elif [ "$OPERATION" == "deploy_jobs" ]; then
-  python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation deploy_jobs
-elif [ "$OPERATION" == "restart_jobs" ]; then
-  python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation restart_jobs
-elif [ "$OPERATION" == "stop_jobs" ]; then
-  python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation stop_jobs
 fi

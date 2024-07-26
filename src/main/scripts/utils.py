@@ -1,5 +1,7 @@
+import functools
 import glob
 import json
+import logging
 import os
 
 
@@ -80,16 +82,34 @@ def get_host_one(role):
 
 def get_host_list(role):
     hosts = get_host_roles()
-    return list(set([ip for ip, roles in hosts.items() if role in roles]))
+    role_hosts = set(ip for ip, roles in hosts.items() if role in roles)
+    return sorted(role_hosts)
 
 
-def get_job_roles():
-    jobs = {}
+def get_job_metadata(name, base_path="/workspace/jobs/"):
+    for job in glob.glob(f"{base_path}/*"):
+        metadata_path = os.path.join(job, "metadata.json")
+        if os.path.isdir(job) and os.path.isfile(metadata_path):
+            with open(metadata_path, "r") as f:
+                metadata = json.load(f)
+                if name == metadata.get("name", ""):
+                    return metadata
+    return None
+
+
+@functools.cache
+def get_jobs():
+    jobs = []
     for job in glob.glob("/workspace/jobs/*"):
         metadata_path = os.path.join(job, "metadata.json")
         if os.path.isdir(job) and os.path.isfile(metadata_path):
             with open(metadata_path, "r") as f:
                 metadata = json.load(f)
-                name = metadata.get("name", "")
-                jobs[name] = set(metadata.get("roles"))
+                jobs.append(metadata.get("name", ""))
     return jobs
+
+
+@functools.cache
+def get_logger():
+    logging.basicConfig(level=logging.INFO)
+    return logging.getLogger(__name__)

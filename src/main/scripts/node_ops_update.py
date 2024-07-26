@@ -1,81 +1,118 @@
-import json
 import os
 import sys
 from pathlib import Path
 from string import Template
+from dotenv import dotenv_values
 
 import command_helper
 import utils
-import variables
+import certs
+
+logger = utils.get_logger()
 
 
 def get_host_id():
-    with open("/opt/agent/node.txt", "r") as f:
-        return f.read().strip()
+    try:
+        with open("/opt/agent/node.txt", "r") as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        logger.error("Host ID file not found.")
+        sys.exit(1)
+
+
+def load_values():
+    host_id = get_host_id()
+    node_ip = os.getenv("HOST")
+    if not node_ip:
+        logger.error("HOST environment variable is not set.")
+        sys.exit(1)
+
+    values = dotenv_values("/workspace/variables.env")
+    values["NODE_NAME"] = host_id
+    values["NODE_IP"] = node_ip
+
+    return values, node_ip
+
+
+def add_roles_to_values(values):
+    available_roles = set()
+    nodes = utils.get_host_roles()
+
+    for ip, roles in nodes.items():
+        available_roles.update(roles)
+
+    for role in available_roles:
+        key_nodes = f"{role}_NODES".upper()
+        key_others = f"{role}_OTHERS".upper()
+        role_hosts = utils.get_host_list(role)
+
+        values[key_nodes] = ",".join(role_hosts)
+        role_hosts.remove(values["NODE_IP"])
+        values[key_others] = ",".join(role_hosts)
+
+        for idx, host in enumerate(utils.get_host_list(role)):
+            key = f"{role}_{idx}".upper()
+            values[key] = host
+
+    values["ROLES"] = ",".join(available_roles)
+    return values
+
+
+def add_tags_to_values(values, node_ip):
+    nodes = utils.get_host_tags()
+    tags = nodes.get(node_ip, {})
+    for k, v in tags.items():
+        key = f"{k}".upper()
+        values[key] = v
+    return values
+
+
+def process_templates(values):
+    for ext in ["*.json", "*.service", "*.conf", "*.yml", "*.env", "*.token"]:
+        for f in Path('/opt/agent/').rglob(ext):
+            try:
+                with open(f, 'r') as file:
+                    data = file.read()
+                template = Template(data)
+                content = template.substitute(values)
+                if content != data:
+                    with open(f, 'w') as file:
+                        file.write(content)
+            except Exception as e:
+                logger.error(f"Error processing file {f}: {e}")
 
 
 def transpile():
-    host_id = get_host_id()
-    node_ip = os.getenv("NODE_IP")
-
-    interface_name = variables.get_network_interface_name()
-    cluster_id = variables.get_cluster_id()
-
-    values = {
-        "$NODE_NAME": host_id,
-        "$INTERFACE_NAME": interface_name,
-        "$CLUSTER_ID": cluster_id,
-        "$NODE_IP": node_ip,
-    }
-
-    available_roles = set()
-    nodes = utils.get_host_roles()
-    for ip in nodes:
-        roles = nodes.get(ip, [])
-        for role in roles:
-            available_roles.add(role)
-
-    for role in available_roles:
-        key = f"${role}_NODES".upper()
-        values[key] = ",".join(utils.get_host_list(role))
-
-        for idx, host in enumerate(utils.get_host_list(role)):
-            key = f"${role}_{idx}".upper()
-            values[key] = host
-
-    nodes = utils.get_host_tags()
-    tags = nodes.get(node_ip)
-    for k, v in tags.items():
-        key = f"${k}".upper()
-        values[key] = v
-
-    for ext in ["*.json", "*.service", "*.conf", "*.yml", "*.env", "*.token"]:
-        for f in Path('/opt/agent/').rglob(ext):
-            with open(f, 'r') as file:
-                data = file.read()
-
-            template = Template(data)
-            content = template.substitute(values)
-
-            if content != data:
-                with open(f, 'w') as file:
-                    file.write(content)
+    values, node_ip = load_values()
+    values = add_roles_to_values(values)
+    values = add_tags_to_values(values, node_ip)
+    process_templates(values)
 
 
 def sync():
-    cluster_id = variables.get_cluster_id()
-    host = os.getenv("NODE_IP")
+    cluster_id = os.getenv("CLUSTER_ID")
+    host = os.getenv("HOST")
+
+    if not cluster_id or not host:
+        logger.error("Required environment variables CLUSTER_ID or HOST are not set.")
+        sys.exit(1)
+
+    if not os.path.isfile("/workspace/ca.key"):
+        certs.generate_ca_private()
+        certs.generate_ca_public(cluster_id, 365)
 
     command_helper.command_local("""
+        mkdir -p /opt/agent/certs
+        rsync /workspace/ca.crt /opt/agent/certs/
         bash /scripts/rsync_remote_local.sh
     """)
 
     if not os.path.isfile("/opt/agent/node.txt"):
-        print("/opt/agent/node.txt is not found")
+        logger.error("/opt/agent/node.txt is not found.")
         sys.exit(1)
 
-    with open(f"/opt/agent/cluster.txt", "w") as f:
-        f.write(f"{cluster_id}")
+    with open("/opt/agent/cluster.txt", "w") as f:
+        f.write(cluster_id)
 
     nodes = utils.get_host_roles()
     roles = nodes.get(host, [])
@@ -83,23 +120,46 @@ def sync():
         f.writelines("\n".join(roles))
 
     assigned_jobs = []
-    jobs = utils.get_job_roles()
-
-    for job, job_roles in jobs.items():
+    jobs = utils.get_jobs()
+    for job in jobs:
+        metadata = utils.get_job_metadata(job)
+        job_roles = metadata.get("roles", [])
         if set(roles) & set(job_roles):
             assigned_jobs.append(job)
 
-    assigned_jobs = ",".join(assigned_jobs)
+    command_helper.command_local("rsync -r /agent/bin /opt/agent/")
 
-    command_helper.command_local(f"rsync -r /agent/bin /opt/agent/")
     if assigned_jobs:
-        command_helper.command_local(f"rsync -r /workspace/jobs/{assigned_jobs} /opt/agent/jobs/")
+        assigned_jobs_str = ",".join(assigned_jobs)
+        command_helper.command_local(f"rsync -r /workspace/jobs/{assigned_jobs_str} /opt/agent/jobs/")
 
     transpile()
+    update_certificates(jobs, cluster_id)
 
-    command_helper.command_local("""
-        bash /scripts/rsync_local_remote.sh
-    """)
+    command_helper.command_local("rm -f /workspace/ca.srl")
+    command_helper.command_local("bash /scripts/rsync_local_remote.sh")
+
+
+def update_certificates(jobs, cluster_id):
+    node_ip = os.getenv("HOST")
+    for job in jobs:
+        metadata = utils.get_job_metadata(job, base_path="/opt/agent/jobs")
+        if os.getenv("UPDATE_CERTS", "0") == "1":
+            certificates = metadata.get("certificates", [])
+            for cert in certificates:
+                for name, cert_config in cert.items():
+                    if not os.path.isfile(f"/opt/agent/certs/{name}.key"):
+                        ttl = cert_config.get("ttl", 60)
+                        certs.generate_site_private(name)
+                        certs.generate_private_pem_pkcs_8(name)
+
+                        common = cert_config.get("subject", cluster_id)
+                        certs.generate_site_csr(name, common)
+
+                        subject_alt_name = cert_config.get("subject_alt_name", f"DNS.1:localhost,IP.1:127.0.0.1,IP.2:{node_ip}")
+                        certs.generate_site_public(name, subject_alt_name, ttl)
+
+                        command_helper.command_local(f"rm /opt/agent/certs/{name}.csr")
 
 
 if __name__ == "__main__":
