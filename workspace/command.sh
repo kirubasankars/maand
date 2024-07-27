@@ -1,0 +1,1 @@
+yes | docker system prune -a

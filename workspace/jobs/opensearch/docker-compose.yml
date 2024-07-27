@@ -22,5 +22,5 @@ services:
       - ./config/opensearch.yml:/usr/share/opensearch/config/opensearch.yml
       - ./config/jvm.options:/usr/share/opensearch/config/jvm.options
 
-      - /opt/data:/usr/share/opensearch/data
-      - /opt/logs:/usr/share/opensearch/logs
+      - /opt/maand/opensearch/data:/usr/share/opensearch/data
+      - /opt/maand/opensearch/logs:/usr/share/opensearch/logs

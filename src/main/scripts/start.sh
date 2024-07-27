@@ -38,9 +38,6 @@ if [ "$OPERATION" == "run_command" ]; then
   max_concurrency=${MAX_CONCURRENCY:-0}
   ignore_error=${IGNORE_ERROR:-0}
   touch /workspace/command.sh && python3 /scripts/system_manager.py --roles "$roles" --concurrency "$max_concurrency" --ignore_error "$ignore_error" --operation run_command
-elif [ "$OPERATION" == "bootstrap" ]; then
-  python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation linux_setup
-  python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation update
 elif [ "$OPERATION" == "sync" ]; then
   python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation update
 elif [ "$OPERATION" == "deploy_jobs" ]; then
@@ -50,7 +47,7 @@ elif [ "$OPERATION" == "force_deploy_jobs" ]; then
 elif [ "$OPERATION" == "stop_jobs" ]; then
   python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation stop_jobs
 elif [ "$OPERATION" == "restart_jobs" ]; then
-  python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation stop_jobs
+  python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation restart_jobs
 elif [ "$OPERATION" == "rolling_upgrade" ]; then
-  python3 /scripts/system_manager.py --concurrency "1" --operation rolling_upgrade
+  python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation rolling_upgrade
 fi

@@ -35,6 +35,7 @@ def load_values():
 
 
 def add_roles_to_values(values):
+    node_ip = values["NODE_IP"]
     available_roles = set()
     nodes = utils.get_host_roles()
 
@@ -43,18 +44,25 @@ def add_roles_to_values(values):
 
     for role in available_roles:
         key_nodes = f"{role}_NODES".upper()
-        key_others = f"{role}_OTHERS".upper()
         role_hosts = utils.get_host_list(role)
-
         values[key_nodes] = ",".join(role_hosts)
-        role_hosts.remove(values["NODE_IP"])
+
+        if node_ip in role_hosts:
+            role_hosts.remove(node_ip)
+        key_others = f"{role}_OTHERS".upper()
         values[key_others] = ",".join(role_hosts)
 
         for idx, host in enumerate(utils.get_host_list(role)):
             key = f"{role}_{idx}".upper()
             values[key] = host
 
-    values["ROLES"] = ",".join(available_roles)
+            if host == node_ip:
+                key = f"{role}_ALLOCATION_INDEX".upper()
+                values[key] = idx
+
+    host_roles = utils.get_host_roles()
+    values["ROLES"] = ",".join(host_roles.get(node_ip))
+
     return values
 
 

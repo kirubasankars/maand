@@ -42,7 +42,9 @@ def get_hosts(host_role_filter=None):
         if len(s) == 1:
             nodes[s[0]] = []
 
-    for host, roles in nodes.items():
+    ips = nodes.keys()
+    for host in ips:
+        roles = nodes.get(host)
         roles = list(set(roles))
         nodes[host] = sorted(roles, key=custom_sort_order)
 
@@ -94,7 +96,7 @@ def get_job_metadata(name, base_path="/workspace/jobs/"):
                 metadata = json.load(f)
                 if name == metadata.get("name", ""):
                     return metadata
-    return None
+    return {}
 
 
 @functools.cache
