@@ -3,10 +3,10 @@ http.port: 9200
 
 action.auto_create_index: true
 
-node.name: $NODE_NAME
+node.name: $AGENT_ID
 network.host: 0.0.0.0
 cluster.name: $CLUSTER_ID
-network.publish_host: $NODE_IP
+network.publish_host: $AGENT_IP
 node.roles: [cluster_manager,data]
 
 bootstrap.memory_lock: true

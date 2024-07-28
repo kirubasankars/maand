@@ -28,62 +28,62 @@ def flatten(nested_list):
     return list(reversed(flat_list))
 
 
-def get_hosts(host_role_filter=None):
-    with open("/workspace/hosts.txt", "r") as f:
+def get_agents(role_filter=None):
+    with open("/workspace/agents.txt", "r") as f:
         filedata = f.read()
 
     lines = [x.strip() for x in filedata.split("\n") if x.strip()]
 
-    nodes = {}
+    agents = {}
     for line in lines:
         s = line.split(" ")
         if len(s) == 2:
-            nodes[s[0]] = s[1].split(",")
+            agents[s[0]] = s[1].split(",")
         if len(s) == 1:
-            nodes[s[0]] = []
+            agents[s[0]] = []
 
-    ips = nodes.keys()
-    for host in ips:
-        roles = nodes.get(host)
+    agents_ip = agents.keys()
+    for agent_ip in agents_ip:
+        roles = agents.get(agent_ip)
         roles = list(set(roles))
-        nodes[host] = sorted(roles, key=custom_sort_order)
+        agents[agent_ip] = sorted(roles, key=custom_sort_order)
 
-    if host_role_filter:
-        nodes = {host: roles for host, roles in nodes.items() if set(host_role_filter) & set(roles)}
+    if role_filter:
+        agents = {agent_ip: roles for agent_ip, roles in agents.items() if set(role_filter) & set(roles)}
 
-    return nodes
-
-
-def get_tag_value(host, key):
-    nodes = get_hosts()
-    for host, roles in nodes.items():
-        nodes[host] = {r.split(":")[0].strip(): r.split(":")[1].strip() for r in roles if ":" in r}
-    return nodes.get(host).get(key)
+    return agents
 
 
-def get_host_roles(host_role_filter=None):
-    nodes = get_hosts(host_role_filter)
+def get_agent_tag_value(agent, tag_key):
+    agents = get_agents()
+    for agent, roles in agents.items():
+        agents[agent] = {r.split(":")[0].strip(): r.split(":")[1].strip() for r in roles if ":" in r}
+    return agents.get(agent).get(tag_key)
+
+
+def get_agent_roles(role_filter=None):
+    nodes = get_agents(role_filter)
     for host, roles in nodes.items():
         nodes[host] = [r for r in roles if ":" not in r]
     return nodes
 
 
-def get_host_tags(host_role_filter=None):
-    nodes = get_hosts(host_role_filter)
+def get_agent_tags(role_filter=None):
+    nodes = get_agents(role_filter)
     for host, roles in nodes.items():
         nodes[host] = {r.split(":")[0]: r.split(":")[1] for r in roles if ":" in r}
     return nodes
 
 
-def get_host_one(role):
-    hosts = get_host_roles()
+def get_agent_one(role):
+    hosts = get_agent_roles()
     filtered_hosts = [ip for ip, roles in hosts.items() if role in roles]
     if len(filtered_hosts) > 0:
         return filtered_hosts[0]
 
 
-def get_host_list(role):
-    hosts = get_host_roles()
+def get_agents_by_role(role):
+    hosts = get_agent_roles()
     role_hosts = set(ip for ip, roles in hosts.items() if role in roles)
     return sorted(role_hosts)
 

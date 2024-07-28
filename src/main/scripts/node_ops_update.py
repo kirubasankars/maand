@@ -1,50 +1,60 @@
 import os
 import sys
+import uuid
 from pathlib import Path
 from string import Template
+
 from dotenv import dotenv_values
 
+import certs
 import command_helper
 import utils
-import certs
+import variables
 
 logger = utils.get_logger()
 
 
-def get_host_id():
+def get_agent_id():
     try:
-        with open("/opt/agent/node.txt", "r") as f:
+        with open("/opt/agent/agent_id.txt", "r") as f:
             return f.read().strip()
     except FileNotFoundError:
-        logger.error("Host ID file not found.")
+        logger.error("agent_id.txt not found.")
+        sys.exit(1)
+
+
+def get_cluster_id():
+    try:
+        with open("/opt/agent/cluster_id.txt", "r") as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        logger.error("agent_id.txt not found.")
         sys.exit(1)
 
 
 def load_values():
-    host_id = get_host_id()
-    node_ip = os.getenv("HOST")
-    if not node_ip:
-        logger.error("HOST environment variable is not set.")
-        sys.exit(1)
-
     values = dotenv_values("/workspace/variables.env")
-    values["NODE_NAME"] = host_id
-    values["NODE_IP"] = node_ip
 
-    return values, node_ip
+    agent_id = get_agent_id()
+    agent_ip = os.getenv("AGENT_IP")
+
+    values["AGENT_ID"] = agent_id
+    values["AGENT_IP"] = agent_ip
+
+    return values, agent_ip
 
 
 def add_roles_to_values(values):
-    node_ip = values["NODE_IP"]
+    node_ip = values["AGENT_IP"]
     available_roles = set()
-    nodes = utils.get_host_roles()
+    nodes = utils.get_agent_roles()
 
     for ip, roles in nodes.items():
         available_roles.update(roles)
 
     for role in available_roles:
         key_nodes = f"{role}_NODES".upper()
-        role_hosts = utils.get_host_list(role)
+        role_hosts = utils.get_agents_by_role(role)
         values[key_nodes] = ",".join(role_hosts)
 
         if node_ip in role_hosts:
@@ -52,7 +62,7 @@ def add_roles_to_values(values):
         key_others = f"{role}_OTHERS".upper()
         values[key_others] = ",".join(role_hosts)
 
-        for idx, host in enumerate(utils.get_host_list(role)):
+        for idx, host in enumerate(utils.get_agents_by_role(role)):
             key = f"{role}_{idx}".upper()
             values[key] = host
 
@@ -60,14 +70,14 @@ def add_roles_to_values(values):
                 key = f"{role}_ALLOCATION_INDEX".upper()
                 values[key] = idx
 
-    host_roles = utils.get_host_roles()
+    host_roles = utils.get_agent_roles()
     values["ROLES"] = ",".join(host_roles.get(node_ip))
 
     return values
 
 
 def add_tags_to_values(values, node_ip):
-    nodes = utils.get_host_tags()
+    nodes = utils.get_agent_tags()
     tags = nodes.get(node_ip, {})
     for k, v in tags.items():
         key = f"{k}".upper()
@@ -88,26 +98,29 @@ def process_templates(values):
                         file.write(content)
             except Exception as e:
                 logger.error(f"Error processing file {f}: {e}")
+                raise e
 
 
 def transpile():
-    values, node_ip = load_values()
+    values, agent_ip = load_values()
     values = add_roles_to_values(values)
-    values = add_tags_to_values(values, node_ip)
+    values = add_tags_to_values(values, agent_ip)
     process_templates(values)
 
 
 def sync():
     cluster_id = os.getenv("CLUSTER_ID")
-    host = os.getenv("HOST")
+    agent_ip = os.getenv("AGENT_IP")
 
-    if not cluster_id or not host:
-        logger.error("Required environment variables CLUSTER_ID or HOST are not set.")
+    if not cluster_id:
+        logger.error("Required environment variable: CLUSTER_ID is not set.")
         sys.exit(1)
 
     if not os.path.isfile("/workspace/ca.key"):
         certs.generate_ca_private()
         certs.generate_ca_public(cluster_id, 365)
+
+    command_helper.command_remote("mkdir -p /opt/agent")
 
     command_helper.command_local("""
         mkdir -p /opt/agent/certs
@@ -115,15 +128,19 @@ def sync():
         bash /scripts/rsync_remote_local.sh
     """)
 
-    if not os.path.isfile("/opt/agent/node.txt"):
-        logger.error("/opt/agent/node.txt is not found.")
-        sys.exit(1)
+    if not os.path.isfile("/opt/agent/agent_id.txt"):
+        with open("/opt/agent/agent_id.txt", "w") as f:
+            f.write(uuid.uuid4().__str__())
 
-    with open("/opt/agent/cluster.txt", "w") as f:
-        f.write(cluster_id)
+    if not os.path.isfile("/opt/agent/cluster_id.txt"):
+        with open("/opt/agent/cluster_id.txt", "w") as f:
+            f.write(cluster_id)
 
-    nodes = utils.get_host_roles()
-    roles = nodes.get(host, [])
+    if get_cluster_id() != cluster_id:
+        raise Exception("Failed on cluster id validation: mismatch")
+
+    agents = utils.get_agent_roles()
+    roles = agents.get(agent_ip, [])
     with open("/opt/agent/roles.txt", "w") as f:
         f.writelines("\n".join(roles))
 
@@ -135,7 +152,10 @@ def sync():
         if set(roles) & set(job_roles):
             assigned_jobs.append(job)
 
-    command_helper.command_local("rsync -r /agent/bin /opt/agent/")
+    command_helper.command_local("""
+        rsync -r /agent/bin /opt/agent/
+        mkdir -p /opt/agent/jobs/
+    """)
 
     if assigned_jobs:
         assigned_jobs_str = ",".join(assigned_jobs)
@@ -149,7 +169,7 @@ def sync():
 
 
 def update_certificates(jobs, cluster_id):
-    node_ip = os.getenv("HOST")
+    node_ip = os.getenv("AGENT_IP")
     for job in jobs:
         metadata = utils.get_job_metadata(job, base_path="/opt/agent/jobs")
         if os.getenv("UPDATE_CERTS", "0") == "1":
@@ -164,7 +184,8 @@ def update_certificates(jobs, cluster_id):
                         common = cert_config.get("subject", cluster_id)
                         certs.generate_site_csr(name, common)
 
-                        subject_alt_name = cert_config.get("subject_alt_name", f"DNS.1:localhost,IP.1:127.0.0.1,IP.2:{node_ip}")
+                        subject_alt_name = cert_config.get("subject_alt_name",
+                                                           f"DNS.1:localhost,IP.1:127.0.0.1,IP.2:{node_ip}")
                         certs.generate_site_public(name, subject_alt_name, ttl)
 
                         command_helper.command_local(f"rm /opt/agent/certs/{name}.csr")
