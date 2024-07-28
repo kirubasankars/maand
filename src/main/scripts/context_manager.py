@@ -3,6 +3,7 @@ import sys
 
 from dotenv import dotenv_values
 
+import command_helper
 import utils
 
 logger = utils.get_logger()
@@ -26,7 +27,7 @@ def get_cluster_id():
         sys.exit(1)
 
 
-def load_values():
+def _load_values():
     values = dotenv_values("/workspace/variables.env")
 
     agent_id = get_agent_id()
@@ -38,7 +39,7 @@ def load_values():
     return values, agent_ip
 
 
-def add_roles_to_values(values):
+def _add_roles_to_values(values):
     node_ip = values["AGENT_IP"]
     available_roles = set()
     nodes = utils.get_agent_roles()
@@ -70,7 +71,7 @@ def add_roles_to_values(values):
     return values
 
 
-def add_tags_to_values(values, node_ip):
+def _add_tags_to_values(values, node_ip):
     nodes = utils.get_agent_tags()
     tags = nodes.get(node_ip, {})
     for k, v in tags.items():
@@ -79,8 +80,24 @@ def add_tags_to_values(values, node_ip):
     return values
 
 
-def get_variables():
-    values, agent_ip = load_values()
-    values = add_roles_to_values(values)
-    values = add_tags_to_values(values, agent_ip)
+def get_values():
+    values, agent_ip = _load_values()
+    values = _add_roles_to_values(values)
+    values = _add_tags_to_values(values, agent_ip)
     return values
+
+
+def validate_cluster_id():
+    cluster_id = os.getenv("CLUSTER_ID")
+
+    if not cluster_id:
+        logger.error("Required environment variable: CLUSTER_ID is not set.")
+        sys.exit(1)
+
+    command_helper.command_local("bash /scripts/rsync_remote_local.sh")
+    command_helper.command_local("mkdir -p /opt/agent")
+
+    if os.path.isfile("/opt/agent/cluster_id.txt"):
+        with open("/opt/agent/cluster_id.txt", "r") as f:
+            if f.read().strip() != cluster_id:
+                raise Exception("Failed on cluster id validation: mismatch")
