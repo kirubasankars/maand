@@ -40,20 +40,23 @@ def _load_values():
 
 
 def _add_roles_to_values(values):
-    node_ip = values["AGENT_IP"]
+    agent_ip = values["AGENT_IP"]
     available_roles = set()
-    nodes = utils.get_agent_roles()
+    agents = utils.get_agent_roles()
 
-    for ip, roles in nodes.items():
+    for ip, roles in agents.items():
         available_roles.update(roles)
+
+    available_roles = set(available_roles)
 
     for role in available_roles:
         key_nodes = f"{role}_NODES".upper()
         role_hosts = utils.get_agents_by_role(role)
         values[key_nodes] = ",".join(role_hosts)
 
-        if node_ip in role_hosts:
-            role_hosts.remove(node_ip)
+        if agent_ip in role_hosts:
+            role_hosts.remove(agent_ip)
+
         key_others = f"{role}_OTHERS".upper()
         values[key_others] = ",".join(role_hosts)
 
@@ -61,19 +64,19 @@ def _add_roles_to_values(values):
             key = f"{role}_{idx}".upper()
             values[key] = host
 
-            if host == node_ip:
+            if host == agent_ip:
                 key = f"{role}_ALLOCATION_INDEX".upper()
                 values[key] = idx
 
     host_roles = utils.get_agent_roles()
-    values["ROLES"] = ",".join(host_roles.get(node_ip))
+    values["ROLES"] = ",".join(host_roles.get(agent_ip))
 
     return values
 
 
 def _add_tags_to_values(values, node_ip):
-    nodes = utils.get_agent_tags()
-    tags = nodes.get(node_ip, {})
+    agents = utils.get_agent_tags()
+    tags = agents.get(node_ip, {})
     for k, v in tags.items():
         key = f"{k}".upper()
         values[key] = v

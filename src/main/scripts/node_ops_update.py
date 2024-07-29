@@ -67,16 +67,14 @@ def sync():
     """)
 
     agents = utils.get_agent_roles()
-    roles = agents.get(agent_ip, [])
+    agent_roles = agents.get(agent_ip, [])
     with open("/opt/agent/roles.txt", "w") as f:
-        f.writelines("\n".join(roles))
+        f.writelines("\n".join(agent_roles))
 
     assigned_jobs = []
     jobs = utils.get_jobs()
     for job in jobs:
-        metadata = utils.get_job_metadata(job)
-        job_roles = metadata.get("roles", [])
-        if set(roles) & set(job_roles):
+        if job in agent_roles:
             assigned_jobs.append(job)
 
     command_helper.command_local("""
@@ -86,7 +84,7 @@ def sync():
 
     if assigned_jobs:
         for job in assigned_jobs:
-            command_helper.command_local(f"rsync -r /workspace/jobs/{job} /opt/agent/jobs/")
+            command_helper.command_local(f"rsync -r --exclude '/workspace/jobs/{job}/modules' /workspace/jobs/{job} /opt/agent/jobs/")
 
     transpile()
 
@@ -112,9 +110,9 @@ def update_certificates(jobs, cluster_id):
         name = "agent"
         certs.generate_site_private(name, path)
         certs.generate_private_pem_pkcs_8(name, path)
-        certs.generate_site_csr("agent", cluster_id, path)
+        certs.generate_site_csr(name, cluster_id, path)
         subject_alt_name = f"DNS.1:localhost,IP.1:127.0.0.1,IP.2:{agent_ip}"
-        certs.generate_site_public("agent", subject_alt_name, 60, path)
+        certs.generate_site_public(name, subject_alt_name, 60, path)
         command_helper.command_local(f"rm -f {path}/{name}.csr")
 
     for job in jobs:

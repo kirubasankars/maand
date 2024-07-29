@@ -62,30 +62,23 @@ def get_agent_tag_value(agent, tag_key):
 
 
 def get_agent_roles(role_filter=None):
-    nodes = get_agents(role_filter)
-    for host, roles in nodes.items():
-        nodes[host] = [r for r in roles if ":" not in r]
-    return nodes
+    agents = get_agents(role_filter)
+    for agent_ip, roles in agents.items():
+        agents[agent_ip] = [r for r in roles if ":" not in r]
+    return agents
 
 
 def get_agent_tags(role_filter=None):
-    nodes = get_agents(role_filter)
-    for host, roles in nodes.items():
-        nodes[host] = {r.split(":")[0]: r.split(":")[1] for r in roles if ":" in r}
-    return nodes
-
-
-def get_agent_one(role):
-    hosts = get_agent_roles()
-    filtered_hosts = [ip for ip, roles in hosts.items() if role in roles]
-    if len(filtered_hosts) > 0:
-        return filtered_hosts[0]
+    agents = get_agents(role_filter)
+    for host, roles in agents.items():
+        agents[host] = {r.split(":")[0]: r.split(":")[1] for r in roles if ":" in r}
+    return agents
 
 
 def get_agents_by_role(role):
     hosts = get_agent_roles()
-    role_hosts = set(ip for ip, roles in hosts.items() if role in roles)
-    return sorted(role_hosts)
+    role_hosts = [ip for ip, roles in hosts.items() if role in roles]
+    return role_hosts
 
 
 def get_job_metadata(name, base_path="/workspace/jobs/"):
@@ -101,12 +94,13 @@ def get_job_metadata(name, base_path="/workspace/jobs/"):
 @functools.cache
 def get_jobs():
     jobs = []
-    for job in glob.glob("/workspace/jobs/*"):
-        metadata_path = os.path.join(job, "metadata.json")
-        if os.path.isdir(job) and os.path.isfile(metadata_path):
+    for metadata_path in glob.glob("/workspace/jobs/*/metadata.json"):
+        job_name = os.path.basename(os.path.dirname(metadata_path))
+        if os.path.isfile(metadata_path):
             with open(metadata_path, "r") as f:
                 metadata = json.load(f)
-                jobs.append(metadata.get("name", ""))
+                if job_name == metadata.get("name", ""):
+                    jobs.append(metadata.get("name", ""))
     return jobs
 
 

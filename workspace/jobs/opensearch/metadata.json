@@ -1,6 +1,5 @@
 {
   "name": "opensearch",
-  "roles": ["opensearch"],
   "certs": [
     {
       "admin": {
