@@ -49,7 +49,7 @@ elif [ "$OPERATION" == "restart_jobs" ]; then
 elif [ "$OPERATION" == "force_deploy_jobs" ]; then
   python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation force_deploy_jobs
 elif [ "$OPERATION" == "rolling_upgrade" ]; then
-  python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation rolling_upgrade
+  python3 /scripts/system_manager.py --concurrency "1" --operation rolling_upgrade
 elif [ "$OPERATION" == "health_check" ]; then
   python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation health_check
 fi

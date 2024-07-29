@@ -4,21 +4,27 @@ import command_helper
 import context_manager
 import utils
 
-context_manager.validate_cluster_id()
 
-agent_ip = os.getenv("AGENT_IP")
+def health_check():
+    context_manager.validate_cluster_id()
 
-agents = utils.get_agent_roles()
-roles = agents.get(agent_ip, [])
+    agent_ip = os.getenv("AGENT_IP")
 
-values = context_manager.get_values()
-with open("/opt/agent/values.env", "w") as f:
-    for key, value in values.items():
-        f.write("export {}={}\n".format(key, value))
+    agents = utils.get_agent_roles()
+    roles = agents.get(agent_ip, [])
 
-for role in roles:
-    if os.path.exists(f"/workspace/jobs/{role}/modules/health_check.sh"):
-        command_helper.command_local(f"""
-            mkdir -p /modules/{role} && rsync -r /workspace/jobs/{role}/modules/ /modules/{role}/
-            cd /modules/{role} && source /opt/agent/values.env && bash /modules/{role}/health_check.sh
-        """)
+    values = context_manager.get_values()
+    with open("/opt/agent/values.env", "w") as f:
+        for key, value in values.items():
+            f.write("export {}={}\n".format(key, value))
+
+    for role in roles:
+        if os.path.exists(f"/workspace/jobs/{role}/modules/health_check.sh"):
+            command_helper.command_local(f"""
+                mkdir -p /modules/{role} && rsync -r /workspace/jobs/{role}/modules/ /modules/{role}/
+                cd /modules/{role} && source /opt/agent/values.env && bash /modules/{role}/health_check.sh
+            """)
+
+
+if __name__ == "__main__":
+    health_check()
