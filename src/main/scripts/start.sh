@@ -20,8 +20,8 @@ export WORKSPACE=${WORKSPACE:-""}
 
 mkdir -p /opt/agents
 
-if [[ -z "$OPERATION" || -z "$SSH_USER" || -z "$SSH_KEY" || -z "$WORKSPACE" ]]; then
-  echo "missing arguments (OPERATION, SSH_USER, SSH_KEY, WORKSPACE)";
+if [[ -z "$OPERATION" || -z "$SSH_USER" || -z "$SSH_KEY" || -z "$WORKSPACE" || -z "$CLUSTER_ID" ]]; then
+  echo "missing arguments (OPERATION, SSH_USER, SSH_KEY, WORKSPACE, CLUSTER_ID)";
   exit 1
 fi
 
@@ -31,6 +31,11 @@ echo "StrictHostKeyChecking accept-new" >> /etc/ssh/ssh_config
 if [ "$NODE_OPS" == "1" ]; then
   python3 /scripts/"node_ops_$OPERATION".py
   exit 0
+fi
+
+if [ ! -f /workspace/ca.key ]; then
+  openssl genrsa -out /workspace/ca.key 4096
+  openssl req -new -x509 -sha256 -days 365 -subj /CN="$CLUSTER_ID" -key /workspace/ca.key -out /workspace/ca.crt
 fi
 
 if [ "$OPERATION" == "run_command" ]; then

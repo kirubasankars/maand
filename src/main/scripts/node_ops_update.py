@@ -42,8 +42,8 @@ def sync():
     cluster_id = os.getenv("CLUSTER_ID")
     agent_ip = os.getenv("AGENT_IP")
 
-    if not cluster_id or not agent_ip:
-        logger.error("CLUSTER_ID or AGENT_IP environment variables are not set.")
+    if not cluster_id:
+        logger.error("CLUSTER_ID environment variables are not set.")
         return
 
     command_helper.command_remote("mkdir -p /opt/agent")
@@ -58,8 +58,9 @@ def sync():
             f.write(uuid.uuid4().__str__())
 
     if not os.path.isfile("/workspace/ca.key"):
-        certs.generate_ca_private()
-        certs.generate_ca_public(cluster_id, 365)
+        raise Exception("CA key file not found.")
+    #     certs.generate_ca_private()
+    #     certs.generate_ca_public(cluster_id, 365)
 
     command_helper.command_local("""
         mkdir -p /opt/agent/certs
