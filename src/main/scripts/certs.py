@@ -1,3 +1,7 @@
+from datetime import datetime, timedelta
+
+from OpenSSL import crypto
+
 from command_helper import *
 
 
@@ -43,3 +47,19 @@ def trust_ca_public():
 def generate_encryption_key():
     result = command_local("openssl rand -base64 32")
     return result.stdout.decode('utf-8').strip()
+
+
+def is_certificate_expiring_soon(cert_file_path, days=15):
+    # Load the certificate from the file
+    with open(cert_file_path, 'rb') as cert_file:
+        cert_data = cert_file.read()
+
+    # Load the certificate using pyOpenSSL
+    cert = crypto.load_certificate(crypto.FILETYPE_PEM, cert_data)
+
+    # Get the expiration date of the certificate
+    expiry_date = cert.get_notAfter().decode('ascii')
+    expiry_date = datetime.strptime(expiry_date, '%Y%m%d%H%M%SZ')
+
+    # Check if the certificate will expire within the specified number of days
+    return expiry_date <= datetime.utcnow() + timedelta(days=days)

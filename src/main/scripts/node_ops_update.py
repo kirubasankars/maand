@@ -1,5 +1,4 @@
 import os
-import sys
 import uuid
 from pathlib import Path
 from string import Template
@@ -107,9 +106,10 @@ def update_certificates(jobs, cluster_id):
     logger.info("Updating certificates...")
     agent_ip = os.getenv("AGENT_IP")
 
-    if not os.path.isfile(f"/opt/agent/certs/agent.key"):
+    path = "/opt/agent/certs"
+    if (not os.path.isfile(f"{path}/agent.key") or
+            (os.path.isfile(f"{path}/agent.crt") and certs.is_certificate_expiring_soon(f"{path}/agent.crt"))):
         name = "agent"
-        path = "/opt/agent/certs"
         certs.generate_site_private(name, path)
         certs.generate_private_pem_pkcs_8(name, path)
         certs.generate_site_csr("agent", cluster_id, path)
@@ -121,10 +121,16 @@ def update_certificates(jobs, cluster_id):
         metadata = utils.get_job_metadata(job, base_path=f"/opt/agent/jobs")
         certificates = metadata.get("certs", [])
         for cert in certificates:
+
             path = f"/opt/agent/jobs/{job}/certs"
             command_helper.command_local(f"mkdir -p {path}")
+
             for name, cert_config in cert.items():
-                if not os.path.isfile(f"{path}/{name}.key"):
+
+                if (not os.path.isfile(f"{path}/{name}.key") or
+                        (os.path.isfile(f"{path}/{name}.key") and certs.is_certificate_expiring_soon(
+                            f"{path}/{name}.crt"))):
+
                     ttl = cert_config.get("ttl", 60)
                     certs.generate_site_private(name, path)
 
