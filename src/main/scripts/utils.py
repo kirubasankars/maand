@@ -89,9 +89,8 @@ def get_agents_by_role(role):
 
 
 def get_job_metadata(name, base_path="/workspace/jobs/"):
-    for job in glob.glob(f"{base_path}/*"):
-        metadata_path = os.path.join(job, "metadata.json")
-        if os.path.isdir(job) and os.path.isfile(metadata_path):
+    for metadata_path in glob.glob(f"{base_path}/{name}/metadata.json"):
+        if os.path.isfile(metadata_path):
             with open(metadata_path, "r") as f:
                 metadata = json.load(f)
                 if name == metadata.get("name", ""):

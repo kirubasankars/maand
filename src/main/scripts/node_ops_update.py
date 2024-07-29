@@ -1,4 +1,5 @@
 import os
+import sys
 import uuid
 from pathlib import Path
 from string import Template
@@ -12,6 +13,7 @@ logger = utils.get_logger()
 
 
 def process_templates(values):
+    logger.info("Processing templates...")
     for ext in ["*.json", "*.service", "*.conf", "*.yml", "*.env", "*.token"]:
         for f in Path('/opt/agent/').rglob(ext):
             try:
@@ -22,21 +24,28 @@ def process_templates(values):
                 if content != data:
                     with open(f, 'w') as file:
                         file.write(content)
+                logger.info(f"Processed template: {f}")
             except Exception as e:
                 logger.error(f"Error processing file {f}: {e}")
                 raise e
 
 
 def transpile():
+    logger.info("Transpiling templates...")
     values = context_manager.get_values()
     process_templates(values)
 
 
 def sync():
+    logger.info("Starting sync process...")
     context_manager.validate_cluster_id()
 
     cluster_id = os.getenv("CLUSTER_ID")
     agent_ip = os.getenv("AGENT_IP")
+
+    if not cluster_id or not agent_ip:
+        logger.error("CLUSTER_ID or AGENT_IP environment variables are not set.")
+        return
 
     command_helper.command_remote("mkdir -p /opt/agent")
     command_helper.command_local("bash /scripts/rsync_remote_local.sh")
@@ -77,8 +86,8 @@ def sync():
     """)
 
     if assigned_jobs:
-        assigned_jobs_str = ",".join(assigned_jobs)
-        command_helper.command_local(f"rsync -r /workspace/jobs/{assigned_jobs_str} /opt/agent/jobs/")
+        for job in assigned_jobs:
+            command_helper.command_local(f"rsync -r /workspace/jobs/{job} /opt/agent/jobs/")
 
     transpile()
 
@@ -91,29 +100,45 @@ def sync():
 
     command_helper.command_local("rm -f /workspace/ca.srl")
     command_helper.command_local("bash /scripts/rsync_local_remote.sh")
+    logger.info("Sync process completed.")
 
 
 def update_certificates(jobs, cluster_id):
-    node_ip = os.getenv("AGENT_IP")
+    logger.info("Updating certificates...")
+    agent_ip = os.getenv("AGENT_IP")
+
+    if not os.path.isfile(f"/opt/agent/certs/agent.key"):
+        name = "agent"
+        path = "/opt/agent/certs"
+        certs.generate_site_private(name, path)
+        certs.generate_private_pem_pkcs_8(name, path)
+        certs.generate_site_csr("agent", cluster_id, path)
+        subject_alt_name = f"DNS.1:localhost,IP.1:127.0.0.1,IP.2:{agent_ip}"
+        certs.generate_site_public("agent", subject_alt_name, 60, path)
+        command_helper.command_local(f"rm -f {path}/{name}.csr")
+
     for job in jobs:
-        metadata = utils.get_job_metadata(job, base_path="/opt/agent/jobs")
-        if os.getenv("UPDATE_CERTS", "0") == "1":
-            certificates = metadata.get("certificates", [])
-            for cert in certificates:
-                for name, cert_config in cert.items():
-                    if not os.path.isfile(f"/opt/agent/certs/{name}.key"):
-                        ttl = cert_config.get("ttl", 60)
-                        certs.generate_site_private(name)
-                        certs.generate_private_pem_pkcs_8(name)
+        metadata = utils.get_job_metadata(job, base_path=f"/opt/agent/jobs")
+        certificates = metadata.get("certs", [])
+        for cert in certificates:
+            path = f"/opt/agent/jobs/{job}/certs"
+            command_helper.command_local(f"mkdir -p {path}")
+            for name, cert_config in cert.items():
+                if not os.path.isfile(f"{path}/{name}.key"):
+                    ttl = cert_config.get("ttl", 60)
+                    certs.generate_site_private(name, path)
 
-                        common = cert_config.get("subject", cluster_id)
-                        certs.generate_site_csr(name, common)
+                    if cert_config.get("pkcs8", False):
+                        certs.generate_private_pem_pkcs_8(name, path)
 
-                        subject_alt_name = cert_config.get("subject_alt_name",
-                                                           f"DNS.1:localhost,IP.1:127.0.0.1,IP.2:{node_ip}")
-                        certs.generate_site_public(name, subject_alt_name, ttl)
+                    common = cert_config.get("subject", cluster_id)
+                    certs.generate_site_csr(name, common, path)
 
-                        command_helper.command_local(f"rm /opt/agent/certs/{name}.csr")
+                    subject_alt_name = cert_config.get("subject_alt_name",
+                                                       f"DNS.1:localhost,IP.1:127.0.0.1,IP.2:{agent_ip}")
+                    certs.generate_site_public(name, subject_alt_name, ttl, path)
+                    command_helper.command_local(f"rm -f {path}/{name}.csr")
+                    logger.info(f"Updated certificate: {name}")
 
 
 if __name__ == "__main__":

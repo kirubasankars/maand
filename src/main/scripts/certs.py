@@ -10,26 +10,26 @@ def generate_ca_public(common_name, ttl):
                   "/workspace/ca.key -out /workspace/ca.crt")
 
 
-def generate_site_private(name):
-    command_local(f"openssl genrsa -out /opt/agent/certs/{name}.key 4096")
+def generate_site_private(name, path):
+    command_local(f"openssl genrsa -out {path}/{name}.key 4096")
 
 
-def generate_site_csr(name, common_name):
-    command_local(f"openssl req -new -sha256 -subj /CN={common_name} -key /opt/agent/certs/{name}.key "
-                  f"-out /opt/agent/certs/{name}.csr")
+def generate_site_csr(name, common_name, path):
+    command_local(f"openssl req -new -sha256 -subj /CN={common_name} -key {path}/{name}.key "
+                  f"-out {path}/{name}.csr")
 
 
-def generate_private_pem_pkcs_8(name):
-    command_local(f"openssl pkcs8 -inform PEM -outform PEM -in /opt/agent/certs/{name}.key -topk8 -nocrypt "
-                  f"-v1 PBE-SHA1-3DES -out /opt/agent/certs/{name}.pem")
+def generate_private_pem_pkcs_8(name, path):
+    command_local(f"openssl pkcs8 -inform PEM -outform PEM -in {path}/{name}.key -topk8 -nocrypt "
+                  f"-v1 PBE-SHA1-3DES -out {path}/{name}.pem")
 
 
-def generate_site_public(name, san, ttl):
+def generate_site_public(name, san, ttl, path):
     with open("/tmp/extfile.conf", "w") as f:
         f.writelines(f"subjectAltName={san}")
-    command_local(f"openssl x509 -req -sha256 -days {ttl} -in /opt/agent/certs/{name}.csr "
+    command_local(f"openssl x509 -req -sha256 -days {ttl} -in {path}/{name}.csr "
                   f"-CA /workspace/ca.crt -CAkey /workspace/ca.key "
-                  f"-out /opt/agent/certs/{name}.crt -extfile /tmp/extfile.conf -CAcreateserial 2> /dev/null")
+                  f"-out {path}/{name}.crt -extfile /tmp/extfile.conf -CAcreateserial 2> /dev/null")
 
 
 def trust_ca_public():

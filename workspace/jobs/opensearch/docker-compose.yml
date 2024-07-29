@@ -12,15 +12,15 @@ services:
         soft: 65536 # Maximum number of open files for the opensearch user - set to at least 65536
         hard: 65536
     volumes:
-      - ../../certs/admin.crt:/usr/share/opensearch/config/admin.pem
-      - ../../certs/node.crt:/usr/share/opensearch/config/node.pem
-      - ../../certs/node.key:/usr/share/opensearch/config/node-key.pem
-      - ../../certs/ca.crt:/usr/share/opensearch/config/root-ca.pem
-      - ../../certs/api.crt:/usr/share/opensearch/config/api.pem
-      - ../../certs/api.key:/usr/share/opensearch/config/api-key.pem
+      - ./certs/admin.crt:/usr/share/opensearch/config/admin.pem
+      - ./certs/node.crt:/usr/share/opensearch/config/node.pem
+      - ./certs/node.key:/usr/share/opensearch/config/node-key.pem
+      - ./certs/ca.crt:/usr/share/opensearch/config/root-ca.pem
+      - ./certs/api.crt:/usr/share/opensearch/config/api.pem
+      - ./certs/api.key:/usr/share/opensearch/config/api-key.pem
 
       - ./config/opensearch.yml:/usr/share/opensearch/config/opensearch.yml
       - ./config/jvm.options:/usr/share/opensearch/config/jvm.options
 
-      - /opt/maand/opensearch/data:/usr/share/opensearch/data
-      - /opt/maand/opensearch/logs:/usr/share/opensearch/logs
+      - ./data:/usr/share/opensearch/data
+      - ./logs:/usr/share/opensearch/logs
