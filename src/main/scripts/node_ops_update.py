@@ -84,7 +84,8 @@ def sync():
 
     if assigned_jobs:
         for job in assigned_jobs:
-            command_helper.command_local(f"rsync -r --exclude '/workspace/jobs/{job}/modules' /workspace/jobs/{job} /opt/agent/jobs/")
+            command_helper.command_local(
+                f"rsync -r --exclude '/workspace/jobs/{job}/modules' /workspace/jobs/{job} /opt/agent/jobs/")
 
     transpile()
 

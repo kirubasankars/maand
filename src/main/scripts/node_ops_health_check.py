@@ -1,8 +1,8 @@
 import os
 
-import utils
 import command_helper
 import context_manager
+import utils
 
 context_manager.validate_cluster_id()
 
@@ -20,5 +20,5 @@ for role in roles:
     if os.path.exists(f"/workspace/jobs/{role}/modules/health_check.sh"):
         command_helper.command_local(f"""
             mkdir -p /modules/{role} && rsync -r /workspace/jobs/{role}/modules/ /modules/{role}/
-            source /opt/agent/values.env && bash /modules/{role}/health_check.sh
+            cd /modules/{role} && source /opt/agent/values.env && bash /modules/{role}/health_check.sh
         """)
