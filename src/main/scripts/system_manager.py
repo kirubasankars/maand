@@ -1,6 +1,7 @@
 import argparse
 import multiprocessing
 import os
+import tempfile
 import uuid
 
 import command_helper
@@ -19,9 +20,21 @@ def run(work_item):
     workspace = os.getenv("WORKSPACE")
 
     name = f"""{command_group}-{agent_ip.replace(".", "-")}"""
+
+    with open(f"/tmp/{name}.env", "w") as f:
+        f.write(f"AGENT_IP={agent_ip}\n")
+        f.write(f"WORKSPACE={workspace}\n")
+        f.write(f"NODE_OPS=1\n")
+
+        f.write(f"OPERATION={os.getenv("OPERATION")}\n")
+
+        if os.getenv("MODULE"):
+            f.write(f"MODULE={os.getenv("MODULE")}\n")
+
     r = command_helper.command_local(cmd=f"""
-        docker run --privileged -e AGENT_IP={agent_ip} -e NODE_OPS="1" -e WORKSPACE="{workspace}" -v {workspace}:/workspace -v /var/run/docker.sock:/var/run/docker.sock --name "{name}" {image} {operation}
+        docker run --env-file /tmp/{name}.env -v {workspace}:/workspace -v /var/run/docker.sock:/var/run/docker.sock --name "{name}" {image} {operation}
     """, return_error=True)
+
     if r.returncode != 0:
         raise Exception(r)
     else:
@@ -39,7 +52,7 @@ def main():
     ignore_error = config["ignore_error"]
     config["roles"] = [x.strip() for x in config["roles"].split(",") if x.strip()]
 
-    agents = utils.get_agent_roles(config["roles"])
+    agents = utils.get_agent_and_roles(config["roles"])
     agents_ip = list(agents.keys())
 
     if len(agents_ip) == 0:

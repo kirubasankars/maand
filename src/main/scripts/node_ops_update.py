@@ -67,16 +67,21 @@ def sync():
         rsync /workspace/ca.crt /opt/agent/certs/
     """)
 
-    agents = utils.get_agent_roles()
+    agents = utils.get_agent_and_roles()
     agent_roles = agents.get(agent_ip, [])
     with open("/opt/agent/roles.txt", "w") as f:
         f.writelines("\n".join(agent_roles))
 
     assigned_jobs = []
-    jobs = utils.get_jobs()
-    for job in jobs:
-        if job in agent_roles:
-            assigned_jobs.append(job)
+    role_jobs = utils.get_role_and_jobs()
+
+    for role in agent_roles:
+        if role not in role_jobs:
+            continue
+        jobs = role_jobs.get(role)
+        assigned_jobs.extend(jobs)
+
+    assigned_jobs = list(set(assigned_jobs))
 
     command_helper.command_local("""
         rsync -r /agent/bin /opt/agent/
@@ -95,7 +100,7 @@ def sync():
         for key, value in values.items():
             f.write("export {}={}\n".format(key, value))
 
-    update_certificates(jobs, cluster_id)
+    update_certificates(assigned_jobs, cluster_id)
 
     command_helper.command_local("rm -f /workspace/ca.srl")
     command_helper.command_local("bash /scripts/rsync_local_remote.sh")

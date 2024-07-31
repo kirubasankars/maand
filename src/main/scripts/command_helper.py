@@ -4,6 +4,16 @@ import sys
 import uuid
 
 
+def command_local_stdout(cmd, env=None, return_error=False):
+    file_id = uuid.uuid4()
+    with open(f"/tmp/{file_id}", "w") as f:
+        f.write("#!/bin/bash\n")
+        f.write(cmd)
+    file_path = f"/tmp/{file_id}"
+    env = env or os.environ.copy()
+    subprocess.run(["sh", file_path], env=env)
+
+
 def command_local(cmd, env=None, return_error=False):
     file_id = uuid.uuid4()
     with open(f"/tmp/{file_id}", "w") as f:

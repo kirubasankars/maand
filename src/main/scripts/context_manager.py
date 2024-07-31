@@ -42,7 +42,7 @@ def _load_values():
 def _add_roles_to_values(values):
     agent_ip = values["AGENT_IP"]
     available_roles = set()
-    agents = utils.get_agent_roles()
+    agents = utils.get_agent_and_roles()
 
     for ip, roles in agents.items():
         available_roles.update(roles)
@@ -68,14 +68,14 @@ def _add_roles_to_values(values):
                 key = f"{role}_ALLOCATION_INDEX".upper()
                 values[key] = idx
 
-    host_roles = utils.get_agent_roles()
+    host_roles = utils.get_agent_and_roles()
     values["ROLES"] = ",".join(host_roles.get(agent_ip))
 
     return values
 
 
 def _add_tags_to_values(values, node_ip):
-    agents = utils.get_agent_tags()
+    agents = utils.get_agent_and_tags()
     tags = agents.get(node_ip, {})
     for k, v in tags.items():
         key = f"{k}".upper()
