@@ -1,7 +1,6 @@
 import argparse
 import multiprocessing
 import os
-import tempfile
 import uuid
 
 import command_helper
@@ -66,4 +65,6 @@ def main():
         pool.map(run, work_items)
 
 
-main()
+if __name__ == "__main__":
+    main()
+

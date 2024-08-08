@@ -8,8 +8,11 @@ touch /workspace/variables.env
 source /workspace/variables.env
 
 export OPERATION=$1
-export CLUSTER_ID=${CLUSTER_ID:-"undefined"}
-export NETWORK_INTERFACE_NAME=${NETWORK_INTERFACE_NAME:-"eth0"}
+export CLUSTER_ID=${CLUSTER_ID:-""}
+if [ "$OPERATION" == "initialize" ]; then
+  python3 /scripts/initialize.py && exit $?
+fi
+
 export UPDATE_CERTS=${UPDATE_CERTS:-0}
 export SSH_USER=${SSH_USER:-""}
 export SSH_KEY=${SSH_KEY:-""}
@@ -21,21 +24,16 @@ export WORKSPACE=${WORKSPACE:-""}
 mkdir -p /opt/agents
 
 if [[ -z "$OPERATION" || -z "$SSH_USER" || -z "$SSH_KEY" || -z "$WORKSPACE" || -z "$CLUSTER_ID" ]]; then
-  echo "missing arguments (OPERATION, SSH_USER, SSH_KEY, WORKSPACE, CLUSTER_ID)";
+  echo "missing arguments (OPERATION, SSH_USER, SSH_KEY, WORKSPACE, CLUSTER_ID)" >&2;
   exit 1
 fi
 
-ssh-add /workspace/"${SSH_KEY}" 2> /dev/null
+#ssh-add /workspace/"${SSH_KEY}" 2> /dev/null
 echo "StrictHostKeyChecking accept-new" >> /etc/ssh/ssh_config
 
 if [ "$NODE_OPS" == "1" ]; then
   python3 /scripts/"node_ops_$OPERATION".py
   exit 0
-fi
-
-if [ ! -f /workspace/ca.key ]; then
-  openssl genrsa -out /workspace/ca.key 4096
-  openssl req -new -x509 -sha256 -days 365 -subj /CN="$CLUSTER_ID" -key /workspace/ca.key -out /workspace/ca.crt
 fi
 
 if [ "$OPERATION" == "run_command" ]; then

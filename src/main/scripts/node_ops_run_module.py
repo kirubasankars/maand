@@ -11,7 +11,7 @@ def run_module(module=None):
     agent_ip = os.getenv("AGENT_IP")
 
     agents = utils.get_agent_and_roles()
-    roles = agents.get(agent_ip, [])
+    roles = agents.get(agent_ip)
 
     values = context_manager.get_values()
     if module is None:

@@ -27,40 +27,35 @@ def get_cluster_id():
         sys.exit(1)
 
 
-def _load_values():
-    values = dotenv_values("/workspace/variables.env")
-
-    agent_id = get_agent_id()
-    agent_ip = os.getenv("AGENT_IP")
-
-    values["AGENT_ID"] = agent_id
-    values["AGENT_IP"] = agent_ip
-
-    return values, agent_ip
+def load_secrets(values):
+    secrets = dotenv_values("/workspace/secrets.env")
+    for key, value in secrets.items():
+        values[key] = value
+    return values
 
 
-def _add_roles_to_values(values):
-    agent_ip = values["AGENT_IP"]
+def _add_roles_to_values(values, agent_ip):
     available_roles = set()
-    agents = utils.get_agent_and_roles()
+    agent_roles = utils.get_agent_and_roles()
 
-    for ip, roles in agents.items():
+    for ip, roles in agent_roles.items():
         available_roles.update(roles)
 
     available_roles = set(available_roles)
 
     for role in available_roles:
         key_nodes = f"{role}_NODES".upper()
-        role_hosts = utils.get_agents_by_role(role)
-        values[key_nodes] = ",".join(role_hosts)
+        agent_roles = utils.get_agents([role])
+        hosts_ip = list(agent_roles.keys())
+        values[key_nodes] = ",".join(hosts_ip)
 
-        if agent_ip in role_hosts:
-            role_hosts.remove(agent_ip)
-
+        other_agents = list(agent_roles.keys())
+        if agent_ip in other_agents:
+            other_agents.remove(agent_ip)
         key_others = f"{role}_OTHERS".upper()
-        values[key_others] = ",".join(role_hosts)
+        values[key_others] = ",".join(other_agents)
 
-        for idx, host in enumerate(utils.get_agents_by_role(role)):
+        for idx, host in enumerate(list(agent_roles.keys())):
             key = f"{role}_{idx}".upper()
             values[key] = host
 
@@ -68,8 +63,11 @@ def _add_roles_to_values(values):
                 key = f"{role}_ALLOCATION_INDEX".upper()
                 values[key] = idx
 
-    host_roles = utils.get_agent_and_roles()
-    values["ROLES"] = ",".join(host_roles.get(agent_ip))
+        key = f"{role}_LENGTH".upper()
+        values[key] = len(agent_roles.keys())
+
+    agent_roles = utils.get_agent_and_roles()
+    values["ROLES"] = ",".join(sorted(agent_roles.get(agent_ip)))
 
     return values
 
@@ -84,9 +82,17 @@ def _add_tags_to_values(values, node_ip):
 
 
 def get_values():
-    values, agent_ip = _load_values()
-    values = _add_roles_to_values(values)
+    agent_id = get_agent_id()
+    agent_ip = os.getenv("AGENT_IP")
+
+    values = dotenv_values("/workspace/variables.env")
+
+    values["AGENT_ID"] = agent_id
+    values["AGENT_IP"] = agent_ip
+
+    values = _add_roles_to_values(values, agent_ip)
     values = _add_tags_to_values(values, agent_ip)
+
     return values
 
 
