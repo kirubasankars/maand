@@ -4,7 +4,9 @@ set -ueo pipefail
 # shellcheck disable=SC2046
 eval $(ssh-agent -s) > /dev/null
 
+touch /workspace/secrets.env
 touch /workspace/variables.env
+source /workspace/secrets.env
 source /workspace/variables.env
 
 export OPERATION=$1

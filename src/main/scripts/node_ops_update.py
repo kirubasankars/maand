@@ -94,7 +94,7 @@ def sync():
     values = context_manager.get_values()
     with open("/opt/agent/values.env", "w") as f:
         for key, value in values.items():
-            f.write("export {}={}\n".format(key, value))
+            f.write("{}={}\n".format(key, value))
 
     update_certificates(assigned_jobs, cluster_id)
 
