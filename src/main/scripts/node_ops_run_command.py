@@ -5,7 +5,9 @@ import uuid
 
 import context_manager
 
-context_manager.validate_cluster_id()
+validate_cluster_mismatch = os.getenv("IGNORE_VALIDATION") != "1"
+if validate_cluster_mismatch:
+    context_manager.validate_cluster_id()
 
 file_id = uuid.uuid4()
 with open(f"/tmp/{file_id}", "w") as f:

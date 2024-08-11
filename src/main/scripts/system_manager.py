@@ -26,12 +26,17 @@ def run(work_item):
         f.write(f"WORKSPACE={workspace}\n")
         f.write(f"NODE_OPS=1\n")
         f.write(f"OPERATION={os.getenv("OPERATION")}\n")
+        f.write(f"IGNORE_VALIDATION={os.getenv("IGNORE_VALIDATION", "0")}\n")
         if os.getenv("MODULE"):
             f.write(f"MODULE={os.getenv("MODULE")}\n")
+    try:
+        command_helper.command_local(cmd=f"""
+            docker run --env-file /tmp/{run_id}.env -v {workspace}:/workspace -v /var/run/docker.sock:/var/run/docker.sock --name "{run_id}" {image} {operation}
+        """)
+    except Exception as e:
+        if not ignore_error:
+            raise e
 
-    command_helper.command_local(cmd=f"""
-        docker run --env-file /tmp/{run_id}.env -v {workspace}:/workspace -v /var/run/docker.sock:/var/run/docker.sock --name "{run_id}" {image} {operation}
-    """)
     command_helper.command_local(cmd=f"docker rm {run_id} > /dev/null 2>&1")
 
 

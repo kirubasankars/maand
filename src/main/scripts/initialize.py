@@ -19,6 +19,7 @@ command_helper.command_local(f"""
     touch /workspace/variables.env    
     touch /workspace/secrets.env
     touch /workspace/agents.json
+    touch /workspace/command.sh
     mkdir -p /workspace/jobs
 """)
 
