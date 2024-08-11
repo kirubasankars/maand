@@ -86,5 +86,9 @@ def get_assigned_roles(agent_ip):
 
 @functools.cache
 def get_logger():
-    logging.basicConfig(level=logging.INFO)
-    return logging.getLogger(os.getenv("AGENT_IP"))
+    root_logger = logging.getLogger(os.getenv("AGENT_IP"))
+    console_handler = logging.StreamHandler()
+    root_logger.addHandler(console_handler)
+    log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+    root_logger.setLevel(log_level)
+    return root_logger

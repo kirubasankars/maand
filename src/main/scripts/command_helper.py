@@ -3,7 +3,7 @@ import subprocess
 import uuid
 
 
-def command_local(cmd, env=None, return_error=False):
+def command_local(cmd, env=None):
     file_id = uuid.uuid4()
     with open(f"/tmp/{file_id}", "w") as f:
         f.write("#!/bin/bash\n")
@@ -11,7 +11,7 @@ def command_local(cmd, env=None, return_error=False):
     file_path = f"/tmp/{file_id}"
     env = env or os.environ.copy()
     try:
-        return subprocess.run(["sh", file_path], env=env, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return subprocess.run(["sh", file_path], env=env, check=True)
     except Exception as e:
         raise e
 

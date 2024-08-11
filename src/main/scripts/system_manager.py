@@ -31,8 +31,8 @@ def run(work_item):
 
     command_helper.command_local(cmd=f"""
         docker run --env-file /tmp/{run_id}.env -v {workspace}:/workspace -v /var/run/docker.sock:/var/run/docker.sock --name "{run_id}" {image} {operation}
-    """, return_error=True)
-    command_helper.command_local(cmd=f"docker rm {run_id} > /dev/null 2>&1", return_error=True)
+    """)
+    command_helper.command_local(cmd=f"docker rm {run_id} > /dev/null 2>&1")
 
 
 def main():
