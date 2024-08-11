@@ -1,5 +1,6 @@
 import os
 import sys
+import difflib
 
 from dotenv import dotenv_values
 
@@ -87,6 +88,7 @@ def get_values():
 
     values = dotenv_values("/workspace/variables.env")
 
+    values["CLUSTER_ID"] = get_cluster_id()
     values["AGENT_ID"] = agent_id
     values["AGENT_IP"] = agent_ip
 
@@ -107,6 +109,7 @@ def validate_cluster_id():
     command_helper.command_local("mkdir -p /opt/agent")
 
     if os.path.isfile("/opt/agent/cluster_id.txt"):
-        with open("/opt/agent/cluster_id.txt", "r") as f:
-            if f.read().strip() != cluster_id:
+        with open("/opt/agent/cluster_id.txt", "r", encoding='utf-8') as f:
+            data = f.read().strip().casefold()
+            if data != cluster_id.strip():
                 raise Exception("Failed on cluster id validation: mismatch")

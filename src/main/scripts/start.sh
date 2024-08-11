@@ -10,11 +10,12 @@ source /workspace/secrets.env
 source /workspace/variables.env
 
 export OPERATION=$1
-export CLUSTER_ID=${CLUSTER_ID:-""}
 if [ "$OPERATION" == "initialize" ]; then
-  python3 /scripts/initialize.py && exit $?
+  python3 /scripts/initialize.py
+  exit $?
 fi
 
+export CLUSTER_ID=$(cat /workspace/cluster_id.txt)
 export UPDATE_CERTS=${UPDATE_CERTS:-0}
 export SSH_USER=${SSH_USER:-""}
 export SSH_KEY=${SSH_KEY:-""}
@@ -30,7 +31,7 @@ if [[ -z "$OPERATION" || -z "$SSH_USER" || -z "$SSH_KEY" || -z "$WORKSPACE" || -
   exit 1
 fi
 
-#ssh-add /workspace/"${SSH_KEY}" 2> /dev/null
+ssh-add /workspace/"${SSH_KEY}" 2> /dev/null
 echo "StrictHostKeyChecking accept-new" >> /etc/ssh/ssh_config
 
 if [ "$NODE_OPS" == "1" ]; then
@@ -56,6 +57,5 @@ elif [ "$OPERATION" == "force_deploy_jobs" ]; then
 elif [ "$OPERATION" == "rolling_upgrade" ]; then
   python3 /scripts/system_manager.py --concurrency "1" --operation rolling_upgrade
 elif [ "$OPERATION" == "health_check" ]; then
-  export MODULE="health_check"
-  python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation run_module
+  MODULE="$OPERATION" python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation run_module
 fi

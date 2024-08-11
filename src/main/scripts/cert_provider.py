@@ -10,7 +10,7 @@ def generate_ca_private():
 
 
 def generate_ca_public(common_name, ttl):
-    command_local(f"openssl req -new -x509 -sha256 -days {ttl} -subj /CN={common_name} -key "
+    command_local(f"openssl req -new -x509 -sha256 -days {ttl} -subj '/CN={common_name}' -key "
                   "/workspace/ca.key -out /workspace/ca.crt")
 
 
@@ -18,8 +18,8 @@ def generate_site_private(name, path):
     command_local(f"openssl genrsa -out {path}/{name}.key 4096")
 
 
-def generate_site_csr(name, common_name, path):
-    command_local(f"openssl req -new -sha256 -subj /CN={common_name} -key {path}/{name}.key "
+def generate_site_csr(name, subj, path):
+    command_local(f"openssl req -new -sha256 -subj '{subj}' -key {path}/{name}.key "
                   f"-out {path}/{name}.csr")
 
 

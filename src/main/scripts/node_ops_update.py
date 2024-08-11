@@ -12,7 +12,7 @@ logger = utils.get_logger()
 
 
 def process_templates(values):
-    logger.info("Processing templates...")
+    logger.debug("Processing templates...")
     for ext in ["*.json", "*.service", "*.conf", "*.yml", "*.env", "*.token"]:
         for f in Path('/opt/agent/').rglob(ext):
             try:
@@ -23,29 +23,24 @@ def process_templates(values):
                 if content != data:
                     with open(f, 'w') as file:
                         file.write(content)
-                logger.info(f"Processed template: {f}")
+                logger.debug(f"Processed template: {f}")
             except Exception as e:
                 logger.error(f"Error processing file {f}: {e}")
                 raise e
 
 
 def transpile():
-    logger.info("Transpiling templates...")
+    logger.debug("Transpiling templates...")
     values = context_manager.get_values()
     context_manager.load_secrets(values)
     process_templates(values)
 
 
 def sync():
-    logger.info("Starting sync process...")
+    logger.debug("Starting sync process...")
     context_manager.validate_cluster_id()
-
     cluster_id = os.getenv("CLUSTER_ID")
     agent_ip = os.getenv("AGENT_IP")
-
-    if not cluster_id:
-        logger.error("CLUSTER_ID environment variables are not set.")
-        return
 
     command_helper.command_remote("mkdir -p /opt/agent")
     command_helper.command_local("bash /scripts/rsync_remote_local.sh")
@@ -63,57 +58,47 @@ def sync():
         rsync /workspace/ca.crt /opt/agent/certs/
     """)
 
-    agents = utils.get_agent_and_roles()
-    agent_roles = agents.get(agent_ip)
+    assigned_jobs = utils.get_assigned_jobs(agent_ip)
+    assigned_roles = utils.get_assigned_roles(agent_ip)
+
     with open("/opt/agent/roles.txt", "w") as f:
-        f.writelines("\n".join(agent_roles))
-
-    assigned_jobs = []
-    roles_jobs = utils.get_role_and_jobs()
-
-    for role in agent_roles:
-        if role not in roles_jobs:
-            continue
-        jobs = roles_jobs.get(role)
-        assigned_jobs.extend(jobs)
-
-    assigned_jobs = list(set(assigned_jobs))
+        f.writelines("\n".join(assigned_roles))
 
     command_helper.command_local("""
         rsync -r /agent/bin /opt/agent/
         mkdir -p /opt/agent/jobs/
     """)
 
-    if assigned_jobs:
-        for job in assigned_jobs:
-            command_helper.command_local(
-                f"rsync -r --exclude 'modules' /workspace/jobs/{job} /opt/agent/jobs/")
+    for job in assigned_jobs:
+        command_helper.command_local(f"rsync -r --exclude 'modules' /workspace/jobs/{job} /opt/agent/jobs/")
 
     transpile()
 
     values = context_manager.get_values()
     with open("/opt/agent/values.env", "w") as f:
-        for key, value in values.items():
+        keys = sorted(values.keys())
+        for key in keys:
+            value = values.get(key)
             f.write("{}={}\n".format(key, value))
 
     update_certificates(assigned_jobs, cluster_id)
 
     command_helper.command_local("rm -f /workspace/ca.srl")
     command_helper.command_local("bash /scripts/rsync_local_remote.sh")
-    logger.info("Sync process completed.")
+    logger.debug("Sync process completed.")
 
 
 def update_certificates(jobs, cluster_id):
-    logger.info("Updating certificates...")
     agent_ip = os.getenv("AGENT_IP")
 
     path = "/opt/agent/certs"
     if (not os.path.isfile(f"{path}/agent.key") or
             (os.path.isfile(f"{path}/agent.crt") and cert_provider.is_certificate_expiring_soon(f"{path}/agent.crt"))):
+        logger.debug(f"Updating certificates agent.key and agent.crt")
         name = "agent"
         cert_provider.generate_site_private(name, path)
         cert_provider.generate_private_pem_pkcs_8(name, path)
-        cert_provider.generate_site_csr(name, cluster_id, path)
+        cert_provider.generate_site_csr(name, f"/CN={cluster_id}", path)
         subject_alt_name = f"DNS.1:localhost,IP.1:127.0.0.1,IP.2:{agent_ip}"
         cert_provider.generate_site_public(name, subject_alt_name, 60, path)
         command_helper.command_local(f"rm -f {path}/{name}.csr")
@@ -127,25 +112,23 @@ def update_certificates(jobs, cluster_id):
             command_helper.command_local(f"mkdir -p {path}")
 
             for name, cert_config in cert.items():
-
                 if (not os.path.isfile(f"{path}/{name}.key") or
                         (os.path.isfile(f"{path}/{name}.key") and cert_provider.is_certificate_expiring_soon(
                             f"{path}/{name}.crt"))):
-
+                    logger.debug(f"Updating certificates {name}.key and {name}.crt")
                     ttl = cert_config.get("ttl", 60)
                     cert_provider.generate_site_private(name, path)
 
                     if cert_config.get("pkcs8", False):
                         cert_provider.generate_private_pem_pkcs_8(name, path)
 
-                    common = cert_config.get("subject", cluster_id)
-                    cert_provider.generate_site_csr(name, common, path)
+                    subj = cert_config.get("subject", f"/CN={cluster_id}")
+                    cert_provider.generate_site_csr(name, subj, path)
 
                     subject_alt_name = cert_config.get("subject_alt_name",
                                                        f"DNS.1:localhost,IP.1:127.0.0.1,IP.2:{agent_ip}")
                     cert_provider.generate_site_public(name, subject_alt_name, ttl, path)
                     command_helper.command_local(f"rm -f {path}/{name}.csr")
-                    logger.info(f"Updated certificate: {name}")
 
 
 if __name__ == "__main__":

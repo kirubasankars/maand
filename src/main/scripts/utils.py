@@ -43,7 +43,7 @@ def get_agent_and_tags(role_filter=None):
 
 
 def get_job_metadata(job_folder_name, base_path="/workspace/jobs/"):
-    metadata_path = os.path.join(base_path, job_folder_name,"manifest.json")
+    metadata_path = os.path.join(base_path, job_folder_name, "manifest.json")
     if os.path.exists(metadata_path):
         with open(metadata_path, "r") as f:
             metadata = json.load(f)
@@ -68,7 +68,23 @@ def get_role_and_jobs():
     return roles
 
 
+def get_assigned_jobs(agent_ip):
+    agents = get_agents()
+    roles = agents.get(agent_ip).get("roles")
+    role_jobs = get_role_and_jobs()
+    assigned_jobs = []
+    for role in roles:
+        assigned_jobs.extend(role_jobs.get(role, []))
+    return list(set(assigned_jobs))
+
+
+def get_assigned_roles(agent_ip):
+    agents = get_agents()
+    roles = agents.get(agent_ip).get("roles")
+    return list(set(roles))
+
+
 @functools.cache
 def get_logger():
     logging.basicConfig(level=logging.INFO)
-    return logging.getLogger(__name__)
+    return logging.getLogger(os.getenv("AGENT_IP"))

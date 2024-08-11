@@ -1,19 +1,19 @@
-import command_helper
-import cert_provider
 import os
+import uuid
+import utils
+import cert_provider
+import command_helper
 
-generated_cluster_id = False
-cluster_id = os.getenv("CLUSTER_ID")
+logger = utils.get_logger()
+cluster_id = None
+
+if os.path.isfile('/workspace/cluster_id.txt'):
+    logger.error("found /workspace/cluster_id.txt, cluster is already initialized")
+    exit(1)
 
 if not cluster_id:
-    result = command_helper.command_local("openssl rand -hex 16")
-    cluster_id = result.stdout.strip().decode("utf-8")
-    generated_cluster_id = True
-
-files = ['/workspace/secrets.env',
-         '/workspace/ca.key',
-         '/workspace/ca.crt',
-         '/workspace/agents.json']
+    with open('/workspace/cluster_id.txt', 'w') as f:
+        f.write(uuid.uuid4().__str__())
 
 command_helper.command_local(f"""
     touch /workspace/variables.env    
@@ -25,10 +25,3 @@ command_helper.command_local(f"""
 if not os.path.isfile('/workspace/ca.key'):
     cert_provider.generate_ca_private()
     cert_provider.generate_ca_public(cluster_id, int(os.getenv("CA_TTL", "3650")))
-
-if generated_cluster_id:
-    with open('/workspace/variables.env', 'r') as f:
-        variables = f.read()
-    with open('/workspace/variables.env', 'w') as f:
-        f.write(f"CLUSTER_ID={cluster_id}\n")
-        f.write(variables)
