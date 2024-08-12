@@ -39,21 +39,21 @@ if [ "$NODE_OPS" == "1" ]; then
   exit 0
 fi
 
-if [ "$OPERATION" == "run_command" ]; then
+if [ "$OPERATION" == "run_command_no_check" ]; then
+  roles=${2:-""}
+  max_concurrency=${MAX_CONCURRENCY:-0}
+  ignore_error=${IGNORE_ERROR:-0}
+  touch /workspace/command.sh && python3 /scripts/system_manager.py --roles "$roles" --concurrency "$max_concurrency" --ignore_error "$ignore_error" --operation run_command_no_check
+elif [ "$OPERATION" == "run_command" ]; then
   roles=${2:-""}
   max_concurrency=${MAX_CONCURRENCY:-0}
   ignore_error=${IGNORE_ERROR:-0}
   touch /workspace/command.sh && python3 /scripts/system_manager.py --roles "$roles" --concurrency "$max_concurrency" --ignore_error "$ignore_error" --operation run_command
-elif [ "$OPERATION" == "protected_run_command" ]; then
+elif [ "$OPERATION" == "run_command_local" ]; then
   roles=${2:-""}
   max_concurrency=${MAX_CONCURRENCY:-0}
   ignore_error=${IGNORE_ERROR:-0}
-  touch /workspace/command.sh && python3 /scripts/system_manager.py --roles "$roles" --concurrency "$max_concurrency" --ignore_error "$ignore_error" --operation protected_run_command
-elif [ "$OPERATION" == "protected_run_command_local" ]; then
-  roles=${2:-""}
-  max_concurrency=${MAX_CONCURRENCY:-0}
-  ignore_error=${IGNORE_ERROR:-0}
-  touch /workspace/command.sh && python3 /scripts/system_manager.py --roles "$roles" --concurrency "$max_concurrency" --ignore_error "$ignore_error" --operation protected_run_command_local
+  touch /workspace/command.sh && python3 /scripts/system_manager.py --roles "$roles" --concurrency "$max_concurrency" --ignore_error "$ignore_error" --operation run_command_local
 elif [ "$OPERATION" == "update" ]; then
   python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation update
 elif [ "$OPERATION" == "deploy_jobs" ]; then
