@@ -1,3 +1,5 @@
+import hashlib
+import json
 import os
 import uuid
 from pathlib import Path
@@ -106,13 +108,27 @@ def update_certificates(jobs, cluster_id):
     for job in jobs:
         metadata = utils.get_job_metadata(job, base_path=f"/opt/agent/jobs")
         certificates = metadata.get("certs", [])
+
+        path = f"/opt/agent/jobs/{job}/certs"
+        command_helper.command_local(f"mkdir -p {path}")
+
+        update_certs = False
+        hash_file = f"/opt/agent/jobs/{job}/certs/md5.hash"
+        if os.path.exists(hash_file):
+            with open(hash_file, "r") as f:
+                current_hash = f.read()
+
+        certs_str = json.dumps(certificates)
+        new_hash = hashlib.md5(certs_str.encode()).hexdigest()
+        with open(hash_file, "w") as f:
+            f.write(new_hash)
+
+        if new_hash != current_hash:
+            update_certs = True
+
         for cert in certificates:
-
-            path = f"/opt/agent/jobs/{job}/certs"
-            command_helper.command_local(f"mkdir -p {path}")
-
             for name, cert_config in cert.items():
-                if (not os.path.isfile(f"{path}/{name}.key") or
+                if update_certs or (not os.path.isfile(f"{path}/{name}.key") or
                         (os.path.isfile(f"{path}/{name}.key") and cert_provider.is_certificate_expiring_soon(
                             f"{path}/{name}.crt"))):
                     logger.debug(f"Updating certificates {name}.key and {name}.crt")
