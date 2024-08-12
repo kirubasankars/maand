@@ -16,7 +16,7 @@ def run_module(module=None):
         module = os.getenv("MODULE")
     values["MODULE"] = module
 
-    with open("/opt/agent/values.env", "w") as f:
+    with open("/opt/agent/context.env", "w") as f:
         for key, value in values.items():
             f.write("{}={}\n".format(key, value))
 
@@ -24,7 +24,7 @@ def run_module(module=None):
         if os.path.exists(f"/workspace/jobs/{job}/modules/run.sh"):
             command_helper.command_local(f"""
                 mkdir -p /modules/{job} && rsync -r /workspace/jobs/{job}/modules/ /modules/{job}/                
-                cd /modules/{job} && source /opt/agent/values.env && bash /modules/{job}/run.sh
+                cd /modules/{job} && source /opt/agent/context.env && bash /modules/{job}/run.sh
             """)
 
 

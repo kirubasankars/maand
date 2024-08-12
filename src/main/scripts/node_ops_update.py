@@ -75,7 +75,7 @@ def sync():
     transpile()
 
     values = context_manager.get_values()
-    with open("/opt/agent/values.env", "w") as f:
+    with open("/opt/agent/context.env", "w") as f:
         keys = sorted(values.keys())
         for key in keys:
             value = values.get(key)
