@@ -18,7 +18,7 @@ def run_module(module=None):
 
     with open("/opt/agent/context.env", "w") as f:
         for key, value in values.items():
-            f.write("{}={}\n".format(key, value))
+            f.write("export {}={}\n".format(key, value))
 
     for job in assigned_jobs:
         if os.path.exists(f"/workspace/jobs/{job}/modules/run.sh"):

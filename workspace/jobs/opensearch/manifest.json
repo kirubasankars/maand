@@ -3,11 +3,11 @@
   "certs": [
     {
       "admin": {
-        "pkcs8": true,
+        "pkcs8": false,
         "subject": "/CN=opensearch-node.service.consul"
       },
       "api": {
-        "pkcs8": true,
+        "pkcs8": false,
         "subject": "/CN=opensearch-node.service.consul"
       },
       "node": {

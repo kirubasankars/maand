@@ -3,6 +3,7 @@ import requests
 import os
 
 OPENSEARCH_HOST = os.getenv("OPENSEARCH_0")
+OPENSEARCH_NODES_COUNT = int(os.getenv("OPENSEARCH_LENGTH"))
 
 while True:
     try:

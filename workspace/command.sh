@@ -1,1 +1,1 @@
-hostname -I
+sh /opt/agent/bin/deploy_jobs.sh

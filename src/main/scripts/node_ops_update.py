@@ -114,17 +114,21 @@ def update_certificates(jobs, cluster_id):
 
         update_certs = False
         hash_file = f"/opt/agent/jobs/{job}/certs/md5.hash"
+
+        certs_str = json.dumps(certificates)
+        new_hash = hashlib.md5(certs_str.encode()).hexdigest()
+
         if os.path.exists(hash_file):
             with open(hash_file, "r") as f:
                 current_hash = f.read()
 
-        certs_str = json.dumps(certificates)
-        new_hash = hashlib.md5(certs_str.encode()).hexdigest()
+            if new_hash != current_hash:
+                update_certs = True
+        else:
+            update_certs = True
+
         with open(hash_file, "w") as f:
             f.write(new_hash)
-
-        if new_hash != current_hash:
-            update_certs = True
 
         for cert in certificates:
             for name, cert_config in cert.items():
