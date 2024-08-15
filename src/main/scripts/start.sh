@@ -32,8 +32,7 @@ if [[ -z "$OPERATION" || -z "$SSH_USER" || -z "$SSH_KEY" || -z "$WORKSPACE" || -
   exit 1
 fi
 
-chmod 600 /workspace/"${SSH_KEY}"
-ssh-add /workspace/"${SSH_KEY}" 2> /dev/null
+ssh-add -q /workspace/"${SSH_KEY}"
 
 if [ "$NODE_OPS" == "1" ]; then
   python3 /scripts/"node_ops_$OPERATION".py
