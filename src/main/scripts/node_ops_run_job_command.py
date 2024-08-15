@@ -25,7 +25,7 @@ def run_command(command=None):
             command_helper.command_local(f"""
                 mkdir -p /commands/{job};
                 rsync -r /workspace/jobs/{job}/command/ /commands/{job}/;
-                cd /commands/{job} && bash /commands/{job}/run.sh
+                cd /commands/{job} && bash +x /commands/{job}/run.sh
             """)
 
 
