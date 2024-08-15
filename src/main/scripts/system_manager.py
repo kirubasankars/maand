@@ -26,8 +26,8 @@ def run(work_item):
         f.write(f"WORKSPACE={workspace}\n")
         f.write(f"NODE_OPS=1\n")
         f.write(f"OPERATION={os.getenv("OPERATION")}\n")
-        if os.getenv("MODULE"):
-            f.write(f"MODULE={os.getenv("MODULE")}\n")
+        if os.getenv("COMMAND"):
+            f.write(f"COMMAND={os.getenv("COMMAND")}\n")
     try:
         command_helper.command_local(cmd=f"""
             docker run --env-file /tmp/{run_id}.env -v {workspace}:/workspace -v /var/run/docker.sock:/var/run/docker.sock --name "{run_id}" {image} {operation}

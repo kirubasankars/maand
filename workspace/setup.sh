@@ -1,7 +1,7 @@
 #!/bin/bash
 set -ueo pipefail
 
-yum install -y rsync tree make docker-compose
+yum install -y rsync tree make docker docker-compose
 
 username=agent
 if ! id "$username" &>/dev/null; then

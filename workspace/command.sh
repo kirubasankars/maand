@@ -1,1 +1,1 @@
-sh /opt/agent/bin/deploy_jobs.sh
+cat /opt/agent/context.env

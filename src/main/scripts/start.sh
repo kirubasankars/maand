@@ -3,6 +3,7 @@ set -ueo pipefail
 
 # shellcheck disable=SC2046
 eval $(ssh-agent -s) > /dev/null
+echo "StrictHostKeyChecking accept-new" >> /etc/ssh/ssh_config
 
 touch /workspace/secrets.env
 touch /workspace/variables.env
@@ -31,8 +32,8 @@ if [[ -z "$OPERATION" || -z "$SSH_USER" || -z "$SSH_KEY" || -z "$WORKSPACE" || -
   exit 1
 fi
 
+chmod 600 /workspace/"${SSH_KEY}"
 ssh-add /workspace/"${SSH_KEY}" 2> /dev/null
-echo "StrictHostKeyChecking accept-new" >> /etc/ssh/ssh_config
 
 if [ "$NODE_OPS" == "1" ]; then
   python3 /scripts/"node_ops_$OPERATION".py
@@ -67,5 +68,5 @@ elif [ "$OPERATION" == "force_deploy_jobs" ]; then
 elif [ "$OPERATION" == "rolling_upgrade" ]; then
   python3 /scripts/system_manager.py --concurrency "1" --operation rolling_upgrade
 elif [ "$OPERATION" == "health_check" ]; then
-  MODULE="$OPERATION" python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation run_module
+  COMMAND="$OPERATION" python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation run_job_command
 fi
