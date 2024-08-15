@@ -1,0 +1,5 @@
+source /opt/agent/context.env
+export OPENSEARCH_0=$OPENSEARCH_0
+export OPENSEARCH_LENGTH=$OPENSEARCH_LENGTH
+
+python3 health_check.py

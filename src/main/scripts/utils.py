@@ -92,3 +92,7 @@ def get_logger():
     log_level = os.getenv("LOG_LEVEL", "INFO").upper()
     root_logger.setLevel(log_level)
     return root_logger
+
+
+def is_sudo_enabled():
+    return os.getenv("SUDO") == "1"

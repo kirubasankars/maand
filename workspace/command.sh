@@ -1,1 +1,1 @@
-rm -rf /opt/agent
+cat /opt/agent/context.env
