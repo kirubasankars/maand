@@ -47,7 +47,7 @@
        - `agent_id.txt`: Contains a unique ID for each agent.
        - `certs` folder: Stores `agent.key` (private key) and `agent.crt` (certificate) for secure communication.
        - `bin` folder: Manages and executes jobs on the agent.
-       - `context.env`: Merges environment variables from `agents.json`, `variables.env`, and `secrets.env`, creating smart variables for job templates. Available variables include OPENSEARCH_0, OPENSEARCH_1, OPENSEARCH_2, OPENSEARCH_NODES (all agents), OPENSEARCH_OTHERS (other agents), and OPENSEARCH_LENGTH and AGENT* variables.
+       - `context.env`: Merges environment variables from `agents.json`, `variables.env`, and `secrets.env`, creating smart variables for job templates. Available variables include OPENSEARCH_0, OPENSEARCH_1, OPENSEARCH_2, OPENSEARCH_NODES (all agents), OPENSEARCH_OTHERS (other agents), and OPENSEARCH_LENGTH, OPENSEARCH_ALLOCATION_INDEX and AGENT* variables.
        - `roles.txt`: Lists all roles assigned to that agent.
      - Every agent has a default role called `agent`.
 
