@@ -48,7 +48,7 @@
        - `certs` folder: Stores `agent.key` (private key) and `agent.crt` (certificate) for secure communication.
        - `bin` folder: Manages and executes jobs on the agent.
        - `context.env`: environment variables combines (agent context, variable.env, secrets.env)
-            - Maand smart about create variables and creating following variables (OPENSEARCH_0, OPENSEARCH_1, OPENSEARCH_2, OPENSEARCH_NODES (all agents), OPENSEARCH_OTHERS (other then current agent), OPENSEARCH_LENGTH
+            - Maand smart about create variables and following variables as template and also added context.env (OPENSEARCH_0, OPENSEARCH_1, OPENSEARCH_2, OPENSEARCH_NODES (all agents), OPENSEARCH_OTHERS (other then current agent), OPENSEARCH_LENGTH
        - `roles.txt`: all roles assigned to that agent.
      - Every agent has default roles called `agent`.
        
