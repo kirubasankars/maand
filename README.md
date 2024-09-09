@@ -1,52 +1,76 @@
-# Maand - Job Orchestrator Framework
+### Maand
 
-Maand is a job orchestrator framework designed to manage and distribute jobs across multiple agents. The framework is configured to ensure seamless job assignment and execution based on predefined roles.
+**Inspiration:** Named after an Indian classical music raaga, "Maand" symbolizes the framework's role in orchestrating and harmonizing job management across a cluster of agents.
 
-## Key Components
+**Objective:** Maand is a static job orchestration framework designed to efficiently manage and execute tasks across various agents listed in the `agents.json` file. It coordinates job execution on virtual machines (VMs) within a cluster, ensuring seamless and effective job management.
 
-### Agent Configuration
+**Key Components:**
 
-- **Agents are defined in an `agents.json` file located in the workspace directory.**
-  - Each agent entry includes a host and a list of roles.
+1. **Agent Configuration (`agents.json`):**
+   - The `agents.json` file, located in the workspace folder, lists agents with their IP addresses and roles.
+   - Example structure:
+     ```json
+     [
+       {
+         "host": "192.168.1.110",
+         "roles": ["opensearch"]
+       },
+       {
+         "host": "192.168.1.119",
+         "roles": ["opensearch"]
+       },
+       {
+         "host": "192.168.1.134",
+         "roles": ["opensearch"]
+       }
+     ]
+     ```
+   - Each entry represents an agent that Maand will manage for job orchestration. 
 
-- **Example `agents.json` configuration:**
+2. **SSH Configuration:**
+   - The SSH key required for accessing agents is stored in the workspace folder.
+   - `secrets.env` file contains:
+     - `SSH_USER`: Username for accessing the Linux machines.
+     - `SSH_KEY`: Name of the SSH key file.
 
-  ```json
-  [
-    {
-      "host": "192.168.1.110", "roles": ["opensearch"]
-    },
-    {
-      "host": "192.168.1.119", "roles": ["opensearch"]
-    },
-    {
-      "host": "192.168.1.134", "roles": ["opensearch"]
-    }
-  ]
-  ```
+3. **Cluster Initialization:**
+   - Running `make initialize` sets up the cluster by generating:
+     - `ca.key`: The cluster's private key.
+     - `ca.crt`: The cluster's public certificate.
+     - `cluster_id.txt`: Used to verify that all agents are part of the same cluster.
 
-### Job Matching
+4. **Agent Configuration:**
+   - Running `make update` configures each agent by:
+     - Creating a directory at `/opt/agent/`.
+     - Setting up:
+       - `cluster_id.txt`: Confirms cluster membership.
+       - `agent_id.txt`: Contains a unique ID for each agent.
+       - `certs` folder: Stores `agent.key` (private key) and `agent.crt` (certificate) for secure communication.
+       - `bin` folder: Manages and executes jobs on the agent.
+       - `context.env`: environment variables combines (agent context, variable.env, secrets.env)
+       - `roles.txt`: all roles assigned to that agent.
+     - Every agent has default roles called `agent`.
+       
+5. **Job Management (`jobs` folder):**
+   - The `jobs` folder in the workspace contains subfolders for each job.
+   - Each job folder must include:
+     - `manifest.json`: Defines the `roles` attribute (an array of strings) indicating which roles the job targets.
+     - `Makefile`: Contains instructions for job execution, including targets like `build`, `deploy_job`, `restart_job`, and `stop_job`.
+   - Maand matches the roles in `manifest.json` with those of agents in `agents.json`, using `rsync` to sync job files to the appropriate agents. It also leverages variables from `agents.json`, `variables.env`, and `secrets.env` during transfers. Additionally, `manifest.json` can specify certification needs, with Maand handling certificate provisioning and renewal.
 
-- **Jobs are stored in the `jobs` folder within the workspace.**
-  - Each job has a manifest file specifying the roles required for execution.
-  - Maand matches jobs to agents based on the roles specified in the manifest and the roles assigned to each agent. If an agent's roles match the required roles, the job is assigned to that agent.
-  - Maand is a generic framework that supports various types of jobs, including (shell script, binary, docker or docker-compose)
+6. **Rolling Upgrades:**
+   - Maand supports rolling upgrades. Each job can include a `commands` folder with a `run.sh` file. Maand executes this script before and after applying changes to an agent to ensure a smooth upgrade process. Maand waits utils successful error before moving on to next agent.
 
-### Job Distribution
+7. **Executing Adhoc Commands (`command.sh`):**
+   - A `command.sh` script in the workspace contains shell commands or scripts for adhoc execution.
+   - Running `make run_command` executes `command.sh` on each agent after verifying that all agents belong to the same cluster.
+   - Running `make run_command_no_check` executes `command.sh` on each agent without cluster validation.
+   - Running `make run_command_local` executes `command.sh` locally on each agent after performing cluster validation.
+   - Maand executes run_commands under agent context. 
 
-- **The matched jobs are copied to the agents.**
-  - Files are synchronized to the `/opt/agent` directory on each agent's VM.
+8. **File Integrity and Certificates:**
+   - Maand uses `rsync` to ensure file integrity and manage files on agents. It also renews certificates if they are set to expire within 15 days.
 
-### TLS Certificates Management
-   Maand handles TLS certificates management for agents and jobs. The framework checks if certificates are close to expiration, missing, or if configurations have changed, and updates them accordingly.
+**Summary:**
 
-### Health Checks and Rolling Upgrades
-   - Maand provides support for health checks and rolling upgrades.
-   - Health checks are performed on agents to ensure that jobs are running smoothly.
-   - Rolling upgrades allow for updating jobs on agents without disrupting the overall system.
-
-### Command Execution Targets
-- **Maand includes several command execution targets:**
-  - run_command: Runs any script defined in the command.sh file located in the workspace folder on the agent.
-  - run_command_local: Executes the script locally with the agent context (variables).
-  - run_command_no_check: Performs the same operation as run_command but without checking the cluster_id.
+Maand is a versatile job orchestration framework that efficiently manages job execution across a cluster of agents. It ensures that agents are correctly configured and validated within the cluster, while facilitating secure and flexible job management. With support for various job types, rolling upgrades, and adhoc command execution, Maand optimizes job orchestration and enhances overall system efficiency and security.

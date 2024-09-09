@@ -42,6 +42,10 @@ def get_agent_and_tags(role_filter=None):
     return agents
 
 
+def get_ssh_port(agent_ip):
+    return get_agents(None).get(agent_ip).get("ssh_port", 22)
+
+
 def get_job_metadata(job_folder_name, base_path="/workspace/jobs/"):
     metadata_path = os.path.join(base_path, job_folder_name, "manifest.json")
     if os.path.exists(metadata_path):
@@ -95,4 +99,4 @@ def get_logger():
 
 
 def is_sudo_enabled():
-    return os.getenv("SUDO") == "1"
+    return os.environ.get("USE_SUDO", "0") == "1"

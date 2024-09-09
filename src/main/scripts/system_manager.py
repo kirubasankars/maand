@@ -23,6 +23,7 @@ def run(work_item):
     with open(f"/tmp/{run_id}.env", "w") as f:
         f.write(f"RUN_ID={run_id}\n")
         f.write(f"AGENT_IP={agent_ip}\n")
+        f.write(f"SSH_PORT={utils.get_ssh_port(agent_ip)}\n")
         f.write(f"WORKSPACE={workspace}\n")
         f.write(f"NODE_OPS=1\n")
         f.write(f"OPERATION={os.getenv("OPERATION")}\n")

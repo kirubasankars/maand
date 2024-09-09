@@ -11,15 +11,14 @@ if os.path.isfile('/workspace/cluster_id.txt'):
     logger.error("found /workspace/cluster_id.txt, cluster is already initialized")
     exit(1)
 
-if not cluster_id:
-    with open('/workspace/cluster_id.txt', 'w') as f:
-        f.write(uuid.uuid4().__str__())
+with open('/workspace/cluster_id.txt', 'w') as f:
+    f.write(uuid.uuid4().__str__())
 
-command_helper.command_local(f"""
-    touch /workspace/variables.env    
-    touch /workspace/secrets.env
-    touch /workspace/agents.json
-    touch /workspace/command.sh
+with open('/workspace/update_seq.txt', 'w') as f:
+    f.write(str(1))
+
+command_helper.command_local("""
+    touch /workspace/{variables.env,secrets.env,agents.json}    
     mkdir -p /workspace/jobs
 """)
 

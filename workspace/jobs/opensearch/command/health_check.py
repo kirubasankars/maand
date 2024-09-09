@@ -11,5 +11,5 @@ while True:
         r.raise_for_status()
         if r.json()["number_of_nodes"] == OPENSEARCH_NODES_COUNT:
             break
-    except ConnectionRefusedError as e:
+    except Exception as e:
         print("Unable to connect to Open Search server", flush=True)

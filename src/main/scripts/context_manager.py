@@ -1,6 +1,5 @@
 import os
 import sys
-import difflib
 
 from dotenv import dotenv_values
 
@@ -54,7 +53,8 @@ def _add_roles_to_values(values, agent_ip):
         if agent_ip in other_agents:
             other_agents.remove(agent_ip)
         key_others = f"{role}_OTHERS".upper()
-        values[key_others] = ",".join(other_agents)
+        if other_agents:
+            values[key_others] = ",".join(other_agents)
 
         for idx, host in enumerate(list(agent_roles.keys())):
             key = f"{role}_{idx}".upper()
@@ -82,6 +82,13 @@ def _add_tags_to_values(values, node_ip):
     return values
 
 
+def _add_ports_to_values(values):
+    secrets = dotenv_values("/workspace/ports.env")
+    for key, value in secrets.items():
+        values[key] = value
+    return values
+
+
 def get_values():
     agent_id = get_agent_id()
     agent_ip = os.getenv("AGENT_IP")
@@ -94,6 +101,7 @@ def get_values():
 
     values = _add_roles_to_values(values, agent_ip)
     values = _add_tags_to_values(values, agent_ip)
+    values = _add_ports_to_values(values)
 
     return values
 

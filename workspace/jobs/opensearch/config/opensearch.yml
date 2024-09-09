@@ -1,5 +1,5 @@
 transport.port: 9300
-http.port: 9200
+http.port: $OPENSEARCH_PORT
 
 action.auto_create_index: true
 

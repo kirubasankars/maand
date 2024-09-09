@@ -1,0 +1,20 @@
+version: '3.7'
+
+services:
+  server1:
+    image: ssh_server
+    build: .
+    ports:
+      - "3000:22"
+
+  server2:
+    image: ssh_server
+    build: .
+    ports:
+      - "3001:22"
+
+  server3:
+    image: ssh_server
+    build: .
+    ports:
+      - "22:22"

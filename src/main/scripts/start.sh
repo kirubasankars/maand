@@ -5,10 +5,9 @@ set -ueo pipefail
 eval $(ssh-agent -s) > /dev/null
 echo "StrictHostKeyChecking accept-new" >> /etc/ssh/ssh_config
 
-touch /workspace/secrets.env
-touch /workspace/variables.env
-source /workspace/secrets.env
-source /workspace/variables.env
+test -f /workspace/secrets.env && source /workspace/secrets.env
+test -f /workspace/variables.env && source /workspace/variables.env
+test -f /workspace/ports.env && source /workspace/ports.env
 
 export OPERATION=$1
 if [ "$OPERATION" == "initialize" ]; then
@@ -24,6 +23,7 @@ export IMAGE_NAME=$(docker inspect --format='{{.Config.Image}}' "$HOSTNAME")
 export NODE_OPS=${NODE_OPS:-"0"}
 export MAX_CONCURRENCY=${MAX_CONCURRENCY:-"4"}
 export WORKSPACE=${WORKSPACE:-""}
+export AGENT_API=${AGENT_API:-"true"}
 
 mkdir -p /opt/agents
 
@@ -55,6 +55,7 @@ elif [ "$OPERATION" == "run_command_local" ]; then
   ignore_error=${IGNORE_ERROR:-0}
   touch /workspace/command.sh && python3 /scripts/system_manager.py --roles "$roles" --concurrency "$max_concurrency" --ignore_error "$ignore_error" --operation run_command_local
 elif [ "$OPERATION" == "update" ]; then
+  echo $(( $(cat /workspace/update_seq.txt) + 1 )) > /workspace/update_seq.txt
   python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation update
 elif [ "$OPERATION" == "deploy_jobs" ]; then
   python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation deploy_jobs

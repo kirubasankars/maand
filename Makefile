@@ -3,6 +3,12 @@ IMAGE="maand"
 build:
 	docker build -t $(IMAGE) ./src/main
 
+exec:
+	docker run --entrypoint=/bin/bash -v $(PWD)/workspace:/workspace -it $(IMAGE)
+
+clean:
+	rm -rf ./workspace/{ca.crt,ca.key,cluster_id.txt,command.sh,secrets.env,variables.env}
+
 initialize:
 	docker run --rm --privileged -e WORKSPACE=$(PWD)/workspace -v $(PWD)/workspace:/workspace -v /var/run/docker.sock:/var/run/docker.sock $(IMAGE) initialize
 

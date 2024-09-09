@@ -1,10 +1,11 @@
+import glob
 import hashlib
 import json
 import os
 import uuid
 from pathlib import Path
 from string import Template
-
+import shutil
 import cert_provider
 import command_helper
 import context_manager
@@ -64,12 +65,20 @@ def sync():
     assigned_roles = utils.get_assigned_roles(agent_ip)
 
     with open("/opt/agent/roles.txt", "w") as f:
-        f.writelines("\n".join(assigned_roles))
+        f.writelines("\n".join(sorted(assigned_roles)))
 
     command_helper.command_local("""
         rsync -r /agent/bin /opt/agent/
         mkdir -p /opt/agent/jobs/
     """)
+
+    exists_jobs = []
+    for x in glob.glob("/opt/agent/jobs/*"):
+        exists_jobs.append(os.path.basename(x))
+
+    removables = set(exists_jobs) ^ set(assigned_jobs)
+    for job in removables:
+        shutil.rmtree("/opt/agent/jobs/" + job, ignore_errors=True)
 
     for job in assigned_jobs:
         command_helper.command_local(f"rsync -r --exclude 'modules' /workspace/jobs/{job} /opt/agent/jobs/")
@@ -85,9 +94,15 @@ def sync():
 
     update_certificates(assigned_jobs, cluster_id)
 
+    if os.environ.get("AGENT_API") == "false":
+        command_helper.command_local("rm -rf /opt/agent/jobs/agent-api")
     command_helper.command_local("rm -f /workspace/ca.srl")
     command_helper.command_local("bash /scripts/rsync_local_remote.sh")
+
     logger.debug("Sync process completed.")
+
+    command_helper.command_local("cp /workspace/update_seq.txt /opt/agent/update_seq.txt")
+    command_helper.command_local("bash /scripts/rsync_local_remote.sh")
 
 
 def update_certificates(jobs, cluster_id):
@@ -105,9 +120,15 @@ def update_certificates(jobs, cluster_id):
         cert_provider.generate_site_public(name, subject_alt_name, 60, path)
         command_helper.command_local(f"rm -f {path}/{name}.csr")
 
+        with open(f"{path}/reload.txt", "w") as f:
+            f.write("")
+
     for job in jobs:
         metadata = utils.get_job_metadata(job, base_path=f"/opt/agent/jobs")
         certificates = metadata.get("certs", [])
+
+        if not certificates:
+            continue
 
         path = f"/opt/agent/jobs/{job}/certs"
         command_helper.command_local(f"mkdir -p {path}")
@@ -133,8 +154,9 @@ def update_certificates(jobs, cluster_id):
         for cert in certificates:
             for name, cert_config in cert.items():
                 if update_certs or (not os.path.isfile(f"{path}/{name}.key") or
-                        (os.path.isfile(f"{path}/{name}.key") and cert_provider.is_certificate_expiring_soon(
-                            f"{path}/{name}.crt"))):
+                                    (os.path.isfile(
+                                        f"{path}/{name}.key") and cert_provider.is_certificate_expiring_soon(
+                                        f"{path}/{name}.crt"))):
                     logger.debug(f"Updating certificates {name}.key and {name}.crt")
                     ttl = cert_config.get("ttl", 60)
                     cert_provider.generate_site_private(name, path)
@@ -149,6 +171,9 @@ def update_certificates(jobs, cluster_id):
                                                        f"DNS.1:localhost,IP.1:127.0.0.1,IP.2:{agent_ip}")
                     cert_provider.generate_site_public(name, subject_alt_name, ttl, path)
                     command_helper.command_local(f"rm -f {path}/{name}.csr")
+
+                    with open(f"{path}/reload.txt", "w") as f:
+                        f.write("")
 
 
 if __name__ == "__main__":
