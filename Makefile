@@ -4,40 +4,37 @@ build:
 	docker build -t $(IMAGE) ./src/main
 
 exec:
-	docker run --entrypoint=/bin/bash -v $(PWD)/workspace:/workspace -it $(IMAGE)
-
-clean:
-	rm -rf ./workspace/{ca.crt,ca.key,cluster_id.txt,command.sh,secrets.env,variables.env}
+	docker run --rm --entrypoint=/bin/bash -v $(PWD)/workspace:/workspace -it $(IMAGE)
 
 initialize:
-	docker run --rm --privileged -e WORKSPACE=$(PWD)/workspace -v $(PWD)/workspace:/workspace -v /var/run/docker.sock:/var/run/docker.sock $(IMAGE) initialize
-
-run_command_no_check:
-	docker run --rm --privileged -e WORKSPACE=$(PWD)/workspace -v $(PWD)/workspace:/workspace -v /var/run/docker.sock:/var/run/docker.sock $(IMAGE) run_command_no_check $(ROLE)
-
-run_command:
-	docker run --rm --privileged -e WORKSPACE=$(PWD)/workspace -v $(PWD)/workspace:/workspace -v /var/run/docker.sock:/var/run/docker.sock $(IMAGE) run_command $(ROLE)
-
-run_command_local:
-	docker run --rm --privileged -e WORKSPACE=$(PWD)/workspace -v $(PWD)/workspace:/workspace -v /var/run/docker.sock:/var/run/docker.sock $(IMAGE) run_command_local $(ROLE)
+	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) initialize
 
 update:
-	docker run --rm --privileged -e WORKSPACE=$(PWD)/workspace -v $(PWD)/workspace:/workspace -v /var/run/docker.sock:/var/run/docker.sock $(IMAGE) update
+	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) update
 
-deploy-jobs:
-	docker run --rm --privileged -e WORKSPACE=$(PWD)/workspace -v $(PWD)/workspace:/workspace -v /var/run/docker.sock:/var/run/docker.sock $(IMAGE) deploy_jobs
+run_command:
+	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) run_command
 
-force-deploy-jobs:
-	docker run --rm --privileged -e WORKSPACE=$(PWD)/workspace -v $(PWD)/workspace:/workspace -v /var/run/docker.sock:/var/run/docker.sock $(IMAGE) force_deploy_jobs
+run_command_with_health_check:
+	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) run_command_with_health_check
 
-stop-jobs:
-	docker run --rm --privileged -e WORKSPACE=$(PWD)/workspace -v $(PWD)/workspace:/workspace -v /var/run/docker.sock:/var/run/docker.sock $(IMAGE) stop_jobs
+run_command_local:
+	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) run_command_local
 
-restart-jobs:
-	docker run --rm --privileged -e WORKSPACE=$(PWD)/workspace -v $(PWD)/workspace:/workspace -v /var/run/docker.sock:/var/run/docker.sock $(IMAGE) restart_jobs
+start_jobs:
+	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) start_jobs
 
-rolling-upgrade:
-	docker run --rm --privileged -e WORKSPACE=$(PWD)/workspace -v $(PWD)/workspace:/workspace -v /var/run/docker.sock:/var/run/docker.sock $(IMAGE) rolling_upgrade
+stop_jobs:
+	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) stop_jobs
 
-health-check:
-	docker run --rm --privileged -e WORKSPACE=$(PWD)/workspace -v $(PWD)/workspace:/workspace -v /var/run/docker.sock:/var/run/docker.sock $(IMAGE) health_check
+restart_jobs:
+	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) restart_jobs
+
+rolling_restart_jobs:
+	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) rolling_restart_jobs
+
+health_check:
+	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) health_check
+
+run_command_no_cluster_check:
+	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) run_command_no_cluster_check

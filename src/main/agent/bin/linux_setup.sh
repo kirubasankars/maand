@@ -3,7 +3,7 @@ set -ueo pipefail
 
 yum update -y
 
-yum install -y docker rsync python yum-utils jq make docker-compose
+yum install -y rsync make docker python yum-utils jq docker-compose
 
 username=agent
 if ! id "$username" &>/dev/null; then
@@ -14,3 +14,8 @@ usermod -aG docker agent || true
 
 /usr/bin/systemctl daemon-reload
 /usr/bin/systemctl enable --now docker
+
+sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
+dnf remove firewalld
+
+reboot now

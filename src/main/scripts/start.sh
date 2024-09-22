@@ -1,15 +1,14 @@
 #!/bin/bash
 set -ueo pipefail
-
-# shellcheck disable=SC2046
-eval $(ssh-agent -s) > /dev/null
 echo "StrictHostKeyChecking accept-new" >> /etc/ssh/ssh_config
 
+mkdir -p /opt/agents
 test -f /workspace/secrets.env && source /workspace/secrets.env
 test -f /workspace/variables.env && source /workspace/variables.env
 test -f /workspace/ports.env && source /workspace/ports.env
 
 export OPERATION=$1
+
 if [ "$OPERATION" == "initialize" ]; then
   python3 /scripts/initialize.py
   exit $?
@@ -19,54 +18,33 @@ export CLUSTER_ID=$(cat /workspace/cluster_id.txt)
 export UPDATE_CERTS=${UPDATE_CERTS:-0}
 export SSH_USER=${SSH_USER:-""}
 export SSH_KEY=${SSH_KEY:-""}
-export IMAGE_NAME=$(docker inspect --format='{{.Config.Image}}' "$HOSTNAME")
-export NODE_OPS=${NODE_OPS:-"0"}
 export MAX_CONCURRENCY=${MAX_CONCURRENCY:-"4"}
-export WORKSPACE=${WORKSPACE:-""}
 export AGENT_API=${AGENT_API:-"true"}
 
-mkdir -p /opt/agents
-
-if [[ -z "$OPERATION" || -z "$SSH_USER" || -z "$SSH_KEY" || -z "$WORKSPACE" || -z "$CLUSTER_ID" ]]; then
-  echo "missing arguments (OPERATION, SSH_USER, SSH_KEY, WORKSPACE, CLUSTER_ID)" >&2;
+if [[ -z "$OPERATION" || -z "$SSH_USER" || -z "$SSH_KEY" || -z "$CLUSTER_ID" ]]; then
+  echo "missing arguments (OPERATION, SSH_USER, SSH_KEY, CLUSTER_ID)" >&2;
   exit 1
 fi
 
-ssh-add -q /workspace/"${SSH_KEY}"
-
-if [ "$NODE_OPS" == "1" ]; then
-  python3 /scripts/"node_ops_$OPERATION".py
-  exit 0
-fi
-
-if [ "$OPERATION" == "run_command_no_check" ]; then
-  roles=${2:-""}
-  max_concurrency=${MAX_CONCURRENCY:-0}
-  ignore_error=${IGNORE_ERROR:-0}
-  touch /workspace/command.sh && python3 /scripts/system_manager.py --roles "$roles" --concurrency "$max_concurrency" --ignore_error "$ignore_error" --operation run_command_no_check
-elif [ "$OPERATION" == "run_command" ]; then
-  roles=${2:-""}
-  max_concurrency=${MAX_CONCURRENCY:-0}
-  ignore_error=${IGNORE_ERROR:-0}
-  touch /workspace/command.sh && python3 /scripts/system_manager.py --roles "$roles" --concurrency "$max_concurrency" --ignore_error "$ignore_error" --operation run_command
+if [ "$OPERATION" == "run_command" ]; then
+  python3 /scripts/run_command.py
 elif [ "$OPERATION" == "run_command_local" ]; then
-  roles=${2:-""}
-  max_concurrency=${MAX_CONCURRENCY:-0}
-  ignore_error=${IGNORE_ERROR:-0}
-  touch /workspace/command.sh && python3 /scripts/system_manager.py --roles "$roles" --concurrency "$max_concurrency" --ignore_error "$ignore_error" --operation run_command_local
+  python3 /scripts/run_command_local.py
+elif [ "$OPERATION" == "run_command_with_health_check" ]; then
+  python3 /scripts/run_command_with_health_check.py
 elif [ "$OPERATION" == "update" ]; then
   echo $(( $(cat /workspace/update_seq.txt) + 1 )) > /workspace/update_seq.txt
-  python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation update
-elif [ "$OPERATION" == "deploy_jobs" ]; then
-  python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation deploy_jobs
+  python3 /scripts/update.py
+elif [ "$OPERATION" == "start_jobs" ]; then
+  python3 /scripts/start_jobs.py
 elif [ "$OPERATION" == "stop_jobs" ]; then
-  python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation stop_jobs
+  python3 /scripts/stop_jobs.py
 elif [ "$OPERATION" == "restart_jobs" ]; then
-  python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation restart_jobs
-elif [ "$OPERATION" == "force_deploy_jobs" ]; then
-  python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation force_deploy_jobs
-elif [ "$OPERATION" == "rolling_upgrade" ]; then
-  python3 /scripts/system_manager.py --concurrency "1" --operation rolling_upgrade
+  python3 /scripts/restart_jobs.py
+elif [ "$OPERATION" == "rolling_restart_jobs" ]; then
+  python3 /scripts/rolling_restart_jobs.py
 elif [ "$OPERATION" == "health_check" ]; then
-  COMMAND="$OPERATION" python3 /scripts/system_manager.py --concurrency "$MAX_CONCURRENCY" --operation run_job_command
+  python3 /scripts/health_check.py
+elif [ "$OPERATION" == "run_command_no_cluster_check" ]; then
+  python3 /scripts/run_command_no_cluster_check.py
 fi

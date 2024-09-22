@@ -7,14 +7,11 @@ setup:
 	chown -R 1050 ./config
 	mkdir -p ./{data,logs} && chown -R 1050 ./{data,logs}
 
-deploy: setup
+start: setup
 	docker-compose up -d --remove-orphans
-
-force-deploy: setup
-	docker-compose up -d --remove-orphans --force-recreate
-
-restart:
-	docker-compose restart
 
 stop:
 	docker-compose stop
+
+restart:
+	docker-compose restart

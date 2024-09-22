@@ -100,3 +100,7 @@ def get_logger():
 
 def is_sudo_enabled():
     return os.environ.get("USE_SUDO", "0") == "1"
+
+
+def enabled_agent_api():
+    return os.environ.get("AGENT_API", "true").lower() == "true"

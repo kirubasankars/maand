@@ -1,0 +1,15 @@
+version: '3.7'
+
+services:
+  agent-api:
+    image: agent-api
+    ports:
+      - "5001:80"
+    networks:
+      - agent-api-network
+    volumes:
+      - /opt/agent:/opt/agent
+
+networks:
+  agent-api-network:
+    driver: bridge

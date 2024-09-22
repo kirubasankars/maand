@@ -1,8 +1,9 @@
 import os
 import uuid
-import utils
+
 import cert_provider
 import command_helper
+import utils
 
 logger = utils.get_logger()
 cluster_id = None
@@ -19,7 +20,6 @@ with open('/workspace/update_seq.txt', 'w') as f:
 
 command_helper.command_local("""
     touch /workspace/{variables.env,secrets.env,agents.json}    
-    mkdir -p /workspace/jobs
 """)
 
 if not os.path.isfile('/workspace/ca.key'):

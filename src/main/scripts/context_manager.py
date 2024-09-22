@@ -9,22 +9,20 @@ import utils
 logger = utils.get_logger()
 
 
-def get_agent_id():
+def get_agent_id(agent_ip):
+    agent_dir = get_agent_dir(agent_ip)
     try:
-        with open("/opt/agent/agent_id.txt", "r") as f:
+        with open(f"{agent_dir}/agent_id.txt", "r") as f:
             return f.read().strip()
     except FileNotFoundError:
         logger.error("agent_id.txt not found.")
         sys.exit(1)
 
 
-def get_cluster_id():
-    try:
-        with open("/opt/agent/cluster_id.txt", "r") as f:
-            return f.read().strip()
-    except FileNotFoundError:
-        logger.error("agent_id.txt not found.")
-        sys.exit(1)
+def get_agent_cluster_id(agent_id):
+    agent_dir = get_agent_dir(agent_id)
+    with open(f"{agent_dir}/cluster_id.txt", "r") as f:
+        return f.read().strip()
 
 
 def load_secrets(values):
@@ -62,10 +60,10 @@ def _add_roles_to_values(values, agent_ip):
 
             if host == agent_ip:
                 key = f"{role}_ALLOCATION_INDEX".upper()
-                values[key] = idx
+                values[key] = str(idx)
 
         key = f"{role}_LENGTH".upper()
-        values[key] = len(agent_roles.keys())
+        values[key] = str(len(agent_roles.keys()))
 
     agent_roles = utils.get_agent_and_roles()
     values["ROLES"] = ",".join(sorted(agent_roles.get(agent_ip)))
@@ -73,9 +71,9 @@ def _add_roles_to_values(values, agent_ip):
     return values
 
 
-def _add_tags_to_values(values, node_ip):
+def _add_tags_to_values(values, agent_ip):
     agents = utils.get_agent_and_tags()
-    tags = agents.get(node_ip, {})
+    tags = agents.get(agent_ip, {})
     for k, v in tags.items():
         key = f"{k}".upper()
         values[key] = v
@@ -89,14 +87,15 @@ def _add_ports_to_values(values):
     return values
 
 
-def get_values():
-    agent_id = get_agent_id()
-    agent_ip = os.getenv("AGENT_IP")
+def get_agent_dir(agent_ip):
+    return f"/opt/agents/{agent_ip}"
 
+
+def get_values(agent_ip):
     values = dotenv_values("/workspace/variables.env")
 
-    values["CLUSTER_ID"] = get_cluster_id()
-    values["AGENT_ID"] = agent_id
+    values["CLUSTER_ID"] = get_agent_cluster_id(agent_ip)
+    values["AGENT_ID"] = get_agent_id(agent_ip)
     values["AGENT_IP"] = agent_ip
 
     values = _add_roles_to_values(values, agent_ip)
@@ -106,18 +105,44 @@ def get_values():
     return values
 
 
-def validate_cluster_id():
+def get_agent_env(agent_ip):
+    agent_dir = get_agent_dir(agent_ip)
+    values = get_values(agent_ip)
+    load_secrets(values)
+    values["AGENT_DIR"] = agent_dir
+    return values
+
+
+def get_agent_minimal_env(agent_ip):
+    secrets = dotenv_values("/workspace/secrets.env")
+    return {"AGENT_IP": agent_ip, "AGENT_DIR": get_agent_dir(agent_ip), "SSH_USER": secrets.get("SSH_USER"),
+            "SSH_KEY": secrets.get("SSH_KEY")}
+
+
+def rsync_download_agent_files(agent_ip):
+    command_helper.command_local(f"mkdir -p {get_agent_dir(agent_ip)}")
+    command_helper.command_local("bash /scripts/rsync_download.sh", env=get_agent_minimal_env(agent_ip))
+
+
+def rsync_upload_agent_files(agent_ip):
+    agent_env = get_agent_minimal_env(agent_ip)
+    command_helper.command_remote("mkdir -p /opt/agent", env=agent_env)
+    command_helper.command_local("bash /scripts/rsync_upload.sh", env=agent_env)
+
+
+def validate_cluster_id(agent_ip, failed_if_cluster_id_not_found=False):
     cluster_id = os.getenv("CLUSTER_ID")
+    agent_dir = get_agent_dir(agent_ip)
 
     if not cluster_id:
         logger.error("Required environment variable: CLUSTER_ID is not set.")
         sys.exit(1)
 
-    command_helper.command_local("bash /scripts/rsync_remote_local.sh")
-    command_helper.command_local("mkdir -p /opt/agent")
-
-    if os.path.isfile("/opt/agent/cluster_id.txt"):
-        with open("/opt/agent/cluster_id.txt", "r", encoding='utf-8') as f:
+    if os.path.isfile(f"{agent_dir}/cluster_id.txt"):
+        with open(f"{agent_dir}/cluster_id.txt", "r", encoding='utf-8') as f:
             data = f.read().strip().casefold()
             if data != cluster_id.strip():
-                raise Exception("Failed on cluster id validation: mismatch")
+                raise Exception(f"Failed on cluster id validation: mismatch, agent_ip {agent_ip}.")
+    else:
+        if failed_if_cluster_id_not_found:
+            raise Exception(f"Failed on cluster id validation: cluster_id.txt not found, agent {agent_ip}.")
