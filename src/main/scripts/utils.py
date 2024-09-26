@@ -107,37 +107,24 @@ def enabled_agent_api():
     return os.environ.get("AGENT_API", "true").lower() == "true"
 
 
-def args_roles_agents():
+def args_filters(roles_filter, jobs_filter, agents_filter):
     parser = argparse.ArgumentParser()
-    parser.add_argument('--roles', default="")
-    parser.add_argument('--agents', default="")
+    if agents_filter:
+        parser.add_argument('--agents', default="")
+    if jobs_filter:
+        parser.add_argument('--jobs', default="")
+    if roles_filter:
+        parser.add_argument('--roles', default="")
     args = parser.parse_args()
 
-    roles = None
-    agents = None
-    if args.roles:
-        roles = args.roles.split(',')
-    if args.agents:
-        agents = args.agents.split(',')
-
-    return roles, agents
-
-
-def args_roles_agents_jobs():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--roles', default="")
-    parser.add_argument('--agents', default="")
-    parser.add_argument('--jobs', default="")
-    args = parser.parse_args()
-
-    roles = None
     agents = None
     jobs = None
-    if args.roles:
-        roles = args.roles.split(',')
+    roles = None
     if args.agents:
         agents = args.agents.split(',')
     if args.jobs:
         jobs = args.jobs.split(',')
+    if args.roles:
+        roles = args.roles.split(',')
 
-    return roles, agents, jobs
+    return roles, jobs, agents

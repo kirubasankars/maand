@@ -1,9 +1,11 @@
 #!/bin/bash
 set -ueo pipefail
 
-yum update -y
+sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
+dnf remove firewalld
 
-yum install -y rsync make docker python yum-utils jq docker-compose
+yum update -y
+yum install -y rsync make python corntab docker docker-compose
 
 username=agent
 if ! id "$username" &>/dev/null; then
@@ -14,8 +16,3 @@ usermod -aG docker agent || true
 
 /usr/bin/systemctl daemon-reload
 /usr/bin/systemctl enable --now docker
-
-sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
-dnf remove firewalld
-
-reboot now

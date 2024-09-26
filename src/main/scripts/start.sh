@@ -27,6 +27,8 @@ if [[ -z "$OPERATION" || -z "$SSH_USER" || -z "$SSH_KEY" || -z "$CLUSTER_ID" ]];
   exit 1
 fi
 
+# TODO: validate target
+
 if [ "$OPERATION" == "run_command" ]; then
   python3 /scripts/run_command.py $@
 elif [ "$OPERATION" == "run_command_local" ]; then

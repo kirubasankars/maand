@@ -22,6 +22,7 @@ def run_command(agent_ip):
     command_helper.command_remote(f"python /opt/agent/bin/runner.py restart {jobs}", env=agent_env)
 
 
-roles, agents, jobs_filter = utils.args_roles_agents_jobs()
+# TODO: rolling restart order
+_, jobs_filter, agents_filter = utils.args_filters(roles_filter=False, agents_filter=True, jobs_filter=True)
 system_manager.run(validate_cluster_id)
-system_manager.run(run_command)
+system_manager.run(run_command, agents_filter=agents_filter)

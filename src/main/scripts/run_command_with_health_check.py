@@ -13,6 +13,7 @@ if not os.path.exists("/workspace/command.sh"):
 def validate_cluster_id(agent_ip):
     context_manager.rsync_download_agent_files(agent_ip)
     context_manager.validate_cluster_id(agent_ip)
+    # TODO: validate update seq
 
 
 def run_command(agent_ip):
@@ -24,6 +25,6 @@ def run_command(agent_ip):
     health_check_utils.health_check(agent_ip)
 
 
-roles, agents = utils.args_roles_agents()
+roles_filter, _, agents_filter = utils.args_filters(roles_filter=True, agents_filter=True, jobs_filter=False)
 system_manager.run(validate_cluster_id)
-system_manager.run(run_command, concurrency=1, roles_filter=roles, agents_filter=agents)
+system_manager.run(run_command, concurrency=1, roles_filter=roles_filter, agents_filter=agents_filter)

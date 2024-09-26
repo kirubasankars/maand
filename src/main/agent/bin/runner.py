@@ -32,6 +32,7 @@ def run_jobs(cmd, jobs):
 def get_disabled_jobs():
     context_env = get_context_env()
     agent_ip = context_env["AGENT_IP"]
+
     jobs = []
     with open("/opt/agent/disabled.json", "r") as f:
         data = json.load(f)
@@ -41,21 +42,26 @@ def get_disabled_jobs():
                     jobs.append(job)
             else:
                 jobs.append(job)
+
+        agents = data.get("agents", [])
+        if agent_ip in agents:
+            jobs = get_available_jobs()
+
     return jobs
 
 
 def main():
-    jobs = get_available_jobs()
+    available_jobs = get_available_jobs()
     cmd = sys.argv[1]
-    if len(sys.argv) > 2:
+    if cmd in ["start", "restart"] and len(sys.argv) == 1:
+        disabled_jobs = get_disabled_jobs()
+        jobs_to_run = list(set(available_jobs) - set(disabled_jobs))
+    else:
         jobs_filter = sys.argv[2]
         jobs_filter = jobs_filter.split(",")
-        jobs = set(jobs) & set(jobs_filter)
-    else:
-        disabled_jobs = get_disabled_jobs()
-        jobs = list(set(jobs) - set(disabled_jobs))
-        print(jobs)
-    run_jobs(cmd, jobs)
+        jobs_to_run = set(available_jobs) & set(jobs_filter)
+
+    run_jobs(cmd, jobs_to_run)
 
 
 if __name__ == "__main__":

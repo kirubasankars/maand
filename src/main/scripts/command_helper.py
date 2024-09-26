@@ -26,6 +26,7 @@ def command_remote(cmd, env=None):
     return command_local(
         f"ssh -i /workspace/$SSH_KEY -o StrictHostKeyChecking=no -o LogLevel=error $SSH_USER@$AGENT_IP '{sh}' < {file_path}",
         env=env)
+    # TODO: command timeout
 
 
 def command2_remote(file_path, env=None):

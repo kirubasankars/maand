@@ -3,6 +3,7 @@ import context_manager
 import health_check_utils
 import system_manager
 import utils
+from src.main.scripts.run_command import agents
 
 
 def validate_cluster_id(agent_ip):
@@ -20,6 +21,6 @@ def run_command(agent_ip):
     health_check_utils.health_check(agent_ip)
 
 
-roles, agents, jobs_filter = utils.args_roles_agents_jobs()
+_, jobs_filter, _ = utils.args_filters(roles_filter=False, agents_filter=False, jobs_filter=True)
 system_manager.run(validate_cluster_id)
 system_manager.run(run_command, concurrency=1)

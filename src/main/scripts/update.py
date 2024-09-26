@@ -161,6 +161,7 @@ def sync(agent_ip):
     for job in removables:
         shutil.rmtree(f"{agent_dir}/jobs/" + job, ignore_errors=True)
 
+    # TODO: replicas and placement
     for job in assigned_jobs:
         command_helper.command_local(f"rsync -r --exclude '_commands' /workspace/jobs/{job} {agent_dir}/jobs/")
 
@@ -187,6 +188,7 @@ def sync(agent_ip):
 
     logger.debug("Sync process completed.")
 
+    # TODO: update corntab if start on restart enabled
 
 def update():
     if os.path.isfile(f"/workspace/update_seq.txt"):
