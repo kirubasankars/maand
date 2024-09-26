@@ -25,6 +25,7 @@ def run_job_command(agent_ip, command):
                 setup.close()
 
         if os.path.exists(f"{agent_cmd_dir}/{job}/run.sh"):
-            r = command_helper.command_local(f"cd {agent_cmd_dir}/{job} && bash {agent_cmd_dir}/{job}/run.sh", env=values)
+            r = command_helper.command_local(f"cd {agent_cmd_dir}/{job} && bash {agent_cmd_dir}/{job}/run.sh",
+                                             env=values)
             if r.returncode != 0:
                 raise RuntimeError("Runtime Error")

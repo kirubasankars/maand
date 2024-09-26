@@ -3,11 +3,12 @@ set -ueo pipefail
 echo "StrictHostKeyChecking accept-new" >> /etc/ssh/ssh_config
 
 mkdir -p /opt/agents
-test -f /workspace/secrets.env && source /workspace/secrets.env
 test -f /workspace/variables.env && source /workspace/variables.env
 test -f /workspace/ports.env && source /workspace/ports.env
+test -f /workspace/secrets.env && source /workspace/secrets.env
 
 export OPERATION=$1
+shift
 
 if [ "$OPERATION" == "initialize" ]; then
   python3 /scripts/initialize.py
@@ -27,24 +28,23 @@ if [[ -z "$OPERATION" || -z "$SSH_USER" || -z "$SSH_KEY" || -z "$CLUSTER_ID" ]];
 fi
 
 if [ "$OPERATION" == "run_command" ]; then
-  python3 /scripts/run_command.py
+  python3 /scripts/run_command.py $@
 elif [ "$OPERATION" == "run_command_local" ]; then
-  python3 /scripts/run_command_local.py
+  python3 /scripts/run_command_local.py $@
 elif [ "$OPERATION" == "run_command_with_health_check" ]; then
-  python3 /scripts/run_command_with_health_check.py
+  python3 /scripts/run_command_with_health_check.py $@
 elif [ "$OPERATION" == "update" ]; then
-  echo $(( $(cat /workspace/update_seq.txt) + 1 )) > /workspace/update_seq.txt
-  python3 /scripts/update.py
+  python3 /scripts/update.py $@
 elif [ "$OPERATION" == "start_jobs" ]; then
-  python3 /scripts/start_jobs.py
+  python3 /scripts/start_jobs.py $@
 elif [ "$OPERATION" == "stop_jobs" ]; then
-  python3 /scripts/stop_jobs.py
+  python3 /scripts/stop_jobs.py $@
 elif [ "$OPERATION" == "restart_jobs" ]; then
-  python3 /scripts/restart_jobs.py
+  python3 /scripts/restart_jobs.py $@
 elif [ "$OPERATION" == "rolling_restart_jobs" ]; then
-  python3 /scripts/rolling_restart_jobs.py
+  python3 /scripts/rolling_restart_jobs.py $@
 elif [ "$OPERATION" == "health_check" ]; then
-  python3 /scripts/health_check.py
+  python3 /scripts/health_check.py $@
 elif [ "$OPERATION" == "run_command_no_cluster_check" ]; then
-  python3 /scripts/run_command_no_cluster_check.py
+  python3 /scripts/run_command_no_cluster_check.py $@
 fi

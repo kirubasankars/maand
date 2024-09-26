@@ -4,6 +4,7 @@ import command_helper
 import context_manager
 import health_check_utils
 import system_manager
+import utils
 
 if not os.path.exists("/workspace/command.sh"):
     raise Exception("No command file found")
@@ -23,5 +24,6 @@ def run_command(agent_ip):
     health_check_utils.health_check(agent_ip)
 
 
+roles, agents = utils.args_roles_agents()
 system_manager.run(validate_cluster_id)
-system_manager.run(run_command, concurrency=1)
+system_manager.run(run_command, concurrency=1, roles_filter=roles, agents_filter=agents)

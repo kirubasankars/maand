@@ -1,3 +1,4 @@
+import argparse
 import functools
 import glob
 import json
@@ -5,7 +6,7 @@ import logging
 import os
 
 
-def get_agents(role_filter=None):
+def get_agents(roles_filter=None):
     with open("/workspace/agents.json", "r") as f:
         data = json.loads(f.read())
 
@@ -21,15 +22,15 @@ def get_agents(role_filter=None):
         if not agent.get("tags"):
             agent["tags"] = {}
 
-    if role_filter:
+    if roles_filter:
         agents = {agent_ip: agent for agent_ip, agent in agents.items() if
-                  set(role_filter) & set(agent.get("roles", []))}
+                  set(roles_filter or []) & set(agent.get("roles", []))}
 
     return agents
 
 
-def get_agent_and_roles(role_filter=None):
-    agents = get_agents(role_filter)
+def get_agent_and_roles(roles_filter=None):
+    agents = get_agents(roles_filter)
     for agent_ip, agent in agents.items():
         agents[agent_ip] = agent.get("roles")
     return agents
@@ -104,3 +105,39 @@ def is_sudo_enabled():
 
 def enabled_agent_api():
     return os.environ.get("AGENT_API", "true").lower() == "true"
+
+
+def args_roles_agents():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--roles', default="")
+    parser.add_argument('--agents', default="")
+    args = parser.parse_args()
+
+    roles = None
+    agents = None
+    if args.roles:
+        roles = args.roles.split(',')
+    if args.agents:
+        agents = args.agents.split(',')
+
+    return roles, agents
+
+
+def args_roles_agents_jobs():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--roles', default="")
+    parser.add_argument('--agents', default="")
+    parser.add_argument('--jobs', default="")
+    args = parser.parse_args()
+
+    roles = None
+    agents = None
+    jobs = None
+    if args.roles:
+        roles = args.roles.split(',')
+    if args.agents:
+        agents = args.agents.split(',')
+    if args.jobs:
+        jobs = args.jobs.split(',')
+
+    return roles, agents, jobs

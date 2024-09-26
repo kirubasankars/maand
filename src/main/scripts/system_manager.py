@@ -8,9 +8,13 @@ def split_list(input_list, chunk_size=3):
     return [input_list[i:i + chunk_size] for i in range(0, len(input_list), chunk_size)]
 
 
-def run(func, concurrency=None):
-    agents = utils.get_agent_and_roles()
+def run(func, concurrency=None, roles_filter=None, agents_filter=None):
+    agents = utils.get_agent_and_roles(roles_filter)
+
     agents_ip = list(agents.keys())
+    if agents_filter:
+        agents_ip = list(set(agents_filter) & set(agents.keys()))
+
     if len(agents_ip) == 0:
         sys.exit(0)
 

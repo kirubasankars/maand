@@ -8,3 +8,5 @@ __pycache__
 update_seq.txt
 variables.env
 cluster_id.txt
+disabled.json
+secrets.env

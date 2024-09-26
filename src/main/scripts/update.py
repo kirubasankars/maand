@@ -139,6 +139,7 @@ def sync(agent_ip):
     command_helper.command_local(f"""
         mkdir -p {agent_dir}/certs
         rsync /workspace/ca.crt {agent_dir}/certs/
+        test -f /workspace/disabled.json && rsync /workspace/disabled.json {agent_dir}/  
     """)
 
     assigned_jobs = utils.get_assigned_jobs(agent_ip)
@@ -188,6 +189,11 @@ def sync(agent_ip):
 
 
 def update():
+    if os.path.isfile(f"/workspace/update_seq.txt"):
+        with open(f"/workspace/update_seq.txt", "r+") as f:
+            seq = int(f.read()) + 1
+            f.seek(0)
+            f.write(str(seq))
     system_manager.run(validate_cluster_id)
     system_manager.run(sync)
 
