@@ -99,6 +99,27 @@ def get_assigned_jobs(agent_ip):
     return ordered_assigned_jobs
 
 
+def get_disabled_jobs(agent_ip):
+    if not os.path.exists(f"/workspace/disabled.json"):
+        return []
+
+    jobs = []
+    with open("/workspace/disabled.json", "r") as f:
+        data = json.load(f)
+        for job, value in data.get("jobs", {}).items():
+            if "agents" in value:
+                if agent_ip in value["agents"]:
+                    jobs.append(job)
+            else:
+                jobs.append(job)
+
+        agents = data.get("agents", [])
+        if agent_ip in agents:
+            jobs = get_assigned_jobs(agent_ip)
+
+    return jobs
+
+
 def get_filtered_jobs(agent_ip, jobs_filter, min_order, max_order):
     assigned_jobs = get_assigned_jobs(agent_ip)
     filtered_jobs = []

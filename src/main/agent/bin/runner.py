@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 import subprocess
 
 
@@ -27,6 +28,9 @@ def run_jobs(cmd, jobs):
 def get_disabled_jobs():
     context_env = get_context_env()
     agent_ip = context_env["AGENT_IP"]
+
+    if not os.path.exists(f"/opt/agent/disabled.json"):
+        return []
 
     jobs = []
     with open("/opt/agent/disabled.json", "r") as f:
@@ -66,5 +70,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.jobs:
         args.jobs = args.jobs.split(",")
-    print(args)
     main(args)
