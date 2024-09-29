@@ -3,24 +3,22 @@ import context_manager
 import health_check_utils
 import system_manager
 import utils
-from src.main.scripts.run_command import agents
-
-
-def validate_cluster_id(agent_ip):
-    context_manager.rsync_download_agent_files(agent_ip)
-    context_manager.validate_cluster_id(agent_ip)
 
 
 def run_command(agent_ip):
-    jobs = ""
-    if jobs_filter:
-        jobs = ",".join(jobs_filter)
     agent_env = context_manager.get_agent_minimal_env(agent_ip)
+    filtered_jobs = utils.get_filtered_jobs(agent_ip, jobs_filter=args.jobs, min_order=args.min_order, max_order=args.max_order)
+    filtered_jobs = ",".join(filtered_jobs)
+
     health_check_utils.health_check(agent_ip)
-    command_helper.command_remote(f"python /opt/agent/bin/runner.py restart {jobs}", env=agent_env)
+    if filtered_jobs:
+        command_helper.command_remote(f"python /opt/agent/bin/runner.py restart --jobs {filtered_jobs}", env=agent_env)
+    else:
+        command_helper.command_remote(f"python /opt/agent/bin/runner.py restart", env=agent_env)
     health_check_utils.health_check(agent_ip)
 
 
-_, jobs_filter, _ = utils.args_filters(roles_filter=False, agents_filter=False, jobs_filter=True)
-system_manager.run(validate_cluster_id)
-system_manager.run(run_command, concurrency=1)
+if __name__ == "__main__":
+    args = utils.get_args_agents_jobs_concurrency()
+    system_manager.run(context_manager.validate_cluster_update_seq)
+    system_manager.run(run_command, concurrency=args.concurrency, agents_filter=args.agents_filter)

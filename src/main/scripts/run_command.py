@@ -9,17 +9,12 @@ if not os.path.exists("/workspace/command.sh"):
     raise Exception("No command file found")
 
 
-def validate_cluster_id(agent_ip):
-    context_manager.rsync_download_agent_files(agent_ip)
-    context_manager.validate_cluster_id(agent_ip)
-    # TODO: validate update seq
-
-
 def run_command(agent_ip):
     agent_env = context_manager.get_agent_minimal_env(agent_ip)
     command_helper.command2_remote("/workspace/command.sh", env=agent_env)
 
 
-roles_filter, _, agents_filter = utils.args_filters(roles_filter=True, agents_filter=True, jobs_filter=False)
-system_manager.run(validate_cluster_id)
-system_manager.run(run_command, roles_filter=roles_filter, agents_filter=agents_filter)
+if __name__ == "__main__":
+    agents_filter, roles_filter, concurrency = utils.get_args_agents_roles_concurrency()
+    system_manager.run(context_manager.validate_cluster_update_seq)
+    system_manager.run(run_command, concurrency=concurrency, roles_filter=roles_filter, agents_filter=agents_filter)

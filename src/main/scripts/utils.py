@@ -4,6 +4,7 @@ import glob
 import json
 import logging
 import os
+from multiprocessing.managers import Namespace
 
 
 def get_agents(roles_filter=None):
@@ -80,7 +81,41 @@ def get_assigned_jobs(agent_ip):
     assigned_jobs = []
     for role in roles:
         assigned_jobs.extend(role_jobs.get(role, []))
-    return list(set(assigned_jobs))
+    assigned_jobs = list(set(assigned_jobs))
+
+    assigned_jobs_bucket = {}
+    for job in assigned_jobs:
+        job_metadata = get_job_metadata(job)
+        order = int(job_metadata.get("order", 99))
+        if order not in assigned_jobs_bucket:
+            assigned_jobs_bucket[order] = []
+        assigned_jobs_bucket[order].append(job)
+
+    ordered_assigned_jobs = []
+    nums = sorted(assigned_jobs_bucket.keys())
+    for num in nums:
+        ordered_assigned_jobs.extend(assigned_jobs_bucket[num])
+
+    return ordered_assigned_jobs
+
+
+def get_filtered_jobs(agent_ip, jobs_filter, min_order, max_order):
+    assigned_jobs = get_assigned_jobs(agent_ip)
+    filtered_jobs = []
+    for job in assigned_jobs:
+        job_metadata = get_job_metadata(job)
+        order = int(job_metadata.get("order", 99))
+        if jobs_filter:
+            if job in jobs_filter and min_order <= order < max_order:
+                filtered_jobs.append(job)
+        else:
+            if min_order <= order < max_order:
+                filtered_jobs.append(job)
+
+    if (min_order != 0 or max_order != 100) and not filtered_jobs:
+        raise Exception("No jobs found.")
+
+    return filtered_jobs
 
 
 def get_assigned_roles(agent_ip):
@@ -103,28 +138,46 @@ def is_sudo_enabled():
     return os.environ.get("USE_SUDO", "0") == "1"
 
 
-def enabled_agent_api():
-    return os.environ.get("AGENT_API", "true").lower() == "true"
-
-
-def args_filters(roles_filter, jobs_filter, agents_filter):
+def get_args_agents_jobs_concurrency():
     parser = argparse.ArgumentParser()
-    if agents_filter:
-        parser.add_argument('--agents', default="")
-    if jobs_filter:
-        parser.add_argument('--jobs', default="")
-    if roles_filter:
-        parser.add_argument('--roles', default="")
+    parser.add_argument('--agents', default="")
+    parser.add_argument('--jobs', default="")
+    parser.add_argument('--min-order', default="0", type=int)
+    parser.add_argument('--max-order', default="100", type=int)
+    parser.add_argument('--concurrency', default="4", type=int)
     args = parser.parse_args()
 
-    agents = None
-    jobs = None
-    roles = None
     if args.agents:
-        agents = args.agents.split(',')
+        args.agents = args.agents.split(',')
     if args.jobs:
-        jobs = args.jobs.split(',')
-    if args.roles:
-        roles = args.roles.split(',')
+        args.jobs = args.jobs.split(',')
 
-    return roles, jobs, agents
+    return args
+
+
+def get_args_agents_roles_concurrency():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--agents', default="")
+    parser.add_argument('--roles', default="")
+    parser.add_argument('--concurrency', default="4", type=int)
+    args = parser.parse_args()
+
+    if args.agents:
+        args.agents = args.agents.split(',')
+    if args.roles:
+        args.roles = args.roles.split(',')
+
+    return args
+
+
+def get_args_jobs():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--jobs', default="", required=False)
+    parser.add_argument('--min-order', default="0", required=False, type=int)
+    parser.add_argument('--max-order', default="100", required=False, type=int)
+    args = parser.parse_args()
+
+    if args.jobs:
+        args.jobs = args.jobs.split(',')
+
+    return args

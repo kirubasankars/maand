@@ -1,8 +1,6 @@
-import glob
+import argparse
 import json
-import os.path
 import subprocess
-import sys
 
 
 def get_context_env():
@@ -17,11 +15,8 @@ def get_context_env():
 
 
 def get_available_jobs():
-    jobs = []
-    for job in glob.glob("/opt/agent/jobs/*/manifest.json"):
-        job = os.path.basename(os.path.dirname(job))
-        jobs.append(job)
-    return jobs
+    with open("/opt/agent/jobs.txt", "r") as f:
+        return [l.strip() for l in f.readlines()]
 
 
 def run_jobs(cmd, jobs):
@@ -50,19 +45,26 @@ def get_disabled_jobs():
     return jobs
 
 
-def main():
+def main(args):
     available_jobs = get_available_jobs()
-    cmd = sys.argv[1]
-    if cmd in ["start", "restart"] and len(sys.argv) == 1:
+    if args.cmd in ["start", "restart"] and not args.jobs:
         disabled_jobs = get_disabled_jobs()
         jobs_to_run = list(set(available_jobs) - set(disabled_jobs))
     else:
-        jobs_filter = sys.argv[2]
-        jobs_filter = jobs_filter.split(",")
-        jobs_to_run = set(available_jobs) & set(jobs_filter)
+        if args.jobs:
+            jobs_to_run = set(available_jobs) & set(args.jobs)
+        else:
+            jobs_to_run = available_jobs
 
-    run_jobs(cmd, jobs_to_run)
+    run_jobs(args.cmd, jobs_to_run)
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('cmd', default="")
+    parser.add_argument('--jobs', default=None, required=False)
+    args = parser.parse_args()
+    if args.jobs:
+        args.jobs = args.jobs.split(",")
+    print(args)
+    main(args)

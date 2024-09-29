@@ -47,6 +47,6 @@ elif [ "$OPERATION" == "rolling_restart_jobs" ]; then
   python3 /scripts/rolling_restart_jobs.py $@
 elif [ "$OPERATION" == "health_check" ]; then
   python3 /scripts/health_check.py $@
-elif [ "$OPERATION" == "run_command_no_cluster_check" ]; then
-  python3 /scripts/run_command_no_cluster_check.py $@
+elif [ "$OPERATION" == "run_command_no_check" ]; then
+  python3 /scripts/run_command_no_check.py $@
 fi

@@ -122,6 +122,8 @@ def validate_cluster_id(agent_ip):
 
 
 def sync(agent_ip):
+    args = utils.get_args_jobs()
+
     cluster_id = os.getenv("CLUSTER_ID")
     agent_dir = context_manager.get_agent_dir(agent_ip)
 
@@ -146,7 +148,10 @@ def sync(agent_ip):
     assigned_roles = utils.get_assigned_roles(agent_ip)
 
     with open(f"{agent_dir}/roles.txt", "w") as f:
-        f.writelines("\n".join(sorted(assigned_roles)))
+        f.writelines("\n".join(assigned_roles))
+
+    with open(f"{agent_dir}/jobs.txt", "w") as f:
+        f.writelines("\n".join(assigned_jobs))
 
     command_helper.command_local(f"""
         rsync -r /agent/bin {agent_dir}/
@@ -176,19 +181,18 @@ def sync(agent_ip):
 
     update_certificates(assigned_jobs, agent_ip)
 
-    if not utils.enabled_agent_api():
-        command_helper.command_local(f"rm -rf {agent_dir}/jobs/agent-api")
-
     command_helper.command_local("rm -f /workspace/ca.srl")
     command_helper.command_local(f"chown -R 1050:1042 {agent_dir}")
 
-    context_manager.rsync_upload_agent_files(agent_ip)
+    filtered_jobs = utils.get_filtered_jobs(agent_ip, jobs_filter=args.jobs, min_order=args.min_order, max_order=args.max_order)
+    context_manager.rsync_upload_agent_files(agent_ip, filtered_jobs)
     command_helper.command_local(f"cp /workspace/update_seq.txt {agent_dir}/update_seq.txt")
-    context_manager.rsync_upload_agent_files(agent_ip)
+    context_manager.rsync_upload_agent_files(agent_ip, filtered_jobs)
 
     logger.debug("Sync process completed.")
 
-    # TODO: update corntab if start on restart enabled
+    # TODO: update crontab if start on restart enabled
+
 
 def update():
     if os.path.isfile(f"/workspace/update_seq.txt"):
@@ -196,6 +200,7 @@ def update():
             seq = int(f.read()) + 1
             f.seek(0)
             f.write(str(seq))
+
     system_manager.run(validate_cluster_id)
     system_manager.run(sync)
 

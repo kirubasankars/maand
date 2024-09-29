@@ -36,5 +36,5 @@ rolling_restart_jobs:
 health_check:
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) health_check $(ARGS)
 
-run_command_no_cluster_check:
-	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) run_command_no_cluster_check $(ARGS)
+run_command_no_check:
+	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) run_command_no_check $(ARGS)

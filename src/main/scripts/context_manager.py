@@ -124,8 +124,15 @@ def rsync_download_agent_files(agent_ip):
     command_helper.command_local("bash /scripts/rsync_download.sh", env=get_agent_minimal_env(agent_ip))
 
 
-def rsync_upload_agent_files(agent_ip):
+def rsync_upload_agent_files(agent_ip, jobs):
     agent_env = get_agent_minimal_env(agent_ip)
+    lines = ["- jobs/**/bin\n", "- jobs/**/data\n", "- jobs/**/logs\n"]
+    if jobs:
+        for job in jobs:
+            lines.append(f"+ jobs/{job}\n")
+        lines.append("- jobs/*\n")
+    with open("/tmp/rsync_rules.txt", "w") as f:
+        f.writelines(lines)
     command_helper.command_remote("mkdir -p /opt/agent", env=agent_env)
     command_helper.command_local("bash /scripts/rsync_upload.sh", env=agent_env)
 
@@ -142,7 +149,29 @@ def validate_cluster_id(agent_ip, failed_if_cluster_id_not_found=False):
         with open(f"{agent_dir}/cluster_id.txt", "r", encoding='utf-8') as f:
             data = f.read().strip().casefold()
             if data != cluster_id.strip():
-                raise Exception(f"Failed on cluster id validation: mismatch, agent_ip {agent_ip}.")
+                raise Exception(f"Failed on cluster id validation: mismatch, agent {agent_ip}.")
     else:
         if failed_if_cluster_id_not_found:
             raise Exception(f"Failed on cluster id validation: cluster_id.txt not found, agent {agent_ip}.")
+
+
+def validate_update_seq(agent_ip):
+    agent_dir = get_agent_dir(agent_ip)
+
+    update_seq = 0
+    with open(f"/workspace/update_seq.txt", "r", encoding='utf-8') as f:
+        update_seq = f.read().strip().casefold()
+
+    if os.path.isfile(f"{agent_dir}/update_seq.txt"):
+        with open(f"{agent_dir}/update_seq.txt", "r", encoding='utf-8') as f:
+            data = f.read().strip().casefold()
+            if update_seq != data:
+                raise Exception(f"Failed on update_seq validation: mismatch, agent {agent_ip}.")
+    else:
+        raise Exception(f"Failed on update_seq validation: update_seq.txt not found, agent {agent_ip}.")
+
+
+def validate_cluster_update_seq(agent_ip):
+    rsync_download_agent_files(agent_ip)
+    validate_cluster_id(agent_ip)
+    validate_update_seq(agent_ip)
