@@ -1,6 +1,7 @@
+import run_job_command
+
 import command_helper
 import context_manager
-import health_check_utils
 import system_manager
 import utils
 
@@ -13,12 +14,12 @@ def run_command(agent_ip):
     filtered_jobs = ",".join(filtered_jobs)
     agent_env = context_manager.get_agent_minimal_env(agent_ip)
 
-    health_check_utils.health_check(agent_ip)
+    run_job_command.health_check(agent_ip)
     if filtered_jobs:
         command_helper.command_remote(f"python /opt/agent/bin/runner.py restart --jobs {filtered_jobs}", env=agent_env)
     else:
         command_helper.command_remote(f"python /opt/agent/bin/runner.py restart", env=agent_env)
-    health_check_utils.health_check(agent_ip)
+    run_job_command.health_check(agent_ip)
 
 
 if __name__ == "__main__":

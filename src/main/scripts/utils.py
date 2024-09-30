@@ -4,7 +4,6 @@ import glob
 import json
 import logging
 import os
-from multiprocessing.managers import Namespace
 
 
 def get_agents(roles_filter=None):

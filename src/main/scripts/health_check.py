@@ -1,13 +1,15 @@
 import context_manager
-import health_check_utils
+import run_job_command
 import system_manager
 
 
-def validate_cluster_id(agent_ip):
+def validate(agent_ip):
     context_manager.rsync_download_agent_files(agent_ip)
     context_manager.validate_cluster_id(agent_ip)
+    context_manager.validate_cluster_update_seq(agent_ip)
 
 
-# TODO: jobs filter
-system_manager.run(validate_cluster_id)
-system_manager.run(health_check_utils.health_check)
+if __name__ == '__main__':
+    # TODO: jobs filter
+    system_manager.run(validate)
+    system_manager.run(run_job_command.health_check)
