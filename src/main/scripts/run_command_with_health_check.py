@@ -1,6 +1,6 @@
 import os
 
-import run_job_command
+import run_job_command_health_check
 import command_helper
 import context_manager
 import system_manager
@@ -14,9 +14,9 @@ def run_command(agent_ip):
     values = context_manager.get_values(agent_ip)
     values = context_manager.load_secrets(values)
 
-    run_job_command.health_check(agent_ip)
+    run_job_command_health_check.health_check(agent_ip)
     command_helper.command2_remote("/workspace/command.sh", env=values)
-    run_job_command.health_check(agent_ip)
+    run_job_command_health_check.health_check(agent_ip)
 
 
 if __name__ == "__main__":
