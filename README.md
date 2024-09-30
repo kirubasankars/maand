@@ -284,8 +284,8 @@ The `command.sh` script in the workspace can be used for ad-hoc command executio
 The above commands supports roles and agents filters. 
 
 ```shell
-$ make start_jobs ARGS='--roles=role1,role2'
-$ make start_jobs ARGS='--agents=x.x.x.x,x.x.x.x'
+$ make run_command ARGS='--roles=role1,role2'
+$ make run_command ARGS='--agents=x.x.x.x,x.x.x.x'
 ```
 
 ### Job Control
