@@ -73,7 +73,7 @@ You may also include:
 Create a `command.sh` file in your workspace to execute Linux commands on agents. For example, to run `uptime`:
 
 ```shell
-make run_command_no_cluster_check
+make run_command_no_check
 ```
 
 ### Cluster Initialization
@@ -116,7 +116,8 @@ workspace
 
 ```json
 {
-  "roles": ["ROLE1"]
+  "roles": ["ROLE1"],
+  "order": 6
 }
 ```
 
@@ -268,22 +269,39 @@ These dynamically generated variables enable **Maand** to handle complex orchest
 The `command.sh` script in the workspace can be used for ad-hoc command execution. 
 
 - Running `make run_command` executes `command.sh` on each agent after verifying cluster membership using `cluster_id.txt` between the agent and workspace.
-- Running `make run_command_no_cluster_check` executes `command.sh` on each agent without cluster validation.
+- Running `make run_command_no_check` executes `command.sh` on each agent without cluster validation.
 - Running `make run_command_local` executes `command.sh` locally on
 
  the **Maand** controller while validating cluster membership under agent context.
 - Running `make run_command_health_check` executes `command.sh` on each agent, performing health checks before execution.
 
+The above commands supports roles and agents filters. 
+
+```shell
+$ make start_jobs ARGS='--roles=role1,role2'
+$ make start_jobs ARGS='--agents=x.x.x.x,x.x.x.x'
+```
+
 ### Job Control
 
-- Running `make start_jobs` executes `/opt/agent/bin/start_jobs.sh`, which runs the `start` target from the `Makefile` of each job on the agent.
-- Running `make stop_jobs` executes `/opt/agent/bin/stop_jobs.sh`, which runs the `stop` target from the `Makefile` of each job on the agent.
-- Running `make restart_jobs` executes `/opt/agent/bin/restart_jobs.sh`, which runs the `restart` target from the `Makefile` of each job on the agent.
-- Running `make rolling_restart_jobs` executes `/opt/agent/bin/restart_jobs.sh`, which runs the `restart` target from the `Makefile` of each job on the agent and runs health checks before and after per each agent.
+- Running `make start_jobs` executes `/opt/agent/bin/runner.py`, which runs the `start` target from the `Makefile` of each job on the agent.
+- Running `make stop_jobs` executes `/opt/agent/bin/runner.py`, which runs the `stop` target from the `Makefile` of each job on the agent.
+- Running `make restart_jobs` executes `/opt/agent/bin/runner.py`, which runs the `restart` target from the `Makefile` of each job on the agent.
+- Running `make rolling_restart_jobs` executes `/opt/agent/bin/runner.py`, which runs the `restart` target from the `Makefile` of each job on the agent and runs health checks before and after per each agent.
+
+The above commands supports jobs, order and agents filters. 
+
+```shell
+$ make start_jobs ARGS='--jobs=sample_job'
+$ make start_jobs ARGS='--min-order=5'
+$ make start_jobs ARGS='--max-order=5'
+$ make start_jobs ARGS='--min-order=1 --max-order=5'
+$ make start_jobs ARGS='--agents=x.x.x.x,x.x.x.x'
+```
 
 ### Health Check
 
-Each job folder can include a `modules` directory and a `run.sh` file. The `run.sh` file is executed with the agent context on the Maand controller node and should include health checks for the job. These health checks are also used for safe rolling restarts.
+Each job folder can include a `_commands` directory and a `run.sh` file. The `run.sh` file is executed with the agent context on the Maand controller node and should include health checks for the job. These health checks are also used for safe rolling restarts.
 
 To perform a health check, use the following command:
 

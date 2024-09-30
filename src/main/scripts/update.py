@@ -141,17 +141,20 @@ def sync(agent_ip):
     command_helper.command_local(f"""
         mkdir -p {agent_dir}/certs
         rsync /workspace/ca.crt {agent_dir}/certs/
-        test -f /workspace/disabled.json && rsync /workspace/disabled.json {agent_dir}/  
     """)
 
     assigned_jobs = utils.get_assigned_jobs(agent_ip)
     assigned_roles = utils.get_assigned_roles(agent_ip)
+    disabled_jobs = utils.get_disabled_jobs(agent_ip)
 
     with open(f"{agent_dir}/roles.txt", "w") as f:
         f.writelines("\n".join(assigned_roles))
 
     with open(f"{agent_dir}/jobs.txt", "w") as f:
         f.writelines("\n".join(assigned_jobs))
+
+    with open(f"{agent_dir}/disabled_jobs.txt", "w") as f:
+        f.writelines("\n".join(disabled_jobs))
 
     command_helper.command_local(f"""
         rsync -r /agent/bin {agent_dir}/
