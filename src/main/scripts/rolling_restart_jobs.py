@@ -16,8 +16,10 @@ def run_command(agent_ip):
     agent_env = context_manager.get_agent_minimal_env(agent_ip)
 
     run_job_command_health_check.health_check(agent_ip)
-    if filtered_jobs:
-        command_helper.command_remote(f"python /opt/agent/bin/runner.py restart --jobs {filtered_jobs}", env=agent_env)
+    filter_applied = len(args.jobs) != 0 and (args.min_order != 0 or args.max_order != 0)
+    if filter_applied:
+        if filtered_jobs:
+            command_helper.command_remote(f"python /opt/agent/bin/runner.py restart --jobs {filtered_jobs}", env=agent_env)
     else:
         command_helper.command_remote(f"python /opt/agent/bin/runner.py restart", env=agent_env)
     run_job_command_health_check.health_check(agent_ip)

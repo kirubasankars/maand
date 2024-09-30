@@ -18,8 +18,10 @@ def run_command(agent_ip):
     filtered_jobs = ",".join(filtered_jobs)
     agent_env = context_manager.get_agent_minimal_env(agent_ip)
 
-    if filtered_jobs:
-        command_helper.command_remote(f"python /opt/agent/bin/runner.py stop --jobs {filtered_jobs}", env=agent_env)
+    filter_applied = len(args.jobs) != 0 and (args.min_order != 0 or args.max_order != 0)
+    if filter_applied:
+        if filtered_jobs:
+            command_helper.command_remote(f"python /opt/agent/bin/runner.py stop --jobs {filtered_jobs}", env=agent_env)
     else:
         command_helper.command_remote(f"python /opt/agent/bin/runner.py stop", env=agent_env)
 
