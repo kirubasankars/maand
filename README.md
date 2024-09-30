@@ -306,6 +306,22 @@ $ make start_jobs ARGS='--agents=x.x.x.x,x.x.x.x'
 $ make stop_jobs ARGS='--include-disabled'
 ```
 
+** Disabled Jobs **
+
+To disable jobs for specific agents or roles, use a `disabled.json` file in the workspace:
+
+```json
+{
+  "jobs":{
+    "job1": {}, # This disables a job 
+    "job2": {
+      "agents": ["x.x.x.x"] # This disables a job at the particluar agent
+    }
+  },
+  "agents": ["x.x.x.x"] # All jobs at the particluar agent are disabled
+}
+```
+
 ### Health Check
 
 Each job folder can include a `_commands` directory and a `run.sh` file. The `run.sh` file is executed with the agent context on the Maand controller node and should include health checks for the job. These health checks are also used for safe rolling restarts.
