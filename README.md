@@ -309,7 +309,7 @@ To perform a health check, use the following command:
 make health_check
 ```
 
-The above commands supports jobs, order and agents filters. 
+The above commands supports jobs and order filters. 
 
 ```shell
 $ make start_jobs ARGS='--jobs=sample_job'
