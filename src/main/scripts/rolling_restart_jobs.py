@@ -8,8 +8,9 @@ import utils
 
 def run_command(agent_ip):
     filtered_jobs = utils.get_filtered_jobs(agent_ip, jobs_filter=args.jobs, min_order=args.min_order, max_order=args.max_order)
-    disabled_jobs = utils.get_disabled_jobs(agent_ip)
-    filtered_jobs = list(set(filtered_jobs) - set(disabled_jobs))
+    if not args.include_disabled:
+        disabled_jobs = utils.get_disabled_jobs(agent_ip)
+        filtered_jobs = list(set(filtered_jobs) - set(disabled_jobs))
 
     filtered_jobs = ",".join(filtered_jobs)
     agent_env = context_manager.get_agent_minimal_env(agent_ip)

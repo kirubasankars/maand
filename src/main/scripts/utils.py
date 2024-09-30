@@ -195,6 +195,7 @@ def get_args_jobs():
     parser.add_argument('--jobs', default="", required=False)
     parser.add_argument('--min-order', default="0", required=False, type=int)
     parser.add_argument('--max-order', default="100", required=False, type=int)
+    parser.add_argument('--include-disabled', default=False, required=False, action='store_true')
     args = parser.parse_args()
 
     if args.jobs:

@@ -136,6 +136,8 @@ restart:
 
 The `manifest.json` file specifies which agents should receive a job. Jobs are assigned based on role matches in `manifest.json` and `agents.json`, ensuring proper job distribution.
 
+`order` attribute used for order filter and order of start, stop and restart jobs.
+
 ### Running Updates
 
 To copy or update job files in the agents’ `/opt/agent/` directory:
@@ -158,6 +160,8 @@ $ tree /opt/agent
 ├── update_seq.txt
 ├── context.env
 ├── roles.txt
+├── jobs.txt
+├── disabled_jobs.txt
 ├── bin
 │   ├── start_jobs.sh
 │   ├── stop_jobs.sh
@@ -174,7 +178,9 @@ $ tree /opt/agent
 - **`cluster_id.txt`**: Unique identifier for the cluster.
 - **`agent_id.txt`**: Unique identifier for the agent.
 - **`update_seq.txt`**: Tracks the update count and increments with each update command.
-- **`roles.txt`**: Lists roles assigned to the agent.
+- **`roles.txt`**: Lists of roles assigned to the agent.
+- **`jobs.txt`**: Lists of jobs assigned to the agent.
+- **`disabled_jobs.txt`**: Lists of disabled jobs to the agent.
 - **`certs`**: Contains the agent’s private and public certificates (`agent.key` and `agent.crt`).
 - **`jobs`**: Directory for job files, with each job having its own folder containing `manifest.json` and `Makefile`.
 - **`context.env`**: Environment variables set by **Maand**.
@@ -294,9 +300,10 @@ The above commands supports jobs, order and agents filters.
 ```shell
 $ make start_jobs ARGS='--jobs=sample_job'
 $ make start_jobs ARGS='--min-order=5'
-$ make start_jobs ARGS='--max-order=5'
+$ make restart_jobs ARGS='--max-order=5'
 $ make start_jobs ARGS='--min-order=1 --max-order=5'
 $ make start_jobs ARGS='--agents=x.x.x.x,x.x.x.x'
+$ make stop_jobs ARGS='--include-disabled'
 ```
 
 ### Health Check
@@ -312,10 +319,11 @@ make health_check
 The above commands supports jobs and order filters. 
 
 ```shell
-$ make start_jobs ARGS='--jobs=sample_job'
-$ make start_jobs ARGS='--min-order=5'
-$ make start_jobs ARGS='--max-order=5'
-$ make start_jobs ARGS='--min-order=1 --max-order=5'
+$ make health_check ARGS='--jobs=sample_job'
+$ make health_check ARGS='--min-order=5'
+$ make health_check ARGS='--max-order=5'
+$ make health_check ARGS='--min-order=1 --max-order=5'
+$ make health_check ARGS='--include-disabled'
 ```
 
 
