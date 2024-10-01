@@ -10,7 +10,7 @@ if not os.path.exists("/workspace/command.sh"):
 
 
 def run_command(agent_ip):
-    filtered_jobs = utils.get_filtered_jobs(agent_ip, jobs_filter=args.jobs, min_order=args.min_order, max_order=args.max_order)
+    filtered_jobs, filter_applied = utils.get_filtered_jobs(agent_ip, jobs_filter=args.jobs, min_order=args.min_order, max_order=args.max_order)
     if not args.include_disabled:
         disabled_jobs = utils.get_disabled_jobs(agent_ip)
         filtered_jobs = list(set(filtered_jobs) - set(disabled_jobs))
@@ -18,7 +18,6 @@ def run_command(agent_ip):
     filtered_jobs = ",".join(filtered_jobs)
     agent_env = context_manager.get_agent_minimal_env(agent_ip)
 
-    filter_applied = len(args.jobs) != 0 and (args.min_order != 0 or args.max_order != 0)
     if filter_applied:
         if filtered_jobs:
             command_helper.command_remote(f"python /opt/agent/bin/runner.py restart --jobs {filtered_jobs}", env=agent_env)

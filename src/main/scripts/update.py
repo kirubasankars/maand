@@ -187,7 +187,7 @@ def sync(agent_ip):
     command_helper.command_local("rm -f /workspace/ca.srl")
     command_helper.command_local(f"chown -R 1050:1042 {agent_dir}")
 
-    filtered_jobs = utils.get_filtered_jobs(agent_ip, jobs_filter=args.jobs, min_order=args.min_order,
+    filtered_jobs, _ = utils.get_filtered_jobs(agent_ip, jobs_filter=args.jobs, min_order=args.min_order,
                                             max_order=args.max_order)
     context_manager.rsync_upload_agent_files(agent_ip, filtered_jobs)
     command_helper.command_local(f"cp /workspace/update_seq.txt {agent_dir}/update_seq.txt")

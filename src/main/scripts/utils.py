@@ -132,10 +132,7 @@ def get_filtered_jobs(agent_ip, jobs_filter, min_order, max_order):
             if min_order <= order < max_order:
                 filtered_jobs.append(job)
 
-    if (min_order != 0 or max_order != 100) and not filtered_jobs:
-        raise Exception("No jobs found.")
-
-    return filtered_jobs
+    return filtered_jobs, len(jobs_filter) != 0 or min_order != 0 or max_order != 100
 
 
 def get_assigned_roles(agent_ip):

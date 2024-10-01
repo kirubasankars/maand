@@ -21,6 +21,7 @@ export SSH_USER=${SSH_USER:-""}
 export SSH_KEY=${SSH_KEY:-""}
 export MAX_CONCURRENCY=${MAX_CONCURRENCY:-"4"}
 export AGENT_API=${AGENT_API:-"true"}
+export USE_SUDO=${USE_SUDO:-"0"}
 
 if [[ -z "$OPERATION" || -z "$SSH_USER" || -z "$SSH_KEY" || -z "$CLUSTER_ID" ]]; then
   echo "missing arguments (OPERATION, SSH_USER, SSH_KEY, CLUSTER_ID)" >&2;

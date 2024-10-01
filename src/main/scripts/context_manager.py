@@ -1,5 +1,6 @@
 import os
 import sys
+import uuid
 
 from dotenv import dotenv_values
 
@@ -65,6 +66,9 @@ def _add_roles_to_values(values, agent_ip):
         key = f"{role}_LENGTH".upper()
         values[key] = str(len(agent_roles.keys()))
 
+        key = f"{role}_ID".upper()
+        values[key] = uuid.uuid5(uuid.NAMESPACE_DNS, str(role))
+
     agent_roles = utils.get_agent_and_roles()
     values["ROLES"] = ",".join(sorted(agent_roles.get(agent_ip)))
 
@@ -81,8 +85,8 @@ def _add_tags_to_values(values, agent_ip):
 
 
 def _add_ports_to_values(values):
-    secrets = dotenv_values("/workspace/ports.env")
-    for key, value in secrets.items():
+    ports = dotenv_values("/workspace/ports.env")
+    for key, value in ports.items():
         values[key] = value
     return values
 
@@ -126,7 +130,7 @@ def rsync_download_agent_files(agent_ip):
 
 def rsync_upload_agent_files(agent_ip, jobs):
     agent_env = get_agent_minimal_env(agent_ip)
-    lines = ["- jobs/**/bin\n", "- jobs/**/data\n", "- jobs/**/logs\n"]
+    lines = ["- jobs/*/bin\n", "- jobs/*/data\n", "- jobs/*/logs\n"]
     if jobs:
         for job in jobs:
             lines.append(f"+ jobs/{job}\n")
