@@ -111,8 +111,13 @@ def get_agent_env(agent_ip):
 
 def get_agent_minimal_env(agent_ip):
     secrets = dotenv_values("/workspace/secrets.env")
-    return {"AGENT_IP": agent_ip, "AGENT_DIR": get_agent_dir(agent_ip), "SSH_USER": secrets.get("SSH_USER"),
-            "SSH_KEY": secrets.get("SSH_KEY")}
+    return {
+        "AGENT_IP": agent_ip,
+        "AGENT_DIR": get_agent_dir(agent_ip),
+        "SSH_USER": secrets.get("SSH_USER"),
+        "SSH_KEY": secrets.get("SSH_KEY"),
+        "USE_SUDO": secrets.get("USE_SUDO")
+    }
 
 
 def rsync_download_agent_files(agent_ip):
