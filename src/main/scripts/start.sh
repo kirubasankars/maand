@@ -2,6 +2,11 @@
 set -ueo pipefail
 echo "StrictHostKeyChecking accept-new" >> /etc/ssh/ssh_config
 
+mkdir -p /root/.ssh
+touch /root/.ssh/known_hosts
+chmod 600 /root/.ssh/known_hosts
+chmod 700 /root/.ssh
+
 mkdir -p /opt/agents
 test -f /workspace/variables.env && source /workspace/variables.env
 test -f /workspace/secrets.env && source /workspace/secrets.env
