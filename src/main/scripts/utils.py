@@ -87,6 +87,8 @@ def get_assigned_jobs(agent_ip):
     for job in assigned_jobs:
         job_metadata = get_job_metadata(job)
         order = int(job_metadata.get("order", 99))
+        if order < 0 or order > 99:
+            continue
         if order not in assigned_jobs_bucket:
             assigned_jobs_bucket[order] = []
         assigned_jobs_bucket[order].append(job)

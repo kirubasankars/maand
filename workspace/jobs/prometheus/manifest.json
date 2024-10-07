@@ -1,3 +1,4 @@
 {
-  "roles": ["prometheus"]
+  "roles": ["prometheus"],
+  "order": 102
 }

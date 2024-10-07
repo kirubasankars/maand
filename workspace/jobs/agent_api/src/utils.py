@@ -1,5 +1,6 @@
 import functools
 import glob
+import json
 import os
 
 
@@ -21,10 +22,8 @@ def get_roles():
 
 @functools.cache
 def get_jobs():
-    jobs = []
-    for metadata_path in glob.glob("/opt/agent/jobs/*/manifest.json"):
-        jobs.append(os.path.basename(os.path.dirname(metadata_path)))
-    return jobs
+    with open("/opt/agent/jobs.json", "r") as f:
+        return json.loads(f.read())
 
 
 def get_update_seq():

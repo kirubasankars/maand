@@ -1,4 +1,5 @@
 import argparse
+import json
 import subprocess
 
 
@@ -13,9 +14,9 @@ def get_context_env():
     return agent_env
 
 
-def get_available_jobs():
-    with open("/opt/agent/jobs.txt", "r") as f:
-        return [l.strip() for l in f.readlines()]
+def get_jobs():
+    with open("/opt/agent/jobs.json", "r") as f:
+        return json.loads(f.read())
 
 
 def run_jobs(cmd, jobs):
@@ -23,17 +24,12 @@ def run_jobs(cmd, jobs):
         subprocess.run(["make", "-C", f"/opt/agent/jobs/{job}", cmd])
 
 
-def get_disabled_jobs():
-    with open("/opt/agent/disabled_jobs.txt", "r") as f:
-        return [l.strip() for l in f.readlines()]
-
-
 def main(args):
-    available_jobs = get_available_jobs()
+    jobs = get_jobs()
     if args.cmd in ["start", "restart"] and not args.jobs:
-        disabled_jobs = get_disabled_jobs()
-        jobs_to_run = list(set(available_jobs) - set(disabled_jobs))
+        jobs_to_run = [job for job, obj in jobs.items() if "disabled" not in obj]
     else:
+        available_jobs = [job for job, obj in jobs.items()]
         if args.jobs:
             jobs_to_run = set(available_jobs) & set(args.jobs)
         else:

@@ -130,11 +130,11 @@ def sync(agent_ip):
     logger.debug("Starting sync process...")
     context_manager.rsync_download_agent_files(agent_ip)
 
-    if not os.path.exists(f"{agent_dir}/cluster_id.txt"):
+    if not os.path.isfile(f"{agent_dir}/cluster_id.txt"):
         with open(f"{agent_dir}/cluster_id.txt", "w") as f:
             f.write(cluster_id)
 
-    if not os.path.exists(f"{agent_dir}/agent_id.txt"):
+    if not os.path.isfile(f"{agent_dir}/agent_id.txt"):
         with open(f"{agent_dir}/agent_id.txt", "w") as f:
             f.write(uuid.uuid4().__str__())
 
@@ -150,11 +150,17 @@ def sync(agent_ip):
     with open(f"{agent_dir}/roles.txt", "w") as f:
         f.writelines("\n".join(assigned_roles))
 
-    with open(f"{agent_dir}/jobs.txt", "w") as f:
-        f.writelines("\n".join(assigned_jobs))
+    jobs = {}
+    for job in assigned_jobs:
+        metadata = utils.get_job_metadata(job)
+        jobs[job] = {
+            "order": metadata.get("order", 99),
+        }
+        if job in disabled_jobs:
+            jobs[job]["disabled"] = True
 
-    with open(f"{agent_dir}/disabled_jobs.txt", "w") as f:
-        f.writelines("\n".join(disabled_jobs))
+    with open(f"{agent_dir}/jobs.json", "w") as f:
+        f.writelines(json.dumps(jobs))
 
     command_helper.command_local(f"""
         rsync -r /agent/bin {agent_dir}/
