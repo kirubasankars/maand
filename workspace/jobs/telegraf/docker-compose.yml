@@ -1,0 +1,12 @@
+---
+services:
+  telegraf:
+    image: telegraf:latest
+    container_name: telegraf
+    network_mode: host
+    pid: host
+    restart: unless-stopped
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock'
+      - './telegraf.conf:/etc/telegraf/telegraf.conf'
+      - './telegraf.d:/etc/telegraf/telegraf.d'
