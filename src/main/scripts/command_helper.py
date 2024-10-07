@@ -7,7 +7,7 @@ import utils
 logger = utils.get_logger()
 
 
-def command_local(cmd, env=None, stdout = subprocess.PIPE, stderr = subprocess.PIPE):
+def command_local(cmd, env=None, stdout = None, stderr = None):
     file_id = uuid.uuid4()
     with open(f"/tmp/{file_id}", "w") as f:
         f.write("#!/bin/bash\n")
