@@ -168,6 +168,7 @@ def validate_update_seq(agent_ip):
 
 
 def validate_cluster_update_seq(agent_ip):
+    command_helper.scan_agent(agent_ip)
     rsync_download_agent_files(agent_ip)
     validate_cluster_id(agent_ip)
     validate_update_seq(agent_ip)

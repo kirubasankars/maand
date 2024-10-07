@@ -16,4 +16,5 @@ def run_command(agent_ip):
 
 if __name__ == "__main__":
     args = utils.get_args_agents_roles_concurrency()
+    system_manager.run(command_helper.scan_agent)
     system_manager.run(run_command, concurrency=args.concurrency, roles_filter=args.roles, agents_filter=args.agents)

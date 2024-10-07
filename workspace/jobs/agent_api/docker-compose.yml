@@ -1,4 +1,3 @@
----
 services:
   agent-api:
     image: agent_api

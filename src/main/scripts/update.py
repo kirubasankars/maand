@@ -206,6 +206,7 @@ def update():
             f.seek(0)
             f.write(str(seq))
 
+    system_manager.run(command_helper.scan_agent)
     system_manager.run(validate_cluster_id)
     system_manager.run(sync)
 
