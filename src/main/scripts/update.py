@@ -3,7 +3,6 @@ import hashlib
 import json
 import os
 import shutil
-import sys
 import uuid
 from pathlib import Path
 from string import Template
@@ -131,7 +130,6 @@ def sync(agent_ip):
     logger.debug("Starting sync process...")
     context_manager.rsync_download_agent_files(agent_ip)
 
-    command_helper.command_local(f"mkdir -p {agent_dir}")
     if not os.path.exists(f"{agent_dir}/cluster_id.txt"):
         with open(f"{agent_dir}/cluster_id.txt", "w") as f:
             f.write(cluster_id)
