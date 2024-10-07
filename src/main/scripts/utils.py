@@ -4,6 +4,7 @@ import glob
 import json
 import logging
 import os
+import fcntl
 
 
 def get_agents(roles_filter=None):
@@ -200,3 +201,21 @@ def get_args_jobs():
         args.jobs = args.jobs.split(',')
 
     return args
+
+
+class FileMutex:
+    def __init__(self, filename):
+        self.filename = filename
+        self.file = None
+
+    def acquire(self):
+        self.file = open(self.filename, 'w')
+
+        fcntl.flock(self.file.fileno(), fcntl.LOCK_EX)
+
+    def release(self):
+        """Release the mutex by unlocking the file."""
+        if self.file:
+            # Release the lock on the file
+            fcntl.flock(self.file.fileno(), fcntl.LOCK_UN)
+            self.file.close()

@@ -20,7 +20,7 @@ def get_available_jobs():
 
 def run_jobs(cmd, jobs):
     for job in jobs:
-        subprocess.run(["make", "-C", f"/opt/agent/jobs/{job}", "build", cmd])
+        subprocess.run(["make", "-C", f"/opt/agent/jobs/{job}", cmd])
 
 
 def get_disabled_jobs():

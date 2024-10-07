@@ -67,7 +67,7 @@ def _add_roles_to_values(values, agent_ip):
         values[key] = str(len(agent_roles.keys()))
 
         key = f"{role}_ID".upper()
-        values[key] = uuid.uuid5(uuid.NAMESPACE_DNS, str(role))
+        values[key] = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(role)))
 
     agent_roles = utils.get_agent_and_roles()
     values["ROLES"] = ",".join(sorted(agent_roles.get(agent_ip)))
@@ -84,13 +84,6 @@ def _add_tags_to_values(values, agent_ip):
     return values
 
 
-def _add_ports_to_values(values):
-    ports = dotenv_values("/workspace/ports.env")
-    for key, value in ports.items():
-        values[key] = value
-    return values
-
-
 def get_agent_dir(agent_ip):
     return f"/opt/agents/{agent_ip}"
 
@@ -104,7 +97,6 @@ def get_values(agent_ip):
 
     values = _add_roles_to_values(values, agent_ip)
     values = _add_tags_to_values(values, agent_ip)
-    values = _add_ports_to_values(values)
 
     return values
 
@@ -130,7 +122,7 @@ def rsync_download_agent_files(agent_ip):
 
 def rsync_upload_agent_files(agent_ip, jobs):
     agent_env = get_agent_minimal_env(agent_ip)
-    lines = ["- jobs/*/bin\n", "- jobs/*/data\n", "- jobs/*/logs\n"]
+    lines = []
     if jobs:
         for job in jobs:
             lines.append(f"+ jobs/{job}\n")
@@ -149,7 +141,7 @@ def validate_cluster_id(agent_ip, failed_if_cluster_id_not_found=False):
         logger.error("Required environment variable: CLUSTER_ID is not set.")
         sys.exit(1)
 
-    if os.path.isfile(f"{agent_dir}/cluster_id.txt"):
+    if os.path.exists(f"{agent_dir}/cluster_id.txt"):
         with open(f"{agent_dir}/cluster_id.txt", "r", encoding='utf-8') as f:
             data = f.read().strip().casefold()
             if data != cluster_id.strip():

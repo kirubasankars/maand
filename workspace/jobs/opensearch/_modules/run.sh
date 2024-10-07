@@ -1,3 +1,4 @@
 export OPENSEARCH_0=$OPENSEARCH_0
 export OPENSEARCH_LENGTH=$OPENSEARCH_LENGTH
-python3 health_check.py
+exit 2
+#python3 health_check.py

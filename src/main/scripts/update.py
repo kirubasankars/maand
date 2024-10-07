@@ -3,6 +3,7 @@ import hashlib
 import json
 import os
 import shutil
+import sys
 import uuid
 from pathlib import Path
 from string import Template
@@ -130,11 +131,12 @@ def sync(agent_ip):
     logger.debug("Starting sync process...")
     context_manager.rsync_download_agent_files(agent_ip)
 
-    if not os.path.isfile(f"{agent_dir}/cluster_id.txt"):
+    command_helper.command_local(f"mkdir -p {agent_dir}")
+    if not os.path.exists(f"{agent_dir}/cluster_id.txt"):
         with open(f"{agent_dir}/cluster_id.txt", "w") as f:
             f.write(cluster_id)
 
-    if not os.path.isfile(f"{agent_dir}/agent_id.txt"):
+    if not os.path.exists(f"{agent_dir}/agent_id.txt"):
         with open(f"{agent_dir}/agent_id.txt", "w") as f:
             f.write(uuid.uuid4().__str__())
 
@@ -171,7 +173,7 @@ def sync(agent_ip):
 
     # TODO: replicas and placement
     for job in assigned_jobs:
-        command_helper.command_local(f"rsync -r --exclude '_commands' /workspace/jobs/{job} {agent_dir}/jobs/")
+        command_helper.command_local(f"rsync -r --exclude '_modules' /workspace/jobs/{job} {agent_dir}/jobs/")
 
     transpile(agent_ip)
 
@@ -187,8 +189,9 @@ def sync(agent_ip):
     command_helper.command_local("rm -f /workspace/ca.srl")
     command_helper.command_local(f"chown -R 1050:1042 {agent_dir}")
 
-    filtered_jobs, _ = utils.get_filtered_jobs(agent_ip, jobs_filter=args.jobs, min_order=args.min_order,
-                                            max_order=args.max_order)
+    filtered_jobs, filtered = utils.get_filtered_jobs(agent_ip, jobs_filter=args.jobs, min_order=args.min_order,max_order=args.max_order)
+    if not filtered:
+        filtered_jobs = []
     context_manager.rsync_upload_agent_files(agent_ip, filtered_jobs)
     command_helper.command_local(f"cp /workspace/update_seq.txt {agent_dir}/update_seq.txt")
     context_manager.rsync_upload_agent_files(agent_ip, filtered_jobs)

@@ -1,15 +1,14 @@
 {
-  "order": 8,
   "roles": ["opensearch"],
   "certs": [
     {
       "admin": {
         "pkcs8": false,
-        "subject": "/CN=opensearch-node.service.consul"
+        "subject": "/CN=opensearch-node.service.node"
       },
       "api": {
         "pkcs8": false,
-        "subject": "/CN=opensearch-node.service.consul"
+        "subject": "/CN=opensearch-node.service.node"
       },
       "node": {
         "pkcs8": true

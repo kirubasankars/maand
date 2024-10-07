@@ -1,5 +1,5 @@
 transport.port: 9300
-http.port: $OPENSEARCH_PORT
+http.port: 9200
 
 action.auto_create_index: true
 
@@ -37,9 +37,9 @@ plugins.security.system_indices.enabled: false
 plugins.security.system_indices.indices: [".plugins-ml-model", ".plugins-ml-task", ".opendistro-alerting-config", ".opendistro-alerting-alert*", ".opendistro-anomaly-results*", ".opendistro-anomaly-detector*", ".opendistro-anomaly-checkpoints", ".opendistro-anomaly-detection-state", ".opendistro-reports-*", ".opensearch-notifications-*", ".opensearch-notebooks", ".opensearch-observability", ".opendistro-asynchronous-search-response*", ".replication-metadata-store"]
 
 plugins.security.authcz.admin_dn:
-  - 'CN=opensearch-node.service.consul'
+  - 'CN=opensearch-node.service.node'
 plugins.security.nodes_dn:
-  - 'CN=opensearch-node.service.consul'
+  - 'CN=opensearch-node.service.node'
 
 discovery.seed_hosts: [ $OPENSEARCH_NODES ]
 cluster.initial_cluster_manager_nodes: $OPENSEARCH_0

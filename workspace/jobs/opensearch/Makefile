@@ -7,11 +7,11 @@ setup:
 	chown -R 1050 ./config
 	mkdir -p ./{data,logs} && chown -R 1050 ./{data,logs}
 
-start: setup
+start: build setup
 	docker-compose up -d --remove-orphans
 
-stop:
-	docker-compose stop
+stop: build
+	docker-compose down
 
-restart:
+restart: build
 	docker-compose restart

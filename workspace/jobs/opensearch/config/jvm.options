@@ -1,5 +1,5 @@
--Xms1024m
--Xms1024m
+-Xms8024m
+-Xms8024m
 
 8-10:-XX:+UseConcMarkSweepGC
 8-10:-XX:CMSInitiatingOccupancyFraction=75

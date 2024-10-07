@@ -4,7 +4,6 @@ echo "StrictHostKeyChecking accept-new" >> /etc/ssh/ssh_config
 
 mkdir -p /opt/agents
 test -f /workspace/variables.env && source /workspace/variables.env
-test -f /workspace/ports.env && source /workspace/ports.env
 test -f /workspace/secrets.env && source /workspace/secrets.env
 
 export OPERATION=$1

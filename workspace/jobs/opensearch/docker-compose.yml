@@ -18,9 +18,7 @@ services:
       - ./certs/ca.crt:/usr/share/opensearch/config/root-ca.pem
       - ./certs/api.crt:/usr/share/opensearch/config/api.pem
       - ./certs/api.key:/usr/share/opensearch/config/api-key.pem
-
       - ./config/opensearch.yml:/usr/share/opensearch/config/opensearch.yml
       - ./config/jvm.options:/usr/share/opensearch/config/jvm.options
-
       - ./data:/usr/share/opensearch/data
       - ./logs:/usr/share/opensearch/logs

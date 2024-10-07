@@ -10,3 +10,5 @@ variables.env
 cluster_id.txt
 disabled.json
 secrets.env
+agents.json
+jobs
