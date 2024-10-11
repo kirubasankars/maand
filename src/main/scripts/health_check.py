@@ -4,7 +4,6 @@ import system_manager
 
 
 def validate(agent_ip):
-    context_manager.rsync_download_agent_files(agent_ip)
     context_manager.validate_cluster_update_seq(agent_ip)
 
 

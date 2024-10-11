@@ -192,6 +192,7 @@ def sync(agent_ip):
 
     command_helper.command_local(f"""
         rsync -r /agent/bin {agent_dir}/
+        cp /agent/agent.gitignore {agent_dir}/.gitignore
         mkdir -p {agent_dir}/jobs/
     """)
 
@@ -231,13 +232,17 @@ def sync(agent_ip):
     # TODO: update crontab if start on restart enabled
 
 
+def validate_cluster_id(agent_ip):
+    context_manager.validate_cluster_id(agent_ip, fail_if_no_cluster_id=False)
+
+
 def update():
     update_seq = kv_manager.get_value(namespace, "update_seq")
     next_update_seq = int(update_seq) + 1
     kv_manager.put_key_value(namespace, "update_seq", str(next_update_seq))
 
     system_manager.run(command_helper.scan_agent)
-    system_manager.run(context_manager.validate_cluster_id)
+    system_manager.run(validate_cluster_id)
     system_manager.run(sync, concurrency=4)
     kv_manager.gc()
 

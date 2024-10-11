@@ -136,7 +136,7 @@ def rsync_upload_agent_files(agent_ip, jobs):
     command_helper.command_local("bash /scripts/rsync_upload.sh", env=agent_env)
 
 
-def validate_cluster_id(agent_ip):
+def validate_cluster_id(agent_ip, fail_if_no_cluster_id=True):
     cluster_id = kv_manager.get_value("maand", "cluster_id")
     agent_env = get_agent_minimal_env(agent_ip)
 
@@ -145,7 +145,7 @@ def validate_cluster_id(agent_ip):
         sys.exit(1)
 
     res = command_helper.command_remote("cat /opt/agent/cluster_id.txt", agent_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if res.returncode == 1:
+    if fail_if_no_cluster_id and res.returncode == 1:
         raise Exception(f"{agent_ip} : {res.stderr}")
     agent_cluster_id = res.stdout.decode("utf-8")
     if res.returncode == 0 and agent_cluster_id != cluster_id:
