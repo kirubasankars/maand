@@ -1,8 +1,26 @@
 #!/bin/bash
 
 RSYNC_PATH="rsync"
-if [[ "$USE_SUDO" -eq 0 ]]; then
+if [[ "$USE_SUDO" -eq 1 ]]; then
   RSYNC_PATH="sudo rsync"
 fi
 
-rsync -ravc --stats --human-readable --rsync-path="$RSYNC_PATH" --rsh="ssh -i /workspace/$SSH_KEY -o StrictHostKeyChecking=no -o LogLevel=error -l $SSH_USER" --delete --filter='merge /tmp/rsync_rules.txt' $AGENT_DIR/ "$AGENT_IP":/opt/agent/ > /dev/null
+RSYNC_OPTIONS=" \
+  --ignore-times \
+  --verbose \
+  --force \
+  --delete \
+  --compress \
+  --checksum \
+  --recursive \
+  --exclude=\".git\" \
+  --exclude=\"certs/reload.txt\" \
+  --exclude=\"jobs/*/bin\" \
+  --exclude=\"jobs/*/data\" \
+  --exclude=\"jobs/*/logs\" \
+  --filter='merge /tmp/rsync_rules.txt' \
+"
+
+rsync_command="rsync --rsync-path=\"$RSYNC_PATH\" $RSYNC_OPTIONS --rsh=\"ssh -i /workspace/$SSH_KEY\" $AGENT_DIR/ $SSH_USER@$AGENT_IP:/opt/agent/"
+echo $rsync_command
+bash -c "$rsync_command" > /dev/null

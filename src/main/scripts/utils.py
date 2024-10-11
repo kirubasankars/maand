@@ -19,6 +19,7 @@ def get_agents(roles_filter=None):
             agent["roles"] = ["agent"]
         else:
             agent["roles"].append("agent")
+        agent["roles"] = sorted(agent["roles"])
 
         if not agent.get("tags"):
             agent["tags"] = {}
@@ -92,6 +93,7 @@ def get_assigned_jobs(agent_ip):
         if order not in assigned_jobs_bucket:
             assigned_jobs_bucket[order] = []
         assigned_jobs_bucket[order].append(job)
+        assigned_jobs_bucket[order] = sorted(assigned_jobs_bucket[order])
 
     ordered_assigned_jobs = []
     nums = sorted(assigned_jobs_bucket.keys())
@@ -141,7 +143,7 @@ def get_filtered_jobs(agent_ip, jobs_filter, min_order, max_order):
 def get_assigned_roles(agent_ip):
     agents = get_agents()
     roles = agents.get(agent_ip).get("roles")
-    return list(set(roles))
+    return list(sorted(set(roles)))
 
 
 @functools.cache
