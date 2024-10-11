@@ -22,5 +22,4 @@ RSYNC_OPTIONS=" \
 "
 
 rsync_command="rsync --rsync-path=\"$RSYNC_PATH\" $RSYNC_OPTIONS --rsh=\"ssh -i /workspace/$SSH_KEY\" $AGENT_DIR/ $SSH_USER@$AGENT_IP:/opt/agent/"
-echo $rsync_command
 bash -c "$rsync_command" > /dev/null

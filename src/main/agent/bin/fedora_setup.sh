@@ -5,12 +5,12 @@ sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 dnf remove firewalld
 
 yum update -y
-yum install -y rsync make python corntab docker docker-compose
+yum install -y rsync make python corntab docker docker-compose git
 
 username=agent
 if ! id "$username" &>/dev/null; then
-   groupadd --gid 1051 $username || true
-   useradd --shell /bin/bash -g $username -u 1052 $username || true
+   groupadd --gid 1061 $username || true
+   useradd --shell /bin/bash -g $username -u 1062 $username || true
 fi
 usermod -aG docker agent || true
 
