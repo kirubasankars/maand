@@ -5,6 +5,7 @@ import json
 import os
 import shutil
 import uuid
+from copy import deepcopy
 from pathlib import Path
 from string import Template
 
@@ -116,6 +117,9 @@ def update_certificates(jobs, agent_ip):
 
 
 def process_templates(values):
+    values = deepcopy(values)
+    for k, v in values.items():
+        values[k] = v.replace("$$", "$")
     agent_ip = values["AGENT_IP"]
     agent_dir = context_manager.get_agent_dir(agent_ip)
     logger.debug("Processing templates...")
@@ -143,7 +147,7 @@ def transpile(agent_ip):
 
 
 def sync(agent_ip):
-    args = utils.get_args_jobs()
+    args = utils.get_args_jobs_concurrency()
 
     cluster_id = kv_manager.get_value(namespace, "cluster_id")
     agent_dir = context_manager.get_agent_dir(agent_ip)
@@ -204,9 +208,8 @@ def sync(agent_ip):
     for job in removables:
         shutil.rmtree(f"{agent_dir}/jobs/" + job, ignore_errors=True)
 
-    # TODO: replicas and placement
     for job in assigned_jobs:
-        command_helper.command_local(f"rsync -r --exclude '_modules' /workspace/jobs/{job} {agent_dir}/jobs/")
+        command_helper.command_local(f"rsync -r --exclude '_*' /workspace/jobs/{job} {agent_dir}/jobs/")
 
     transpile(agent_ip)
 
@@ -237,13 +240,15 @@ def validate_cluster_id(agent_ip):
 
 
 def update():
+    args = utils.get_args_jobs_concurrency()
+
     update_seq = kv_manager.get_value(namespace, "update_seq")
     next_update_seq = int(update_seq) + 1
     kv_manager.put_key_value(namespace, "update_seq", str(next_update_seq))
 
     system_manager.run(command_helper.scan_agent)
     system_manager.run(validate_cluster_id)
-    system_manager.run(sync, concurrency=4)
+    system_manager.run(sync, concurrency=args.concurrency)
     kv_manager.gc()
 
 

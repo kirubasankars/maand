@@ -1,5 +1,5 @@
 start:
-	python3 parse_node_exporter_targets.py
+	python3 update_targets.py
 	docker-compose up -d --remove-orphans
 
 stop:

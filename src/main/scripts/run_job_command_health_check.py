@@ -4,7 +4,7 @@ import run_job_command
 
 
 def health_check(agent_ip):
-    #time.sleep(10)
+    time.sleep(10)
     retry = 0
     while True:
         try:

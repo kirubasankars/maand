@@ -9,7 +9,7 @@ import utils
 def run_job_command(agent_ip, command):
     mutex = utils.FileMutex("/tmp/lock")
 
-    args = utils.get_args_jobs()
+    args = utils.get_args_jobs_concurrency()
     filtered_jobs, filtered = utils.get_filtered_jobs(agent_ip, jobs_filter=args.jobs, min_order=args.min_order, max_order=args.max_order)
     if not args.include_disabled:
         disabled_jobs = utils.get_disabled_jobs(agent_ip)

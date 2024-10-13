@@ -1,14 +1,7 @@
-FROM fedora:latest
+FROM maand
 
-RUN dnf update -y && dnf install -y openssh-server rsync make tree docker python3
+RUN pip install docker
+COPY scripts /scripts
+RUN chmod +x /scripts/*.sh
 
-RUN mkdir -p /var/run/sshd /root/.ssh
-COPY my_key.pub /root/.ssh/authorized_keys
-RUN chmod 600 /root/.ssh/authorized_keys
-
-RUN sed -i 's/#PermitRootLogin yes/PermitRootLogin yes/' /etc/ssh/sshd_config
-RUN ssh-keygen -A
-
-EXPOSE 22
-
-CMD ["/usr/sbin/sshd", "-D"]
+ENTRYPOINT ["tini", "-g", "--", "/scripts/start.sh"]

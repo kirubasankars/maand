@@ -1,6 +1,8 @@
 services:
   agent-api:
-    image: agent_api
+    build:
+      context: src
+      dockerfile: Dockerfile
     container_name: agent_api
     network_mode: host
     restart: unless-stopped

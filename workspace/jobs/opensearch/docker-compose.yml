@@ -1,5 +1,3 @@
-version: '3.7'
-
 services:
   opensearch:
     image: opensearch
@@ -22,3 +20,12 @@ services:
       - ./config/jvm.options:/usr/share/opensearch/config/jvm.options
       - ./data:/usr/share/opensearch/data
       - ./logs:/usr/share/opensearch/logs
+    restart: unless-stopped
+
+  elasticsearch_exporter:
+    image: quay.io/prometheuscommunity/elasticsearch-exporter:latest
+    command:
+      - '--es.uri=http://$AGENT_IP:9200'
+    restart: unless-stopped
+    ports:
+      - "9114:9114"
