@@ -1,10 +1,2 @@
-iptables -A INPUT -p tcp --dport 9090 -j ACCEPT
-iptables -A INPUT -p tcp --dport 5100 -j ACCEPT
-iptables -A INPUT -p tcp --dport 9100 -j ACCEPT
-iptables -A INPUT -p tcp --dport 9144 -j ACCEPT
-iptables -A INPUT -p tcp --dport 9200 -j ACCEPT
-iptables -A INPUT -p tcp --dport 9300 -j ACCEPT
-
-#rm -rf /opt/agent
-#mkdir -p /opt/agent
-#chown -R photonconfig /opt/agent
+mkdir -p /workspace/tmp/$AGENT_IP
+sudo rsync -r --rsync-path="sudo rsync" --rsh="ssh -i /workspace/$SSH_KEY" $SSH_USER@$AGENT_IP:/opt/agent/ /workspace/tmp/$AGENT_IP/

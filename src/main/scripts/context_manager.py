@@ -13,19 +13,11 @@ logger = utils.get_logger()
 
 
 def get_agent_id(agent_ip):
-    agent_dir = get_agent_dir(agent_ip)
-    try:
-        with open(f"{agent_dir}/agent_id.txt", "r") as f:
-            return f.read().strip()
-    except FileNotFoundError:
-        logger.error("agent_id.txt not found.")
-        sys.exit(1)
+    return kv_manager.get_value("maand", agent_ip)
 
 
-def get_agent_cluster_id(agent_id):
-    agent_dir = get_agent_dir(agent_id)
-    with open(f"{agent_dir}/cluster_id.txt", "r") as f:
-        return f.read().strip()
+def get_cluster_id():
+    return kv_manager.get_value("maand", "cluster_id")
 
 
 def load_secrets(values):
@@ -89,7 +81,7 @@ def _add_tags_to_values(values, agent_ip):
 def get_values(agent_ip):
     values = dotenv_values("/workspace/variables.env")
 
-    values["CLUSTER_ID"] = get_agent_cluster_id(agent_ip)
+    values["CLUSTER_ID"] = get_cluster_id()
     values["AGENT_ID"] = get_agent_id(agent_ip)
     values["AGENT_IP"] = agent_ip
 

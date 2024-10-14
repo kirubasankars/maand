@@ -1,7 +1,11 @@
 FROM maand
 
-RUN pip install docker
-COPY scripts /scripts
-RUN chmod +x /scripts/*.sh
+COPY requirements.txt /requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
-ENTRYPOINT ["tini", "-g", "--", "/scripts/start.sh"]
+ENV PYTHONWARNINGS="ignore:Unverified HTTPS request"
+ENV PYTHONPATH=.
+
+WORKDIR /tests
+
+ENTRYPOINT [ "pytest", "-s" ]

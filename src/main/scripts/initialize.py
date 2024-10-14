@@ -1,4 +1,5 @@
 import os
+import sys
 import uuid
 
 import context_manager
@@ -12,11 +13,11 @@ kv_manager.setup()
 
 cluster_id = kv_manager.get_value("maand", "cluster_id")
 if cluster_id:
-    logger.error("found /workspace/cluster_id.txt, cluster is already initialized")
+    logger.error("found cluster_id, cluster is already initialized")
     context_manager.stop_the_world()
 
 kv_manager.put_key_value("maand", "cluster_id", str(uuid.uuid4()))
-kv_manager.put_key_value("maand", "update_seq", str(1))
+kv_manager.put_key_value("maand", "update_seq", str(0))
 
 command_helper.command_local("""
     touch /workspace/{variables.env,secrets.env,command.sh,agents.json}

@@ -230,6 +230,7 @@ def sync(agent_ip):
         filtered_jobs = []
 
     context_manager.rsync_upload_agent_files(agent_ip, filtered_jobs)
+
     logger.debug("Sync process completed.")
 
     # TODO: update crontab if start on restart enabled

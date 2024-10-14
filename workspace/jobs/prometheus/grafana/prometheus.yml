@@ -4,6 +4,10 @@ datasources:
   - name: Prometheus
     type: prometheus
     access: proxy
-    url: http://$AGENT_IP:9091
+    url: https://$AGENT_IP:9090
+    basicAuth: true
+    basicAuthUser: admin
+    basicAuthPassword: admin
     isDefault: true
-    editable: true
+    editable: false
+    tlsSkipVerify: true

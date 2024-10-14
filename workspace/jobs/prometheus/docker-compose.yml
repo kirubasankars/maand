@@ -22,3 +22,5 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
       - ./grafana:/etc/grafana/provisioning/datasources
+    depends_on:
+      - prometheus

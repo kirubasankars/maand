@@ -1,17 +1,12 @@
 import os
-
-import docker
+import subprocess
 
 
 def run(command):
-    print(command, flush=True)
-    client = docker.from_env()
     workspace = os.environ.get('WORKSPACE')
-    container = client.containers.run("maand", command,
-                                      volumes=[f'{workspace}:/workspace'],
-                                      remove=True, detach=True)
-    for line in container.logs(stream=True):
-        print(line.decode('utf-8'), end='', flush=True)
+    r = subprocess.run(f"docker run -v {workspace}:/workspace -it maand {command}", stdout=subprocess.PIPE, shell=True)
+    if r.returncode != 0:
+        raise Exception(r.stdout.decode('utf-8').strip())
 
 
 def __prepare_args_agents_roles_concurrency(cmd, roles=None, agents=None, concurrency=4):
@@ -101,3 +96,7 @@ def health_check(agents=None, jobs=None, min_order=None, max_order=None, include
     return __prepare_args_agents_jobs_concurrency("health_check", agents=agents, jobs=jobs, min_order=min_order,
                                                   max_order=max_order, include_disabled=include_disabled,
                                                   concurrency=concurrency)
+
+
+def initialize():
+    return "initialize"

@@ -13,3 +13,10 @@ usermod -aG docker agent || true
 
 /usr/bin/systemctl daemon-reload
 /usr/bin/systemctl enable --now docker
+
+iptables -A INPUT -p tcp --dport 9090 -j ACCEPT
+iptables -A INPUT -p tcp --dport 5100 -j ACCEPT
+iptables -A INPUT -p tcp --dport 9100 -j ACCEPT
+iptables -A INPUT -p tcp --dport 9144 -j ACCEPT
+iptables -A INPUT -p tcp --dport 9200 -j ACCEPT
+iptables -A INPUT -p tcp --dport 9300 -j ACCEPT
