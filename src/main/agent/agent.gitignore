@@ -1,6 +1,0 @@
-jobs/*/bin
-jobs/*/data
-jobs/*/config
-update_seq.txt
-certs/reload.txt
-jobs/*/certs/reload.txt

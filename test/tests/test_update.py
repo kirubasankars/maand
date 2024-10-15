@@ -8,4 +8,3 @@ def test_update():
 
 def test_update_jobs():
     run(update(jobs=["opensearch"]))
-    utils.write_command(["rsync "])

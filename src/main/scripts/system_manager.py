@@ -1,7 +1,6 @@
+import maand
 import multiprocessing
 import sys
-
-import utils
 
 
 def split_list(input_list, chunk_size=3):
@@ -9,16 +8,15 @@ def split_list(input_list, chunk_size=3):
 
 
 def run(func, concurrency=None, roles_filter=None, agents_filter=None):
-    agents = utils.get_agent_and_roles(roles_filter)
+    agents = maand.get_agents(roles_filter)
 
-    agents_ip = list(agents.keys())
     if agents_filter:
-        agents_ip = list(set(agents_filter) & set(agents.keys()))
+        agents = list(set(agents_filter) & set(agents))
 
-    if len(agents_ip) == 0:
+    if len(agents) == 0:
         sys.exit(0)
 
-    work_items = split_list(agents_ip, chunk_size=concurrency or len(agents_ip))
+    work_items = split_list(agents, chunk_size=concurrency or len(agents))
     for work_item in work_items:
         with multiprocessing.Pool(processes=len(work_item)) as pool:
             pool.map(func, work_item)

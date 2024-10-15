@@ -4,7 +4,6 @@ import hashlib
 import json
 import os
 import shutil
-import uuid
 from copy import deepcopy
 from pathlib import Path
 from string import Template
@@ -14,6 +13,7 @@ import command_helper
 import context_manager
 import system_manager
 import utils
+import maand
 import kv_manager
 
 logger = utils.get_logger()
@@ -149,7 +149,7 @@ def transpile(agent_ip):
 def sync(agent_ip):
     args = utils.get_args_jobs_concurrency()
 
-    cluster_id = kv_manager.get_value(namespace, "cluster_id")
+    cluster_id = maand.get_cluster_id()
     agent_dir = context_manager.get_agent_dir(agent_ip)
 
     logger.debug("Starting sync process...")
@@ -158,57 +158,33 @@ def sync(agent_ip):
     with open(f"{agent_dir}/cluster_id.txt", "w") as f:
         f.write(cluster_id)
 
-    agent_id = kv_manager.get_value(namespace, agent_ip)
-    if not agent_id:
-        kv_manager.put_key_value(namespace, agent_ip, uuid.uuid4().__str__())
-
-    agent_id = kv_manager.get_value(namespace, agent_ip)
+    agent_id = maand.get_agent_id(agent_ip)
     with open(f"{agent_dir}/agent_id.txt", "w") as f:
         f.write(agent_id)
 
-    update_seq = kv_manager.get_value(namespace, "update_seq")
+    update_seq = maand.get_update_seq()
     with open(f"{agent_dir}/update_seq.txt", "w") as f:
-        f.write(update_seq)
+        f.write(str(update_seq))
 
     command_helper.command_local(f"""
         mkdir -p {agent_dir}/certs
         rsync /workspace/ca.crt {agent_dir}/certs/
     """)
 
-    assigned_jobs = utils.get_assigned_jobs(agent_ip)
-    assigned_roles = utils.get_assigned_roles(agent_ip)
-    disabled_jobs = utils.get_disabled_jobs(agent_ip)
-
-    with open(f"{agent_dir}/roles.txt", "w") as f:
-        f.writelines("\n".join(assigned_roles))
-
-    jobs = {}
-    for job in assigned_jobs:
-        metadata = utils.get_job_metadata(job)
-        jobs[job] = {
-            "order": metadata.get("order", 99),
-        }
-        if job in disabled_jobs:
-            jobs[job]["disabled"] = True
-
+    agent_jobs = maand.get_agent_jobs(agent_ip)
     with open(f"{agent_dir}/jobs.json", "w") as f:
-        f.writelines(json.dumps(jobs))
+        f.writelines(json.dumps(agent_jobs))
+
+    agent_roles = maand.get_agent_roles(agent_ip)
+    with open(f"{agent_dir}/roles.txt", "w") as f:
+        f.writelines("\n".join(agent_roles))
 
     command_helper.command_local(f"""
         rsync -r /agent/bin {agent_dir}/
-        cp /agent/agent.gitignore {agent_dir}/.gitignore
         mkdir -p {agent_dir}/jobs/
     """)
 
-    exists_jobs = []
-    for x in glob.glob(f"{agent_dir}/jobs/*"):
-        exists_jobs.append(os.path.basename(x))
-
-    removables = set(exists_jobs) ^ set(assigned_jobs)
-    for job in removables:
-        shutil.rmtree(f"{agent_dir}/jobs/" + job, ignore_errors=True)
-
-    for job in assigned_jobs:
+    for job in agent_jobs:
         command_helper.command_local(f"rsync -r --exclude '_*' /workspace/jobs/{job} {agent_dir}/jobs/")
 
     transpile(agent_ip)
@@ -220,15 +196,15 @@ def sync(agent_ip):
             value = values.get(key)
             f.write("{}={}\n".format(key, value))
 
-    update_certificates(assigned_jobs, agent_ip)
+    update_certificates(agent_jobs, agent_ip)
 
     command_helper.command_local("rm -f /workspace/ca.srl")
     command_helper.command_local(f"chown -R 1050:1042 {agent_dir}")
 
-    filtered_jobs, filtered = utils.get_filtered_jobs(agent_ip, jobs_filter=args.jobs, min_order=args.min_order,max_order=args.max_order)
+    filtered_jobs, filtered = maand.get_filtered_agent_jobs(agent_jobs, jobs_filter=args.jobs, min_order=args.min_order,max_order=args.max_order)
+    filtered_jobs = list(filtered_jobs.keys())
     if not filtered:
         filtered_jobs = []
-
     context_manager.rsync_upload_agent_files(agent_ip, filtered_jobs)
 
     logger.debug("Sync process completed.")
@@ -240,12 +216,12 @@ def validate_cluster_id(agent_ip):
     context_manager.validate_cluster_id(agent_ip, fail_if_no_cluster_id=False)
 
 
-def update():
+def apply():
     args = utils.get_args_jobs_concurrency()
 
-    update_seq = kv_manager.get_value(namespace, "update_seq")
+    update_seq = maand.get_update_seq()
     next_update_seq = int(update_seq) + 1
-    kv_manager.put_key_value(namespace, "update_seq", str(next_update_seq))
+    maand.update_seq(next_update_seq)
 
     system_manager.run(command_helper.scan_agent)
     system_manager.run(validate_cluster_id)
@@ -254,4 +230,4 @@ def update():
 
 
 if __name__ == "__main__":
-    update()
+    apply()

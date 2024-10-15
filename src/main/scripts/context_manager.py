@@ -1,8 +1,8 @@
+import copy
 import subprocess
-import sys
 import uuid
 
-import kv_manager
+import maand
 
 from dotenv import dotenv_values
 
@@ -10,14 +10,6 @@ import command_helper
 import utils
 
 logger = utils.get_logger()
-
-
-def get_agent_id(agent_ip):
-    return kv_manager.get_value("maand", agent_ip)
-
-
-def get_cluster_id():
-    return kv_manager.get_value("maand", "cluster_id")
 
 
 def load_secrets(values):
@@ -28,64 +20,63 @@ def load_secrets(values):
 
 
 def _add_roles_to_values(values, agent_ip):
-    available_roles = set()
-    agent_roles = utils.get_agent_and_roles()
+    agent_roles = maand.get_agent_roles(agent_ip=agent_ip)
 
-    for ip, roles in agent_roles.items():
-        available_roles.update(roles)
+    roles = maand.get_agent_roles(agent_ip=None)
 
-    available_roles = set(available_roles)
+    for role in roles:
+        key_nodes = f"ROLE_{role}_NODES".upper()
 
-    for role in available_roles:
-        key_nodes = f"{role}_NODES".upper()
-        agent_roles = utils.get_agents([role])
-        hosts_ip = list(agent_roles.keys())
-        values[key_nodes] = ",".join(hosts_ip)
+        agents = maand.get_agents([role])
+        values[key_nodes] = ",".join(agents)
 
-        other_agents = list(agent_roles.keys())
+        other_agents = copy.deepcopy(agents)
         if agent_ip in other_agents:
             other_agents.remove(agent_ip)
-        key_others = f"{role}_OTHERS".upper()
-        if other_agents:
-            values[key_others] = ",".join(other_agents)
 
-        for idx, host in enumerate(list(agent_roles.keys())):
-            key = f"{role}_{idx}".upper()
+        key = f"ROLE_{role}_LENGTH".upper()
+        values[key] = str(len(agents))
+
+        if role not in agent_roles:
+            continue
+
+        key_peers = f"ROLE_{role}_PEERS".upper()
+        if other_agents:
+            values[key_peers] = ",".join(other_agents)
+
+        for idx, host in enumerate(agents):
+            key = f"ROLE_{role}_{idx}".upper()
             values[key] = host
 
             if host == agent_ip:
-                key = f"{role}_ALLOCATION_INDEX".upper()
+                key = f"ROLE_{role}_ALLOCATION_INDEX".upper()
                 values[key] = str(idx)
 
-        key = f"{role}_LENGTH".upper()
-        values[key] = str(len(agent_roles.keys()))
+        key = f"ROLE_{role}_ID".upper()
+        values[key] = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(role)).hex)
 
-        key = f"{role}_ID".upper()
-        values[key] = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(role)))
-
-    agent_roles = utils.get_agent_and_roles()
-    values["ROLES"] = ",".join(sorted(agent_roles.get(agent_ip)))
+    values["ROLES"] = ",".join(sorted(agent_roles))
 
     return values
 
 
 def _add_tags_to_values(values, agent_ip):
-    agents = utils.get_agent_and_tags()
-    tags = agents.get(agent_ip, {})
+    tags = maand.get_agent_tags(agent_ip=agent_ip)
     for k, v in tags.items():
         key = f"{k}".upper()
-        values[key] = v
+        values[key] = str(v)
     return values
 
 
 def get_values(agent_ip):
     values = dotenv_values("/workspace/variables.env")
 
-    values["CLUSTER_ID"] = get_cluster_id()
-    values["AGENT_ID"] = get_agent_id(agent_ip)
+    values["CLUSTER_ID"] = maand.get_cluster_id()
+    values["AGENT_ID"] = maand.get_agent_id(agent_ip)
     values["AGENT_IP"] = agent_ip
-
+    print("before", values)
     values = _add_roles_to_values(values, agent_ip)
+    print("after", values)
     values = _add_tags_to_values(values, agent_ip)
 
     return values
@@ -93,14 +84,6 @@ def get_values(agent_ip):
 
 def get_agent_dir(agent_ip):
     return f"/opt/agents/{agent_ip}"
-
-
-def get_agent_env(agent_ip):
-    agent_dir = get_agent_dir(agent_ip)
-    values = get_values(agent_ip)
-    load_secrets(values)
-    values["AGENT_DIR"] = agent_dir
-    return values
 
 
 def get_agent_minimal_env(agent_ip):
@@ -129,12 +112,8 @@ def rsync_upload_agent_files(agent_ip, jobs):
 
 def validate_cluster_id(agent_ip, fail_if_no_cluster_id=True):
     try:
-        cluster_id = kv_manager.get_value("maand", "cluster_id")
+        cluster_id = maand.get_cluster_id()
         agent_env = get_agent_minimal_env(agent_ip)
-
-        if not cluster_id:
-            logger.error("Required environment variable: CLUSTER_ID is not set.")
-            sys.exit(1)
 
         res = command_helper.command_remote("cat /opt/agent/cluster_id.txt", agent_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if fail_if_no_cluster_id and res.returncode == 1:
@@ -149,7 +128,7 @@ def validate_cluster_id(agent_ip, fail_if_no_cluster_id=True):
 
 def validate_update_seq(agent_ip):
     try:
-        update_seq = kv_manager.get_value("maand", "update_seq")
+        update_seq = str(maand.get_update_seq())
         agent_env = get_agent_minimal_env(agent_ip)
 
         res = command_helper.command_remote("cat /opt/agent/update_seq.txt", agent_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

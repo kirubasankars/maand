@@ -12,6 +12,9 @@ shift
 if [ "$OPERATION" == "initialize" ]; then
   python3 /scripts/initialize.py
   exit $?
+elif [ "$OPERATION" == "plan" ]; then
+  python3 /scripts/maand.py $@
+  exit $?
 fi
 
 export UPDATE_CERTS=${UPDATE_CERTS:-0}
@@ -33,14 +36,14 @@ elif [ "$OPERATION" == "run_command_local" ]; then
   python3 /scripts/run_command_local.py $@
 elif [ "$OPERATION" == "run_command_with_health_check" ]; then
   python3 /scripts/run_command_with_health_check.py $@
-elif [ "$OPERATION" == "update" ]; then
+elif [ "$OPERATION" == "apply" ]; then
   python3 /scripts/update.py $@
 elif [ "$OPERATION" == "start_jobs" ]; then
-  python3 /scripts/start_jobs.py $@
+  CMD="start" python3 /scripts/job_control.py $@
 elif [ "$OPERATION" == "stop_jobs" ]; then
-  python3 /scripts/stop_jobs.py $@
+  CMD="stop" python3 /scripts/job_control.py $@
 elif [ "$OPERATION" == "restart_jobs" ]; then
-  python3 /scripts/restart_jobs.py $@
+  CMD="restart" python3 /scripts/job_control.py $@
 elif [ "$OPERATION" == "rolling_restart_jobs" ]; then
   python3 /scripts/rolling_restart_jobs.py $@
 elif [ "$OPERATION" == "health_check" ]; then

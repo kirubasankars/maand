@@ -7,10 +7,14 @@ exec:
 	docker run --rm --entrypoint=/bin/bash -v $(PWD)/workspace:/workspace -it $(IMAGE)
 
 initialize:
+	rm -rf $(PWD)/workspace/kv.db $(PWD)/workspace/maand.db
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) initialize
 
-update:
-	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) update $(ARGS)
+plan:
+	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) plan
+
+apply:
+	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) apply $(ARGS)
 
 run_command:
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) run_command $(ARGS)

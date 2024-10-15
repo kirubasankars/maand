@@ -31,24 +31,6 @@ def get_agents(roles_filter=None):
     return agents
 
 
-def get_agent_and_roles(roles_filter=None):
-    agents = get_agents(roles_filter)
-    for agent_ip, agent in agents.items():
-        agents[agent_ip] = agent.get("roles")
-    return agents
-
-
-def get_agent_and_tags(role_filter=None):
-    agents = get_agents(role_filter)
-    for host, agent in agents.items():
-        agents[host] = agent.get("tags")
-    return agents
-
-
-def get_ssh_port(agent_ip):
-    return get_agents(None).get(agent_ip).get("ssh_port", 22)
-
-
 def get_job_metadata(job_folder_name, base_path="/workspace/jobs/"):
     metadata_path = os.path.join(base_path, job_folder_name, "manifest.json")
     if os.path.exists(metadata_path):
@@ -172,8 +154,12 @@ def get_args_agents_jobs_concurrency():
 
     if args.agents:
         args.agents = args.agents.split(',')
+    else:
+        args.agents = None
     if args.jobs:
         args.jobs = args.jobs.split(',')
+    else:
+        args.jobs = None
 
     return args
 

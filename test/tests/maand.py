@@ -4,7 +4,7 @@ import subprocess
 
 def run(command):
     workspace = os.environ.get('WORKSPACE')
-    r = subprocess.run(f"docker run -v {workspace}:/workspace -it maand {command}", stdout=subprocess.PIPE, shell=True)
+    r = subprocess.run(f"docker run --rm -v {workspace}:/workspace -it maand {command}", stdout=subprocess.PIPE, shell=True)
     if r.returncode != 0:
         raise Exception(r.stdout.decode('utf-8').strip())
 
