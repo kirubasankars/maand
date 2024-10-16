@@ -52,13 +52,15 @@ def __prepare_args_jobs_concurrency(cmd, jobs=None, min_order=None, max_order=No
     return " ".join(c)
 
 
-def update(jobs=None, min_order=None, max_order=None, include_disabled=False, concurrency=4):
-    return __prepare_args_jobs_concurrency("update", jobs=jobs, min_order=min_order, max_order=max_order, include_disabled=include_disabled, concurrency=concurrency)
+def apply(jobs=None, min_order=None, max_order=None, include_disabled=False, concurrency=4):
+    return __prepare_args_jobs_concurrency("apply", jobs=jobs, min_order=min_order, max_order=max_order, include_disabled=include_disabled, concurrency=concurrency)
 
 
 def run_command_no_check(roles=None, agents=None, concurrency=4):
     return __prepare_args_agents_roles_concurrency("run_command_no_check", roles=roles, agents=agents, concurrency=concurrency)
 
+def run_command_local(roles=None, agents=None, concurrency=4):
+    return __prepare_args_agents_roles_concurrency("run_command_local", roles=roles, agents=agents, concurrency=concurrency)
 
 def run_command(roles=None, agents=None, concurrency=4):
     return __prepare_args_agents_roles_concurrency("run_command", roles=roles, agents=agents, concurrency=concurrency)
@@ -100,3 +102,6 @@ def health_check(agents=None, jobs=None, min_order=None, max_order=None, include
 
 def initialize():
     return "initialize"
+
+def plan():
+    return "plan"

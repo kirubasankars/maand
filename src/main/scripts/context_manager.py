@@ -74,9 +74,8 @@ def get_values(agent_ip):
     values["CLUSTER_ID"] = maand.get_cluster_id()
     values["AGENT_ID"] = maand.get_agent_id(agent_ip)
     values["AGENT_IP"] = agent_ip
-    print("before", values)
+
     values = _add_roles_to_values(values, agent_ip)
-    print("after", values)
     values = _add_tags_to_values(values, agent_ip)
 
     return values

@@ -118,6 +118,7 @@ def update_certificates(jobs, agent_ip):
 
 def process_templates(values):
     values = deepcopy(values)
+    print(values, flush=True)
     for k, v in values.items():
         values[k] = v.replace("$$", "$")
     agent_ip = values["AGENT_IP"]

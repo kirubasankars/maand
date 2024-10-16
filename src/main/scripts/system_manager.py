@@ -7,8 +7,8 @@ def split_list(input_list, chunk_size=3):
     return [input_list[i:i + chunk_size] for i in range(0, len(input_list), chunk_size)]
 
 
-def run(func, concurrency=None, roles_filter=None, agents_filter=None):
-    agents = maand.get_agents(roles_filter)
+def run(func, agents=None, concurrency=None, roles_filter=None, agents_filter=None):
+    agents = agents or maand.get_agents(roles_filter)
 
     if agents_filter:
         agents = list(set(agents_filter) & set(agents))

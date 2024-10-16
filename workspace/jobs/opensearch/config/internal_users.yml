@@ -1,0 +1,12 @@
+---
+
+_meta:
+  type: "internalusers"
+  config_version: 2
+
+admin:
+  hash: "$OPENSEARCH_ADMIN_PASSWORD_HASH"
+  reserved: true
+  backend_roles:
+  - "admin"
+  description: "uem admin user"

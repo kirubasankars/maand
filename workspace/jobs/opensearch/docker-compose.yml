@@ -1,0 +1,39 @@
+services:
+  opensearch:
+    image: opensearch
+    network_mode: host
+    ulimits:
+      memlock:
+        soft: -1 # Set memlock to unlimited (no soft or hard limit)
+        hard: -1
+      nofile:
+        soft: 65536 # Maximum number of open files for the opensearch user - set to at least 65536
+        hard: 65536
+    volumes:
+      - ./certs/node.crt:/usr/share/opensearch/config/node.pem
+      - ./certs/node.pem:/usr/share/opensearch/config/node-key.pem
+
+      - ./certs/api.crt:/usr/share/opensearch/config/api.pem
+      - ./certs/api.pem:/usr/share/opensearch/config/api-key.pem
+
+      - ./certs/ca.crt:/usr/share/opensearch/config/root-ca.pem
+
+      - ./config/opensearch.yml:/usr/share/opensearch/config/opensearch.yml
+      - ./config/jvm.options:/usr/share/opensearch/config/jvm.options
+      - ./config/internal_users.yml:/usr/share/opensearch/config/opensearch-security/internal_users.yml
+      - ./config/log4j2.properties:/usr/share/opensearch/config/log4j2.properties
+    restart: unless-stopped
+
+  elasticsearch_exporter:
+    image: quay.io/prometheuscommunity/elasticsearch-exporter:latest
+    depends_on:
+      - opensearch
+    command: [
+      "--es.uri=https://admin:admin@10.87.170.72:9200",
+      "--es.ca=/tmp/ca.crt"
+    ]
+    restart: unless-stopped
+    ports:
+      - "9114:9114"
+    volumes:
+      - ./certs/ca.crt:/tmp/ca.crt

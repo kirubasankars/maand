@@ -219,7 +219,7 @@ def get_agent_id(agent_ip):
         return row[0]
 
 
-def get_filtered_agent_jobs(jobs, jobs_filter=None, min_order=0, max_order=99):
+def get_filtered_agent_jobs(jobs, jobs_filter=None, min_order=0, max_order=100):
     filtered_jobs = {}
     if jobs_filter:
         for job_filter in jobs_filter:
@@ -233,6 +233,9 @@ def get_filtered_agent_jobs(jobs, jobs_filter=None, min_order=0, max_order=99):
     for name, job in filtered_jobs.items():
         if min_order <= job["order"] < max_order:
             filtered_jobs2[name] = job
+
+    if min_order == 0 and max_order == 100:
+        filtered_jobs2 = filtered_jobs
 
     return filtered_jobs2, len(jobs_filter) > 0 or min_order != 0 or max_order != 99
 

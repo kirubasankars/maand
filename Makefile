@@ -13,7 +13,7 @@ initialize:
 plan:
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) plan
 
-apply:
+apply: plan
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) apply $(ARGS)
 
 run_command:
@@ -42,3 +42,6 @@ health_check:
 
 run_command_no_check:
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) run_command_no_check $(ARGS)
+
+test1:
+	bash ./test/tests.sh
