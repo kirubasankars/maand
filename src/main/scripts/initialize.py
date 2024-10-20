@@ -7,12 +7,14 @@ import cert_provider
 import command_helper
 import kv_manager
 import maand
+import job
 import utils
 
 logger = utils.get_logger()
 
 try:
     maand.setup()
+    job.setup()
     kv_manager.setup()
 except Exception as e:
     logger.error(f"ERROR: {e}")

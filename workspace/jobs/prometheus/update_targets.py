@@ -16,3 +16,4 @@ def update_targets(file, port, variable):
 update_targets("./node_exporter_targets.txt", "9100", "$NODE_EXPORTER_TARGETS")
 update_targets("./node_exporter_targets.txt", "9101", "$CADVISOR_EXPORTER_TARGETS")
 update_targets("./opensearch_exporter_targets.txt", "9114", "$OPENSEARCH_EXPORTER_TARGETS")
+update_targets("./opensearch_exporter_targets.txt", "5100", "$AGENT_API_EXPORTER_TARGETS")

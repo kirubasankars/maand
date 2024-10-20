@@ -6,13 +6,13 @@ def get_connection():
 def setup():
     with get_connection() as connection:
         cursor = connection.cursor()
-        cursor.execute('CREATE TABLE IF NOT EXISTS key_value (namespace, key, version, deleted, value)')
+        cursor.execute('CREATE TABLE IF NOT EXISTS key_value (namespace, key, version, deleted, value, ttl, created_date)')
         connection.commit()
 
-def put_key_value(namespace, key, value):
-    __internal_put_key_value(namespace, key, value, 0)
+def put_key_value(namespace, key, value, ttl=-1):
+    __internal_put_key_value(namespace, key, value, 0, ttl)
 
-def __internal_put_key_value(namespace, key, value, deleted):
+def __internal_put_key_value(namespace, key, value, deleted, ttl):
     if type(value) is not str:
         raise TypeError('value must be a string')
 
@@ -23,7 +23,7 @@ def __internal_put_key_value(namespace, key, value, deleted):
         version = 0
         if row and row[0]:
             version = int(row[0])
-        cursor.execute('INSERT INTO key_value (namespace, key, version, deleted, value) VALUES (?, ?, ?, ?, ?)', (namespace, key, version + 1, deleted, value))
+        cursor.execute('INSERT INTO key_value (namespace, key, version, deleted, value, ttl, created_date) VALUES (?, ?, ?, ?, ?, ?, now())', (namespace, key, version + 1, deleted, value, ttl))
         connection.commit()
 
 def get_value(namespace, key):

@@ -52,46 +52,12 @@ def __build_agents(db):
         cursor.execute("UPDATE agent SET detained = 1 WHERE agent_ip = ?", (agent_ip,))
 
 
-def __build_jobs(db):
-    jobs = workspace.get_jobs()
-
-    db.execute("DELETE FROM job_roles")
-    db.execute("DELETE FROM job_certs")
-
-    for job in jobs:
-        manifest = workspace.get_job_manifest(job)
-
-        roles = manifest.get("roles")
-        position = manifest.get("order")
-        certs = manifest.get("certs")
-
-        cursor = db.cursor()
-        cursor.execute("SELECT * FROM job WHERE name = ?", (job,))
-        row = cursor.fetchone()
-        if row:
-            job_id = row[0]
-        else:
-            job_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(job)).hex)
-
-        if row:
-            cursor.execute("UPDATE job SET position = ? WHERE job_id = ?", (position, job_id,))
-        else:
-            cursor.execute("INSERT INTO job (job_id, name, position) VALUES (?, ?, ?)", (job_id, job, position))
-
-        for role in roles:
-            cursor.execute("INSERT INTO job_roles (job_id, role) VALUES (?, ?)", (job_id, role,))
-
-        for cert in certs:
-            for name, config in cert.items():
-                pkcs8 = config.get("pkcs8", 0)
-                subject = config.get("subject", "")
-                cursor.execute("INSERT INTO job_certs (job_id, name, pkcs8, subject) VALUES (?, ?, ?, ?)", (job_id, name, pkcs8, subject,))
-
-
 def __build_allocated_jobs(db):
     disabled = workspace.get_disabled_jobs()
     disabled_jobs = disabled.get("jobs", [])
     disabled_agents = disabled.get("agents", [])
+
+    db.execute("ATTACH DATABASE '/workspace/maand.jobs.db' AS jobsdb;")
 
     cursor = db.cursor()
     cursor.execute("SELECT agent_id, agent_ip FROM agent")
@@ -99,7 +65,7 @@ def __build_allocated_jobs(db):
 
     for agent_id, agent_ip in agents:
         cursor.execute("""
-                       SELECT j.job_id, j.name FROM job j JOIN job_roles jr WHERE jr.job_id = j.job_id AND EXISTS(
+                       SELECT j.job_id, j.name FROM jobsdb.job j JOIN jobsdb.job_roles jr WHERE jr.job_id = j.job_id AND EXISTS(
                             SELECT 1 FROM agent a JOIN agent_roles ar on a.agent_id = ar.agent_id AND jr.role = ar.role AND a.agent_ip = ?
                        )
                        """, (agent_ip,))
@@ -114,24 +80,18 @@ def __build_allocated_jobs(db):
                 if len(job_disabled_agents) == 0:
                     disabled = job in disabled_jobs
 
-            cursor.execute("SELECT * FROM agent_jobs WHERE job_id = ? AND agent_id = ?", (job_id, agent_id,))
+            cursor.execute("SELECT * FROM agent_jobs WHERE job = ? AND agent_id = ?", (job, agent_id,))
             row = cursor.fetchone()
             if row:
-                cursor.execute("UPDATE agent_jobs SET disabled = ? WHERE job_id = ? AND agent_id = ?", (disabled, job_id, agent_id,))
+                cursor.execute("UPDATE agent_jobs SET disabled = ? WHERE job = ? AND agent_id = ?", (disabled, job, agent_id,))
             else:
-                cursor.execute("INSERT INTO agent_jobs (job_id, agent_id, disabled) VALUES (?, ?, ?)", (job_id, agent_id, disabled))
-
-
-def __build_allocated_certs(db):
-    pass
+                cursor.execute("INSERT INTO agent_jobs (job, agent_id, disabled) VALUES (?, ?, ?)", (job, agent_id, disabled))
 
 
 def build():
     with __get_connection() as db:
         __build_agents(db)
-        __build_jobs(db)
         __build_allocated_jobs(db)
-        __build_allocated_certs(db)
         db.commit()
 
 

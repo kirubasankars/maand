@@ -1,4 +1,11 @@
 {
-  "roles": ["prometheus"],
-  "order": 89
+  "roles": [
+    "prometheus"
+  ],
+  "order": 89,
+  "channels": {
+    "a": {
+      "variables": []
+    }
+  }
 }

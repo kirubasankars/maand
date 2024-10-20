@@ -61,3 +61,9 @@ python3 /tests/prometheus_targets.py node_exporter up 4
 python3 /tests/prometheus_targets.py cadvisor_exporter up 4
 python3 /tests/prometheus_targets.py opensearch_exporter down 3
 
+maand start_jobs --min-order=55
+python3 /tests/prometheus_targets.py prometheus up 1
+python3 /tests/prometheus_targets.py node_exporter up 4
+python3 /tests/prometheus_targets.py cadvisor_exporter up 4
+python3 /tests/prometheus_targets.py opensearch_exporter up 3
+

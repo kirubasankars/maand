@@ -1,17 +1,21 @@
 IMAGE="maand"
 
-build:
+docker:
 	docker build -t $(IMAGE) ./src/main
 
 exec:
 	docker run --rm --entrypoint=/bin/bash -v $(PWD)/workspace:/workspace -it $(IMAGE)
 
+clean:
+	rm -rf $(PWD)/workspace/*.db $(PWD)/workspace/*.env $(PWD)/workspace/{*.crt,*.key,command.sh}
+
 initialize:
-	rm -rf $(PWD)/workspace/kv.db $(PWD)/workspace/maand.db
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) initialize
 
-deploy:
+build:
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) build
+
+deploy:
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) deploy $(ARGS)
 
 run_command:
@@ -41,5 +45,5 @@ health_check:
 run_command_no_check:
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) run_command_no_check $(ARGS)
 
-test: build
+test: docker
 	make -C ./test build run

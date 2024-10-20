@@ -16,5 +16,13 @@
       }
     }
   ],
-  "order": 85
+  "order": 85,
+  "selects": {
+      "prometheus": {
+        "a": {
+          "variables": [],
+          "config": {}
+        }
+     }
+  }
 }

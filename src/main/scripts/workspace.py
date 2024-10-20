@@ -29,6 +29,10 @@ def get_job_manifest(job_name):
         return metadata
 
 
+def get_job_files(job_name):
+    return glob.glob("{}/**".format(job_name), recursive=True, root_dir="/workspace/jobs")
+
+
 def get_disabled_jobs():
     if not os.path.exists(f"/workspace/disabled.json"):
         return {"jobs":{}, "agents":[]}

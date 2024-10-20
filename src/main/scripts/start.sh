@@ -24,6 +24,7 @@ export USE_SUDO=${USE_SUDO:-"0"}
 if [ "$OPERATION" == "initialize" ]; then
   python3 /scripts/initialize.py
 elif [ "$OPERATION" == "build" ]; then
+  python3 /scripts/job.py $@
   python3 /scripts/build.py $@
 elif [ "$OPERATION" == "deploy" ]; then
   python3 /scripts/deploy.py $@

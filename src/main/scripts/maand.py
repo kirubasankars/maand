@@ -13,12 +13,7 @@ def setup():
         cursor.execute("CREATE TABLE IF NOT EXISTS agent (agent_id TEXT, agent_ip TEXT, detained INT, position INT)")
         cursor.execute("CREATE TABLE IF NOT EXISTS agent_roles (agent_id TEXT, role TEXT)")
         cursor.execute("CREATE TABLE IF NOT EXISTS agent_tags (agent_id TEXT, key TEXT, value INT)")
-
-        cursor.execute("CREATE TABLE IF NOT EXISTS job (job_id TEXT, name TEXT, position INT)")
-        cursor.execute("CREATE TABLE IF NOT EXISTS job_roles (job_id TEXT, role TEXT)")
-        cursor.execute("CREATE TABLE IF NOT EXISTS job_certs (job_id TEXT, name TEXT, pkcs8 INT, subject TEXT)")
-
-        cursor.execute("CREATE TABLE IF NOT EXISTS agent_jobs (agent_id TEXT, job_id TEXT, disabled INT)")
+        cursor.execute("CREATE TABLE IF NOT EXISTS agent_jobs (agent_id TEXT, job TEXT, disabled INT)")
 
         cursor.execute("SELECT cluster_id FROM cluster")
         if cursor.fetchone() is None:
