@@ -3,12 +3,12 @@
     "host": "10.87.170.6", "roles": ["prometheus"]
   },
   {
-    "host": "10.87.170.72", "roles": ["opensearch"]
+    "host": "10.87.170.89", "roles": ["opensearch"]
   },
   {
     "host": "10.87.170.75", "roles": ["opensearch"]
   },
   {
-    "host": "10.87.170.76", "roles": ["opensearch"]
+    "host": "10.87.170.84", "roles": ["opensearch"]
   }
 ]

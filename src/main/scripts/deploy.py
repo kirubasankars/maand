@@ -1,9 +1,7 @@
 import base64
-import glob
 import hashlib
 import json
 import os
-import shutil
 from copy import deepcopy
 from pathlib import Path
 from string import Template
@@ -14,6 +12,7 @@ import context_manager
 import system_manager
 import utils
 import maand
+import workspace
 import kv_manager
 
 logger = utils.get_logger()
@@ -47,7 +46,9 @@ def update_certificates(jobs, agent_ip):
     get_cert_if_available(f"{agent_cert_path}.crt", f"{agent_cert_kv_path}.crt")
     get_cert_if_available(f"{agent_cert_path}.pem", f"{agent_cert_kv_path}.pem")
 
-    if (not os.path.isfile(f"{agent_cert_path}.key") or (os.path.isfile(f"{agent_cert_path}.crt") and cert_provider.is_certificate_expiring_soon(f"{agent_cert_path}.crt"))):
+    if (not os.path.isfile(f"{agent_cert_path}.key") or
+            (os.path.isfile(f"{agent_cert_path}.crt") and cert_provider.is_certificate_expiring_soon(f"{agent_cert_path}.crt"))):
+
         logger.debug(f"Updating certificates {name}.key and {name}.crt")
 
         cert_provider.generate_site_private(name, agent_cert_location)
@@ -65,7 +66,7 @@ def update_certificates(jobs, agent_ip):
             f.write("")
 
     for job in jobs:
-        metadata = utils.get_job_metadata(job, base_path=f"{agent_dir}/jobs")
+        metadata = workspace.get_job_manifest(job)
         certificates = metadata.get("certs", [])
 
         if not certificates:
@@ -93,7 +94,8 @@ def update_certificates(jobs, agent_ip):
                 get_cert_if_available(f"{job_cert_path}.crt", f"{job_cert_kv_path}.crt")
                 get_cert_if_available(f"{job_cert_path}.pem", f"{job_cert_kv_path}.pem")
 
-                if update_certs or (not os.path.isfile(f"{job_cert_path}.key") or (os.path.isfile(f"{job_cert_path}.key") and cert_provider.is_certificate_expiring_soon(f"{job_cert_path}.crt"))):
+                if (update_certs or not os.path.isfile(f"{job_cert_path}.key") or
+                            (os.path.isfile(f"{job_cert_path}.key") and cert_provider.is_certificate_expiring_soon(f"{job_cert_path}.crt"))):
 
                     logger.debug(f"Updating certificates {name}.key and {name}.crt")
                     ttl = cert_config.get("ttl", 60)
@@ -118,7 +120,6 @@ def update_certificates(jobs, agent_ip):
 
 def process_templates(values):
     values = deepcopy(values)
-    print(values, flush=True)
     for k, v in values.items():
         values[k] = v.replace("$$", "$")
     agent_ip = values["AGENT_IP"]
@@ -180,6 +181,13 @@ def sync(agent_ip):
     with open(f"{agent_dir}/roles.txt", "w") as f:
         f.writelines("\n".join(agent_roles))
 
+    values = context_manager.get_values(agent_ip)
+    with open(f"{agent_dir}/context.env", "w") as f:
+        keys = sorted(values.keys())
+        for key in keys:
+            value = values.get(key)
+            f.write("{}={}\n".format(key, value))
+
     command_helper.command_local(f"""
         rsync -r /agent/bin {agent_dir}/
         mkdir -p {agent_dir}/jobs/
@@ -189,14 +197,6 @@ def sync(agent_ip):
         command_helper.command_local(f"rsync -r --exclude '_*' /workspace/jobs/{job} {agent_dir}/jobs/")
 
     transpile(agent_ip)
-
-    values = context_manager.get_values(agent_ip)
-    with open(f"{agent_dir}/context.env", "w") as f:
-        keys = sorted(values.keys())
-        for key in keys:
-            value = values.get(key)
-            f.write("{}={}\n".format(key, value))
-
     update_certificates(agent_jobs, agent_ip)
 
     command_helper.command_local("rm -f /workspace/ca.srl")
@@ -206,10 +206,10 @@ def sync(agent_ip):
     filtered_jobs = list(filtered_jobs.keys())
     if not filtered:
         filtered_jobs = []
+
     context_manager.rsync_upload_agent_files(agent_ip, filtered_jobs)
 
     logger.debug("Sync process completed.")
-
     # TODO: update crontab if start on restart enabled
 
 

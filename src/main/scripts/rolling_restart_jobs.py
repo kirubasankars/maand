@@ -1,5 +1,6 @@
 import run_job_command_health_check
 
+import maand
 import command_helper
 import context_manager
 import system_manager
@@ -9,7 +10,7 @@ import utils
 def run_command(agent_ip):
     filtered_jobs, filter_applied = utils.get_filtered_jobs(agent_ip, jobs_filter=args.jobs, min_order=args.min_order, max_order=args.max_order)
     if not args.include_disabled:
-        disabled_jobs = utils.get_disabled_jobs(agent_ip)
+        disabled_jobs = [name for name, job in maand.get_agent_jobs(agent_ip).items() if job["disabled"]]
         filtered_jobs = list(set(filtered_jobs) - set(disabled_jobs))
 
     filtered_jobs = ",".join(filtered_jobs)

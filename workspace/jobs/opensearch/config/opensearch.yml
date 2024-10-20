@@ -42,5 +42,5 @@ plugins.security.authcz.admin_dn:
 plugins.security.nodes_dn:
   - 'CN=opensearch-node.service.node'
 
-discovery.seed_hosts: [ $ROLE_OPENSEARCH_NODES ]
-cluster.initial_cluster_manager_nodes: $ROLE_OPENSEARCH_0
+discovery.seed_hosts: [ $OPENSEARCH_NODES ]
+cluster.initial_cluster_manager_nodes: $OPENSEARCH_0

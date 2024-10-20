@@ -10,11 +10,9 @@ initialize:
 	rm -rf $(PWD)/workspace/kv.db $(PWD)/workspace/maand.db
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) initialize
 
-plan:
-	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) plan
-
-apply: plan
-	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) apply $(ARGS)
+deploy:
+	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) build
+	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) deploy $(ARGS)
 
 run_command:
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) run_command $(ARGS)
@@ -43,5 +41,5 @@ health_check:
 run_command_no_check:
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) run_command_no_check $(ARGS)
 
-test1:
-	bash ./test/tests.sh
+test: build
+	make -C ./test build run

@@ -10,4 +10,4 @@ COPY agent /agent
 COPY scripts /scripts
 RUN chmod +x /scripts/*.sh
 
-ENTRYPOINT ["tini", "-g", "--", "/scripts/start.sh"]
+ENTRYPOINT ["tini", "-g", "--", "bash", "/scripts/start.sh"]

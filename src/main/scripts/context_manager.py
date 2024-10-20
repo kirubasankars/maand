@@ -25,7 +25,7 @@ def _add_roles_to_values(values, agent_ip):
     roles = maand.get_agent_roles(agent_ip=None)
 
     for role in roles:
-        key_nodes = f"ROLE_{role}_NODES".upper()
+        key_nodes = f"{role}_NODES".upper()
 
         agents = maand.get_agents([role])
         values[key_nodes] = ",".join(agents)
@@ -34,25 +34,25 @@ def _add_roles_to_values(values, agent_ip):
         if agent_ip in other_agents:
             other_agents.remove(agent_ip)
 
-        key = f"ROLE_{role}_LENGTH".upper()
+        key = f"{role}_LENGTH".upper()
         values[key] = str(len(agents))
 
         if role not in agent_roles:
             continue
 
-        key_peers = f"ROLE_{role}_PEERS".upper()
+        key_peers = f"{role}_PEERS".upper()
         if other_agents:
             values[key_peers] = ",".join(other_agents)
 
         for idx, host in enumerate(agents):
-            key = f"ROLE_{role}_{idx}".upper()
+            key = f"{role}_{idx}".upper()
             values[key] = host
 
             if host == agent_ip:
-                key = f"ROLE_{role}_ALLOCATION_INDEX".upper()
+                key = f"{role}_ALLOCATION_INDEX".upper()
                 values[key] = str(idx)
 
-        key = f"ROLE_{role}_ID".upper()
+        key = f"{role}_ROLE_ID".upper()
         values[key] = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(role)).hex)
 
     values["ROLES"] = ",".join(sorted(agent_roles))
@@ -86,13 +86,13 @@ def get_agent_dir(agent_ip):
 
 
 def get_agent_minimal_env(agent_ip):
-    secrets = dotenv_values("/workspace/secrets.env")
+    config = dotenv_values("/workspace/maand.config.env")
     return {
         "AGENT_IP": agent_ip,
         "AGENT_DIR": get_agent_dir(agent_ip),
-        "SSH_USER": secrets.get("SSH_USER"),
-        "SSH_KEY": secrets.get("SSH_KEY"),
-        "USE_SUDO": secrets.get("USE_SUDO")
+        "SSH_USER": config.get("SSH_USER"),
+        "SSH_KEY": config.get("SSH_KEY"),
+        "USE_SUDO": config.get("USE_SUDO")
     }
 
 
@@ -113,9 +113,8 @@ def validate_cluster_id(agent_ip, fail_if_no_cluster_id=True):
     try:
         cluster_id = maand.get_cluster_id()
         agent_env = get_agent_minimal_env(agent_ip)
-
         res = command_helper.command_remote("cat /opt/agent/cluster_id.txt", agent_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if fail_if_no_cluster_id and res.returncode == 1:
+        if fail_if_no_cluster_id and res.returncode != 0:
             raise Exception(f"{agent_ip} : {res.stderr}")
         agent_cluster_id = res.stdout.decode("utf-8")
         if res.returncode == 0 and agent_cluster_id != cluster_id:

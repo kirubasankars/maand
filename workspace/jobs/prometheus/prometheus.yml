@@ -1,5 +1,5 @@
 global:
-  scrape_interval: 5s
+  scrape_interval: 30s
   evaluation_interval: 15s
 
 scrape_configs:
@@ -20,6 +20,7 @@ scrape_configs:
       - targets: [ $$NODE_EXPORTER_TARGETS ]
 
   - job_name: "cadvisor_exporter"
+    scrape_timeout: 15s
     static_configs:
       - targets: [ $$CADVISOR_EXPORTER_TARGETS ]
 
