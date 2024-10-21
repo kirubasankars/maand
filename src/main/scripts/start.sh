@@ -14,18 +14,12 @@ export SSH_KEY=${SSH_KEY:-""}
 export AGENT_API=${AGENT_API:-"true"}
 export USE_SUDO=${USE_SUDO:-"0"}
 
-#if [[ -z "$OPERATION" || -z "$SSH_USER" || -z "$SSH_KEY" ]]; then
-#  echo "missing arguments (OPERATION, SSH_USER, SSH_KEY)" >&2;
-#  exit 1
-#fi
-
-# TODO: validate target
-
 if [ "$OPERATION" == "initialize" ]; then
   python3 /scripts/initialize.py
-elif [ "$OPERATION" == "build" ]; then
-  python3 /scripts/job.py $@
-  python3 /scripts/build.py $@
+elif [ "$OPERATION" == "build_jobs" ]; then
+  python3 /scripts/maand_job.py $@
+elif [ "$OPERATION" == "plan" ]; then
+  python3 /scripts/plan.py $@
 elif [ "$OPERATION" == "deploy" ]; then
   python3 /scripts/deploy.py $@
 elif [ "$OPERATION" == "run_command" ]; then

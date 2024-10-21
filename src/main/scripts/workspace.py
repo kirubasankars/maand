@@ -26,6 +26,10 @@ def get_job_manifest(job_name):
             metadata["roles"] = []
         if "certs" not in metadata:
             metadata["certs"] = []
+        if "commands" not in metadata:
+            metadata["commands"] = {}
+        if "plugins" not in metadata:
+            metadata["plugins"] = []
         return metadata
 
 

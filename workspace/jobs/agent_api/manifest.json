@@ -1,4 +1,11 @@
 {
   "roles": ["agent"],
-  "order": 0
+  "order": 0,
+  "plugins": [
+    {
+      "job": "opensearch",
+      "command": "provision_user",
+      "config": {}
+    }
+  ]
 }

@@ -17,12 +17,10 @@
     }
   ],
   "order": 85,
-  "selects": {
-      "prometheus": {
-        "a": {
-          "variables": [],
-          "config": {}
-        }
-     }
+  "commands": {
+    "provision_user": {
+      "executed_on": ["pre_plan", "post_plan", "pre_deploy", "post_deploy"],
+      "availability": "peers"
+    }
   }
 }

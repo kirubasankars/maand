@@ -12,8 +12,11 @@ clean:
 initialize:
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) initialize
 
-build:
-	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) build
+build_jobs:
+	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) build_jobs
+
+plan:
+	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) plan $(ARGS)
 
 deploy:
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) deploy $(ARGS)

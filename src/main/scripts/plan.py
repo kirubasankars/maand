@@ -1,12 +1,13 @@
 import uuid
 import sqlite3
 import workspace
+import maand_job
 
 def __get_connection():
     return sqlite3.connect('/workspace/maand.db')
 
 
-def __build_agents(db):
+def __plan_agents(db):
     agents = workspace.get_agents()
     for index, agent in enumerate(agents):
         agent_ip = agent["host"]
@@ -52,12 +53,10 @@ def __build_agents(db):
         cursor.execute("UPDATE agent SET detained = 1 WHERE agent_ip = ?", (agent_ip,))
 
 
-def __build_allocated_jobs(db):
+def __plan_allocated_jobs(db):
     disabled = workspace.get_disabled_jobs()
     disabled_jobs = disabled.get("jobs", [])
     disabled_agents = disabled.get("agents", [])
-
-    db.execute("ATTACH DATABASE '/workspace/maand.jobs.db' AS jobsdb;")
 
     cursor = db.cursor()
     cursor.execute("SELECT agent_id, agent_ip FROM agent")
@@ -88,12 +87,24 @@ def __build_allocated_jobs(db):
                 cursor.execute("INSERT INTO agent_jobs (job, agent_id, disabled) VALUES (?, ?, ?)", (job, agent_id, disabled))
 
 
-def build():
+def __interceptor(db, action_type):
+    cursor = db.cursor()
+    cursor.execute("SELECT ( SELECT name FROM job j WHERE j.job_id = jp.job_id ) as name, source_job, command, config FROM jobsdb.job_plugins jp, jobsdb.job_commands jc WHERE jc.executed_on = ?", (action_type,))
+    rows = cursor.fetchall()
+    for row in rows:
+        job, command_job, command, config = row
+        maand_job.execute_command(command_job, command, (action_type, job, config))
+
+
+def plan():
     with __get_connection() as db:
-        __build_agents(db)
-        __build_allocated_jobs(db)
+        db.execute("ATTACH DATABASE '/workspace/maand.jobs.db' AS jobsdb;")
+        __interceptor(db, "pre_plan")
+        __plan_agents(db)
+        __plan_allocated_jobs(db)
+        __interceptor(db, "post_plan")
         db.commit()
 
 
 if __name__ == "__main__":
-    build()
+    plan()
