@@ -2,7 +2,7 @@ import copy
 import subprocess
 import uuid
 
-import maand
+import maand_agent
 
 from dotenv import dotenv_values
 
@@ -20,14 +20,14 @@ def load_secrets(values):
 
 
 def _add_roles_to_values(values, agent_ip):
-    agent_roles = maand.get_agent_roles(agent_ip=agent_ip)
+    agent_roles = maand_agent.get_agent_roles(agent_ip=agent_ip)
 
-    roles = maand.get_agent_roles(agent_ip=None)
+    roles = maand_agent.get_agent_roles(agent_ip=None)
 
     for role in roles:
         key_nodes = f"{role}_NODES".upper()
 
-        agents = maand.get_agents([role])
+        agents = maand_agent.get_agents([role])
         values[key_nodes] = ",".join(agents)
 
         other_agents = copy.deepcopy(agents)
@@ -61,7 +61,7 @@ def _add_roles_to_values(values, agent_ip):
 
 
 def _add_tags_to_values(values, agent_ip):
-    tags = maand.get_agent_tags(agent_ip=agent_ip)
+    tags = maand_agent.get_agent_tags(agent_ip=agent_ip)
     for k, v in tags.items():
         key = f"{k}".upper()
         values[key] = str(v)
@@ -71,8 +71,8 @@ def _add_tags_to_values(values, agent_ip):
 def get_values(agent_ip):
     values = dotenv_values("/workspace/variables.env")
 
-    values["CLUSTER_ID"] = maand.get_cluster_id()
-    values["AGENT_ID"] = maand.get_agent_id(agent_ip)
+    values["CLUSTER_ID"] = maand_agent.get_cluster_id()
+    values["AGENT_ID"] = maand_agent.get_agent_id(agent_ip)
     values["AGENT_IP"] = agent_ip
 
     values = _add_roles_to_values(values, agent_ip)
@@ -111,7 +111,7 @@ def rsync_upload_agent_files(agent_ip, jobs):
 
 def validate_cluster_id(agent_ip, fail_if_no_cluster_id=True):
     try:
-        cluster_id = maand.get_cluster_id()
+        cluster_id = maand_agent.get_cluster_id()
         agent_env = get_agent_minimal_env(agent_ip)
         res = command_helper.command_remote("cat /opt/agent/cluster_id.txt", agent_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if fail_if_no_cluster_id and res.returncode != 0:
@@ -126,7 +126,7 @@ def validate_cluster_id(agent_ip, fail_if_no_cluster_id=True):
 
 def validate_update_seq(agent_ip):
     try:
-        update_seq = str(maand.get_update_seq())
+        update_seq = str(maand_agent.get_update_seq())
         agent_env = get_agent_minimal_env(agent_ip)
 
         res = command_helper.command_remote("cat /opt/agent/update_seq.txt", agent_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

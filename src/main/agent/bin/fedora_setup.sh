@@ -5,7 +5,7 @@ sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 dnf remove firewalld
 
 yum update -y
-yum install -y rsync make python corntab docker docker-compose git
+yum install -y rsync make python docker docker-compose
 
 username=agent
 if ! id "$username" &>/dev/null; then

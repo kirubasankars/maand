@@ -11,7 +11,7 @@ import command_helper
 import context_manager
 import system_manager
 import utils
-import maand
+import maand_agent
 import workspace
 import kv_manager
 
@@ -151,7 +151,7 @@ def transpile(agent_ip):
 def sync(agent_ip):
     args = utils.get_args_jobs_concurrency()
 
-    cluster_id = maand.get_cluster_id()
+    cluster_id = maand_agent.get_cluster_id()
     agent_dir = context_manager.get_agent_dir(agent_ip)
 
     logger.debug("Starting sync process...")
@@ -160,11 +160,11 @@ def sync(agent_ip):
     with open(f"{agent_dir}/cluster_id.txt", "w") as f:
         f.write(cluster_id)
 
-    agent_id = maand.get_agent_id(agent_ip)
+    agent_id = maand_agent.get_agent_id(agent_ip)
     with open(f"{agent_dir}/agent_id.txt", "w") as f:
         f.write(agent_id)
 
-    update_seq = maand.get_update_seq()
+    update_seq = maand_agent.get_update_seq()
     with open(f"{agent_dir}/update_seq.txt", "w") as f:
         f.write(str(update_seq))
 
@@ -173,11 +173,11 @@ def sync(agent_ip):
         rsync /workspace/ca.crt {agent_dir}/certs/
     """)
 
-    agent_jobs = maand.get_agent_jobs(agent_ip)
+    agent_jobs = maand_agent.get_agent_jobs(agent_ip)
     with open(f"{agent_dir}/jobs.json", "w") as f:
         f.writelines(json.dumps(agent_jobs))
 
-    agent_roles = maand.get_agent_roles(agent_ip)
+    agent_roles = maand_agent.get_agent_roles(agent_ip)
     with open(f"{agent_dir}/roles.txt", "w") as f:
         f.writelines("\n".join(agent_roles))
 
@@ -202,7 +202,7 @@ def sync(agent_ip):
     command_helper.command_local("rm -f /workspace/ca.srl")
     command_helper.command_local(f"chown -R 1050:1042 {agent_dir}")
 
-    filtered_jobs, filtered = maand.get_filtered_agent_jobs(agent_jobs, jobs_filter=args.jobs, min_order=args.min_order,max_order=args.max_order)
+    filtered_jobs, filtered = maand_agent.get_filtered_agent_jobs(agent_jobs, jobs_filter=args.jobs, min_order=args.min_order,max_order=args.max_order)
     filtered_jobs = list(filtered_jobs.keys())
     if not filtered:
         filtered_jobs = []
@@ -220,9 +220,9 @@ def validate_cluster_id(agent_ip):
 def apply():
     args = utils.get_args_jobs_concurrency()
 
-    update_seq = maand.get_update_seq()
+    update_seq = maand_agent.get_update_seq()
     next_update_seq = int(update_seq) + 1
-    maand.update_seq(next_update_seq)
+    maand_agent.update_seq(next_update_seq)
 
     system_manager.run(command_helper.scan_agent)
     system_manager.run(validate_cluster_id)

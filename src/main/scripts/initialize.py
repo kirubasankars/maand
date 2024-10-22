@@ -6,15 +6,15 @@ import context_manager
 import cert_provider
 import command_helper
 import kv_manager
-import maand
-import job
+import maand_agent
+import maand_job
 import utils
 
 logger = utils.get_logger()
 
 try:
-    maand.setup()
-    job.setup()
+    maand_agent.setup()
+    maand_job.setup()
     kv_manager.setup()
 except Exception as e:
     logger.error(f"ERROR: {e}")
@@ -38,6 +38,6 @@ if not os.path.isfile("/workspace/maand.config.env"):
 
 config = dotenv_values("/workspace/maand.config.env")
 if not os.path.isfile('/workspace/ca.key'):
-    cluster_id = maand.get_cluster_id()
+    cluster_id = maand_agent.get_cluster_id()
     cert_provider.generate_ca_private()
     cert_provider.generate_ca_public(cluster_id, int(os.getenv("CA_TTL", str(365 * 10))))

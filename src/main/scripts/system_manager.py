@@ -1,4 +1,4 @@
-import maand
+import maand_agent
 import multiprocessing
 import sys
 
@@ -8,7 +8,7 @@ def split_list(input_list, chunk_size=3):
 
 
 def run(func, agents=None, concurrency=None, roles_filter=None, agents_filter=None):
-    agents = agents or maand.get_agents(roles_filter)
+    agents = agents or maand_agent.get_agents(roles_filter)
 
     if agents_filter:
         agents = list(set(agents_filter) & set(agents))
