@@ -16,11 +16,5 @@
       }
     }
   ],
-  "order": 85,
-  "commands": {
-    "provision_user": {
-      "executed_on": ["pre_plan", "post_plan", "pre_deploy", "post_deploy"],
-      "availability": "peers"
-    }
-  }
+  "order": 85
 }

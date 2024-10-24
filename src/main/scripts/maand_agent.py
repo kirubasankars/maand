@@ -2,7 +2,7 @@ import uuid
 import sqlite3
 
 def __get_connection():
-    return sqlite3.connect('/workspace/maand.db')
+    return sqlite3.connect('/workspace/maand.agent.db')
 
 
 def setup():
@@ -26,8 +26,9 @@ def setup():
 
 def get_agent_jobs(agent_ip):
     with __get_connection() as db:
+        db.execute("ATTACH DATABASE '/workspace/maand.job.db' AS job_db;")
         cursor = db.cursor()
-        cursor.execute("SELECT j.name, aj.disabled, j.position FROM agent a JOIN agent_jobs aj ON a.agent_id = aj.agent_id JOIN job j ON j.job_id = aj.job_id AND a.agent_ip = ? ORDER BY j.position", (agent_ip,))
+        cursor.execute("SELECT j.name, aj.disabled, j.position FROM agent a JOIN agent_jobs aj ON a.agent_id = aj.agent_id JOIN job_db.job j ON j.name = aj.job AND a.agent_ip = ? ORDER BY j.position", (agent_ip,))
         rows = cursor.fetchall()
         return {row[0]: {"disabled": row[1], "order": row[2] } for row in rows}
 

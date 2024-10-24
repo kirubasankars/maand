@@ -7,7 +7,7 @@ exec:
 	docker run --rm --entrypoint=/bin/bash -v $(PWD)/workspace:/workspace -it $(IMAGE)
 
 clean:
-	rm -rf $(PWD)/workspace/*.db $(PWD)/workspace/*.env $(PWD)/workspace/{*.crt,*.key,command.sh}
+	rm -rf $(PWD)/workspace/*.db $(PWD)/workspace/{*.crt,*.key,command.sh}
 
 initialize:
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) initialize
@@ -16,6 +16,10 @@ build_jobs:
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) build_jobs
 
 plan:
+	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) plan $(ARGS)
+
+build:
+	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) build_jobs
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) plan $(ARGS)
 
 deploy:

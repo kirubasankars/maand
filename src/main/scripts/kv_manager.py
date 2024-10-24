@@ -23,7 +23,7 @@ def __internal_put_key_value(namespace, key, value, deleted, ttl):
         version = 0
         if row and row[0]:
             version = int(row[0])
-        cursor.execute('INSERT INTO key_value (namespace, key, version, deleted, value, ttl, created_date) VALUES (?, ?, ?, ?, ?, ?, now())', (namespace, key, version + 1, deleted, value, ttl))
+        cursor.execute('INSERT INTO key_value (namespace, key, version, deleted, value, ttl, created_date) VALUES (?, ?, ?, ?, ?, ?, unixepoch())', (namespace, key, version + 1, deleted, value, ttl))
         connection.commit()
 
 def get_value(namespace, key):

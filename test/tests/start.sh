@@ -7,7 +7,7 @@ function maand() {
   docker run --rm -v $WORKSPACE:/workspace maand $@
 }
 
-rm -rf /workspace/{ca.crt,ca.key,kv.db,maand.db,secrets.env,variables.env,command.sh}
+rm -rf /workspace/{ca.crt,ca.key,kv.db,maand.agent.db,maand.job.db,secrets.env,variables.env,command.sh}
 echo "rm -rf /opt/agent" > /workspace/command.sh
 maand run_command_no_check
 
@@ -17,7 +17,13 @@ pytest /tests/test_initialize.py
 echo 'OPENSEARCH_ADMIN_PASSWORD_HASH="$$2y$$10$$FNNuaKNKyBQTI3TvzpSl4ummss1zTt2i3mfGUS423lmpN7xlb2woC"' >> /workspace/secrets.env
 echo 'PROMETHEUS_ADMIN_PASSWORD_HASH="$$2y$$10$$FNNuaKNKyBQTI3TvzpSl4ummss1zTt2i3mfGUS423lmpN7xlb2woC"' >> /workspace/secrets.env
 
+echo "CA_TTL=3650" >> /workspace/maand.config.env
+echo "USE_SUDO=1" >> /workspace/maand.config.env
+echo "SSH_USER=agent" >> /workspace/maand.config.env
+echo "SSH_KEY=homelab.key" >> /workspace/maand.config.env
+
 maand build
+maand plan
 maand deploy
 
 maand start_jobs --jobs="prometheus"

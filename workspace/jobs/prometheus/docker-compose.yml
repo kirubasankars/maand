@@ -6,6 +6,7 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--web.config.file=/etc/prometheus/web.config.yml'
+      - '--web.listen-address=0.0.0.0:9091'
     network_mode: host
     restart: unless-stopped
     volumes:

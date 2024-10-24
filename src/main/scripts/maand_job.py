@@ -8,7 +8,7 @@ import uuid
 import workspace
 
 def __get_connection():
-    return sqlite3.connect('/workspace/maand.jobs.db')
+    return sqlite3.connect('/workspace/maand.job.db')
 
 
 def setup():
@@ -103,6 +103,20 @@ def get_jobs():
         cursor.execute("SELECT name FROM job")
         rows = cursor.fetchall()
         return [row[0] for row in rows]
+
+
+def copy_job(name, agent_dir):
+    with __get_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("SELECT path, content, isdir FROM job_files WHERE job_id = (SELECT job_id FROM job WHERE name = ?) AND path NOT LIKE ? ORDER BY isdir DESC", (name, f"{name}/_modules%"))
+        rows = cursor.fetchall()
+
+        for path, content, isdir in rows:
+            if isdir:
+                os.makedirs(f"{agent_dir}/jobs/{path}", exist_ok=True)
+                continue
+            with open(f"{agent_dir}/jobs/{path}", "wb") as f:
+                f.write(content)
 
 
 def execute_command(job, command, context):

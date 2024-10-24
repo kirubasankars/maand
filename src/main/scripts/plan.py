@@ -4,7 +4,7 @@ import workspace
 import maand_job
 
 def __get_connection():
-    return sqlite3.connect('/workspace/maand.db')
+    return sqlite3.connect('/workspace/maand.agent.db')
 
 
 def __plan_agents(db):
@@ -64,7 +64,7 @@ def __plan_allocated_jobs(db):
 
     for agent_id, agent_ip in agents:
         cursor.execute("""
-                       SELECT j.job_id, j.name FROM jobsdb.job j JOIN jobsdb.job_roles jr WHERE jr.job_id = j.job_id AND EXISTS(
+                       SELECT j.job_id, j.name FROM job_db.job j JOIN job_db.job_roles jr WHERE jr.job_id = j.job_id AND EXISTS(
                             SELECT 1 FROM agent a JOIN agent_roles ar on a.agent_id = ar.agent_id AND jr.role = ar.role AND a.agent_ip = ?
                        )
                        """, (agent_ip,))
@@ -89,7 +89,7 @@ def __plan_allocated_jobs(db):
 
 def __interceptor(db, action_type):
     cursor = db.cursor()
-    cursor.execute("SELECT ( SELECT name FROM job j WHERE j.job_id = jp.job_id ) as name, source_job, command, config FROM jobsdb.job_plugins jp, jobsdb.job_commands jc WHERE jc.executed_on = ?", (action_type,))
+    cursor.execute("SELECT ( SELECT name FROM job j WHERE j.job_id = jp.job_id ) as name, source_job, command, config FROM job_db.job_plugins jp, job_db.job_commands jc WHERE jc.executed_on = ?", (action_type,))
     rows = cursor.fetchall()
     for row in rows:
         job, command_job, command, config = row
@@ -98,11 +98,11 @@ def __interceptor(db, action_type):
 
 def plan():
     with __get_connection() as db:
-        db.execute("ATTACH DATABASE '/workspace/maand.jobs.db' AS jobsdb;")
-        __interceptor(db, "pre_plan")
+        db.execute("ATTACH DATABASE '/workspace/maand.job.db' AS job_db;")
+        #__interceptor(db, "pre_plan")
         __plan_agents(db)
         __plan_allocated_jobs(db)
-        __interceptor(db, "post_plan")
+        #__interceptor(db, "post_plan")
         db.commit()
 
 

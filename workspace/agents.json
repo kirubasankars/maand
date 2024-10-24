@@ -1,14 +1,17 @@
 [
   {
-    "host": "10.27.221.181", "roles": ["agent1"]
+    "host": "10.27.221.181", "roles": ["prometheus"]
   },
   {
-    "host": "10.27.221.144", "roles": ["agent2"]
+    "host": "10.27.221.144", "roles": ["opensearch"]
   },
   {
-    "host": "10.27.221.170", "roles": ["agent3"]
+    "host": "10.27.221.170", "roles": ["opensearch"]
   },
   {
-    "host": "10.27.221.129", "roles": ["agent4"]
+    "host": "10.27.221.129", "roles": ["opensearch"]
+  },
+  {
+    "host": "10.27.221.146"
   }
 ]

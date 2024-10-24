@@ -2,10 +2,12 @@ import base64
 import hashlib
 import json
 import os
+
 from copy import deepcopy
 from pathlib import Path
 from string import Template
 
+import maand_job
 import cert_provider
 import command_helper
 import context_manager
@@ -66,7 +68,10 @@ def update_certificates(jobs, agent_ip):
             f.write("")
 
     for job in jobs:
-        metadata = workspace.get_job_manifest(job)
+
+        with open(f"{agent_dir}/jobs/{job}/manifest.json") as f:
+            metadata = json.load(f)
+
         certificates = metadata.get("certs", [])
 
         if not certificates:
@@ -150,7 +155,6 @@ def transpile(agent_ip):
 
 def sync(agent_ip):
     args = utils.get_args_jobs_concurrency()
-
     cluster_id = maand_agent.get_cluster_id()
     agent_dir = context_manager.get_agent_dir(agent_ip)
 
@@ -194,7 +198,7 @@ def sync(agent_ip):
     """)
 
     for job in agent_jobs:
-        command_helper.command_local(f"rsync -r --exclude '_*' /workspace/jobs/{job} {agent_dir}/jobs/")
+        maand_job.copy_job(job, agent_dir)
 
     transpile(agent_ip)
     update_certificates(agent_jobs, agent_ip)

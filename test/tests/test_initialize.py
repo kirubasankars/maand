@@ -4,7 +4,8 @@ def test_initialize():
     assert os.path.exists("/workspace/ca.crt")
     assert os.path.exists("/workspace/ca.key")
 
-    assert os.path.exists("/workspace/maand.db")
+    assert os.path.exists("/workspace/maand.agent.db")
+    assert os.path.exists("/workspace/maand.job.db")
     assert os.path.exists("/workspace/kv.db")
 
     assert os.path.exists("/workspace/secrets.env")
