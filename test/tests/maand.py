@@ -1,0 +1,97 @@
+import json
+import os
+import shutil
+import subprocess
+
+
+def initialize():
+    try:
+        subprocess.run(["bash", "/scripts/start.sh", "initialize"])
+        fix_maand_config()
+    except subprocess.CalledProcessError as e:
+        print(e)
+
+
+def build():
+    try:
+        subprocess.run(["bash", "/scripts/start.sh", "build_jobs"])
+        subprocess.run(["bash", "/scripts/start.sh", "plan"])
+    except subprocess.CalledProcessError as e:
+        print(e)
+
+
+def deploy():
+    try:
+        shutil.rmtree("/opt/agents")
+        subprocess.run(["bash", "/scripts/start.sh", "deploy"])
+    except subprocess.CalledProcessError as e:
+        print(e)
+
+
+def clean():
+    import os
+    import subprocess
+
+    # List of files to delete
+    files_to_delete = [
+        "/workspace/variables.env",
+        "/workspace/secrets.env",
+        "/workspace/maand.job.db",
+        "/workspace/maand.agent.db",
+        "/workspace/kv.db",
+        "/workspace/ca.crt",
+        "/workspace/ca.key"
+    ]
+
+    # Loop over and try to delete each file
+    for file_path in files_to_delete:
+        try:
+            os.unlink(file_path)
+        except Exception as e:
+            pass
+
+    try:
+        # Write to command.sh and execute the script
+        with open("/workspace/command.sh", "w") as f:
+            f.write("rm -rf /opt/agent")
+
+        # Run the bash script
+        subprocess.run(["bash", "/scripts/start.sh", "run_command_no_check"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except:
+        pass
+
+
+def fix_maand_config():
+    with open("/workspace/maand.config.env", "w") as f:
+        f.write("CA_TTL=3650\n")
+        f.write("USE_SUDO=1\n")
+        f.write("SSH_USER=agent\n")
+        f.write("SSH_KEY=homelab.key\n")
+
+
+def make_job(name, roles):
+    os.makedirs(f"/workspace/jobs/{name}", exist_ok=True)
+    with open(f"/workspace/jobs/{name}/manifest.json", "w") as f:
+        f.write(json.dumps({"roles": roles}))
+
+    with open("/tests/Makefile.sample", "rb") as rf:
+        with open(f"/workspace/jobs/{name}/Makefile", "wb") as wf:
+            wf.write(rf.read())
+
+
+def agents_ip(role):
+    with open("/workspace/agents.json") as f:
+        data = json.load(f)
+    if role:
+        return [item for item in data if role in item.get("roles")]
+    return data
+
+
+def sync_files():
+    with open("/workspace/command.sh", "w") as f:
+        f.write('''rsync -vr --delete --rsync-path="sudo rsync" --rsh="ssh -i /workspace/homelab.key" agent@$AGENT_IP:/opt/agent/ /$AGENT_IP > /dev/null''')
+    subprocess.run(["bash", "/scripts/start.sh", "run_command_local"])
+
+
+def tree(path):
+    subprocess.run(["tree", path])
