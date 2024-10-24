@@ -7,12 +7,12 @@ RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r re
 ENV PYTHONWARNINGS="ignore:Unverified HTTPS request"
 ENV PYTHONPATH=.
 
+COPY . /tests
+WORKDIR /tests
+RUN chmod +x /tests/*.sh
+
 RUN mkdir /workspace
 COPY agents.json /workspace/
 COPY homelab.key /workspace/
-
-COPY tests /tests
-WORKDIR /tests
-RUN chmod +x /tests/*.sh
 
 ENTRYPOINT [ "tini", "-g", "--", "bash", "/tests/start.sh" ]

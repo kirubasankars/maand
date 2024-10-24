@@ -16,11 +16,11 @@ build_jobs:
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) build_jobs
 
 plan:
-	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) plan $(ARGS)
+	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) plan
 
 build:
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) build_jobs
-	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) plan $(ARGS)
+	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) plan
 
 deploy:
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) deploy $(ARGS)
@@ -53,4 +53,4 @@ run_command_no_check:
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) run_command_no_check $(ARGS)
 
 test: docker
-	make -C ./test build run
+	make -C ./src/test build run
