@@ -27,7 +27,7 @@ def run_jobs(cmd, jobs):
 def main(args):
     jobs = get_jobs()
     if args.cmd in ["start", "restart"] and not args.jobs:
-        jobs_to_run = [job for job, obj in jobs.items() if "disabled" not in obj]
+        jobs_to_run = [job for job, obj in jobs.items() if obj.get("disabled", 0) == 0]
     else:
         available_jobs = [job for job, obj in jobs.items()]
         if args.jobs:

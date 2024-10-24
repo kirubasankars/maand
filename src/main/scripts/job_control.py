@@ -7,12 +7,13 @@ import context_manager
 import system_manager
 import utils
 
+
 def run_command(agent_ip):
     jobs = maand_agent.get_agent_jobs(agent_ip)
     filtered_jobs, filter_applied = maand_agent.get_filtered_agent_jobs(jobs, jobs_filter=args.jobs, min_order=args.min_order, max_order=args.max_order)
 
     if not args.include_disabled:
-        disabled_jobs = [name for name, job in jobs.items() if job["disabled"]]
+        disabled_jobs = [name for name, job in jobs.items() if job.get("disabled", 0) == 1]
         filtered_jobs = list(set(filtered_jobs.keys()) - set(disabled_jobs))
 
     filtered_jobs = ",".join(filtered_jobs)

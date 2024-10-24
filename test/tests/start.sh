@@ -4,7 +4,7 @@ set -ueo pipefail
 WORKSPACE=${WORKSPACE:-""}
 function maand() {
   echo "maand $@"
-  docker run --rm -v $WORKSPACE:/workspace maand $@
+  bash /scripts/start.sh $@
 }
 
 rm -rf /workspace/{ca.crt,ca.key,kv.db,maand.agent.db,maand.job.db,secrets.env,variables.env,command.sh}
@@ -22,54 +22,54 @@ echo "USE_SUDO=1" >> /workspace/maand.config.env
 echo "SSH_USER=agent" >> /workspace/maand.config.env
 echo "SSH_KEY=homelab.key" >> /workspace/maand.config.env
 
-maand build
+maand build_jobs
 maand plan
 maand deploy
 
 maand start_jobs --jobs="prometheus"
 python3 /tests/prometheus_targets.py prometheus up 1
-python3 /tests/prometheus_targets.py node_exporter down 4
-python3 /tests/prometheus_targets.py cadvisor_exporter down 4
-python3 /tests/prometheus_targets.py opensearch_exporter down 3
+python3 /tests/prometheus_targets.py node_exporter down 5
+python3 /tests/prometheus_targets.py cadvisor_exporter down 5
+python3 /tests/prometheus_targets.py opensearch_exporter down 4
 
 maand start_jobs --jobs="node_exporter"
 python3 /tests/prometheus_targets.py prometheus up 1
-python3 /tests/prometheus_targets.py node_exporter up 4
-python3 /tests/prometheus_targets.py cadvisor_exporter down 4
-python3 /tests/prometheus_targets.py opensearch_exporter down 3
+python3 /tests/prometheus_targets.py node_exporter up 5
+python3 /tests/prometheus_targets.py cadvisor_exporter down 5
+python3 /tests/prometheus_targets.py opensearch_exporter down 4
 
 maand start_jobs --jobs="cadvisor_exporter"
 python3 /tests/prometheus_targets.py prometheus up 1
-python3 /tests/prometheus_targets.py node_exporter up 4
-python3 /tests/prometheus_targets.py cadvisor_exporter up 4
-python3 /tests/prometheus_targets.py opensearch_exporter down 3
+python3 /tests/prometheus_targets.py node_exporter up 5
+python3 /tests/prometheus_targets.py cadvisor_exporter up 5
+python3 /tests/prometheus_targets.py opensearch_exporter down 4
 
 maand start_jobs --jobs="opensearch"
 python3 /tests/prometheus_targets.py prometheus up 1
-python3 /tests/prometheus_targets.py node_exporter up 4
-python3 /tests/prometheus_targets.py cadvisor_exporter up 4
-python3 /tests/prometheus_targets.py opensearch_exporter up 3
+python3 /tests/prometheus_targets.py node_exporter up 5
+python3 /tests/prometheus_targets.py cadvisor_exporter up 5
+python3 /tests/prometheus_targets.py opensearch_exporter up 4
 
 maand stop_jobs --jobs="opensearch,node_exporter,cadvisor_exporter"
-python3 /tests/prometheus_targets.py opensearch_exporter down 3
-python3 /tests/prometheus_targets.py node_exporter down 4
-python3 /tests/prometheus_targets.py cadvisor_exporter down 4
+python3 /tests/prometheus_targets.py opensearch_exporter down 4
+python3 /tests/prometheus_targets.py node_exporter down 5
+python3 /tests/prometheus_targets.py cadvisor_exporter down 5
 
 maand start_jobs --min-order=8 --max-order=12
 python3 /tests/prometheus_targets.py prometheus up 1
-python3 /tests/prometheus_targets.py node_exporter down 4
-python3 /tests/prometheus_targets.py cadvisor_exporter up 4
-python3 /tests/prometheus_targets.py opensearch_exporter down 3
+python3 /tests/prometheus_targets.py node_exporter down 5
+python3 /tests/prometheus_targets.py cadvisor_exporter up 5
+python3 /tests/prometheus_targets.py opensearch_exporter down 4
 
 maand start_jobs --max-order=1
 python3 /tests/prometheus_targets.py prometheus up 1
-python3 /tests/prometheus_targets.py node_exporter up 4
-python3 /tests/prometheus_targets.py cadvisor_exporter up 4
-python3 /tests/prometheus_targets.py opensearch_exporter down 3
+python3 /tests/prometheus_targets.py node_exporter up 5
+python3 /tests/prometheus_targets.py cadvisor_exporter up 5
+python3 /tests/prometheus_targets.py opensearch_exporter down 4
 
 maand start_jobs --min-order=55
 python3 /tests/prometheus_targets.py prometheus up 1
-python3 /tests/prometheus_targets.py node_exporter up 4
-python3 /tests/prometheus_targets.py cadvisor_exporter up 4
-python3 /tests/prometheus_targets.py opensearch_exporter up 3
+python3 /tests/prometheus_targets.py node_exporter up 5
+python3 /tests/prometheus_targets.py cadvisor_exporter up 5
+python3 /tests/prometheus_targets.py opensearch_exporter up 4
 

@@ -1,10 +1,18 @@
+import json
 import sys
 import time
 import requests
 from datetime import datetime, timedelta
 import urllib3
 
-PROMETHEUS_URL = "https://10.87.170.6:9090"
+def agents_ip(role):
+    with open("/workspace/agents.json") as f:
+        data = json.load(f)
+    return [item for item in data if role in item.get("roles")]
+
+prometheus = agents_ip("prometheus")[0].get("host")
+
+PROMETHEUS_URL = f"https://{prometheus}:9091"
 PROMETHEUS_AUTH = ("admin", "admin")
 TIMEOUT = 3 * 60  # Timeout after 3 minutes (in seconds)
 
