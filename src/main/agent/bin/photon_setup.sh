@@ -2,7 +2,7 @@
 set -ueo pipefail
 
 yum update -y
-yum install -y rsync make python corntab docker docker-compose git
+yum install -y rsync make python corntab docker docker-compose dstat
 
 username=agent
 if ! id "$username" &>/dev/null; then

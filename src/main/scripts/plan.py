@@ -23,7 +23,8 @@ def __plan_agents(db):
             agent_id = str(uuid.uuid4().hex)
 
         if row:
-            cursor.execute("UPDATE agent SET position = ? WHERE agent_id = ?", (position, agent_id,))
+            print(agent_ip, agent_id)
+            cursor.execute("UPDATE agent SET position = ?, detained = 0 WHERE agent_id = ?", (position, agent_id,))
         else:
             cursor.execute("INSERT INTO agent (agent_id, agent_ip, detained, position) VALUES (?, ?, 0, ?)", (agent_id, agent_ip, position,))
 

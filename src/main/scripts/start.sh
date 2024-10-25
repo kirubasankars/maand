@@ -16,6 +16,10 @@ export USE_SUDO=${USE_SUDO:-"0"}
 
 if [ "$OPERATION" == "initialize" ]; then
   python3 /scripts/initialize.py
+elif [ "$OPERATION" == "uptime" ]; then
+  python3 /scripts/uptime.py $@
+elif [ "$OPERATION" == "collect" ]; then
+  python3 /scripts/collect.py $@
 elif [ "$OPERATION" == "build_jobs" ]; then
   python3 /scripts/maand_job.py $@
 elif [ "$OPERATION" == "plan" ]; then

@@ -1,6 +1,7 @@
 import json
 import os
 
+import workspace
 import command_helper
 import context_manager
 import system_manager
@@ -18,8 +19,7 @@ def run_command(agent_ip):
 if __name__ == "__main__":
     args = utils.get_args_agents_roles_concurrency()
 
-    with open("/workspace/agents.json") as f:
-        data = json.load(f)
+    data = workspace.get_agents()
     agents = [agent.get("host") for agent in data]
 
     system_manager.run(command_helper.scan_agent, agents=agents)

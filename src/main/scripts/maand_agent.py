@@ -55,7 +55,7 @@ def get_agents(roles_filter=None):
     roles_filter = ",".join(roles_filter)
     with __get_connection() as db:
         cursor = db.cursor()
-        cursor.execute(f"SELECT DISTINCT agent_ip FROM agent a JOIN agent_roles ar ON a.agent_id = ar.agent_id WHERE ar.role IN ({roles_filter}) ORDER BY position;")
+        cursor.execute(f"SELECT DISTINCT agent_ip FROM agent a JOIN agent_roles ar ON a.agent_id = ar.agent_id WHERE a.detained = 0 AND ar.role IN ({roles_filter}) ORDER BY position;")
         rows = cursor.fetchall()
         return [row[0] for row in rows]
 

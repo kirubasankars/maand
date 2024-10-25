@@ -20,10 +20,13 @@ def build():
         print(e)
 
 
-def deploy():
+def deploy(jobs=None):
     try:
         shutil.rmtree("/opt/agents")
-        subprocess.run(["bash", "/scripts/start.sh", "deploy"])
+        l = ["bash", "/scripts/start.sh", "deploy"]
+        if jobs:
+            l.append(f"--jobs={jobs}")
+        subprocess.run(l)
     except subprocess.CalledProcessError as e:
         print(e)
 

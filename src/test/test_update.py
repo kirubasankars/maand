@@ -118,3 +118,24 @@ def test_remove_job_c():
         assert not os.path.exists(f"/{agent}/jobs/c")
 
 
+def test_update_a_job():
+
+    with open("/workspace/jobs/a/new_file1.txt", "w") as f:
+        f.write("test_file")
+    with open("/workspace/jobs/b/new_file1.txt", "w") as f:
+        f.write("test_file")
+
+    maand.build()
+    maand.deploy(jobs="a")
+    maand.sync_files()
+
+    for agent in agents_ip:
+        assert os.path.exists(f"/{agent}/jobs/a/new_file1.txt")
+        assert not os.path.exists(f"/{agent}/jobs/b/new_file1.txt")
+
+    maand.deploy(jobs="b")
+    maand.sync_files()
+
+    for agent in agents_ip:
+        assert os.path.exists(f"/{agent}/jobs/a/new_file1.txt")
+        assert os.path.exists(f"/{agent}/jobs/b/new_file1.txt")

@@ -3,11 +3,14 @@ IMAGE="maand"
 docker:
 	docker build -t $(IMAGE) ./src/main
 
+test: docker
+	make -C ./src/test build run
+
 exec:
 	docker run --rm --entrypoint=/bin/bash -v $(PWD)/workspace:/workspace -it $(IMAGE)
 
 clean:
-	rm -rf $(PWD)/workspace/*.db $(PWD)/workspace/{*.crt,*.key,command.sh}
+	rm -rf $(PWD)/workspace/ $(PWD)/workspace/{*.crt,*.key,command.sh,*.db,secrets.env,variables.env}
 
 initialize:
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) initialize
@@ -18,11 +21,15 @@ build_jobs:
 plan:
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) plan
 
+update:
+	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) update $(ARGS)
+
 build:
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) build_jobs
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) plan
 
 deploy:
+	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) update $(ARGS)
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) deploy $(ARGS)
 
 run_command:
@@ -33,6 +40,15 @@ run_command_with_health_check:
 
 run_command_local:
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) run_command_local $(ARGS)
+
+run_command_no_check:
+	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) run_command_no_check $(ARGS)
+
+uptime:
+	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) uptime $(ARGS)
+
+collect:
+	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) collect $(ARGS)
 
 start_jobs:
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) start_jobs $(ARGS)
@@ -48,9 +64,3 @@ rolling_restart_jobs:
 
 health_check:
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) health_check $(ARGS)
-
-run_command_no_check:
-	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) run_command_no_check $(ARGS)
-
-test: docker
-	make -C ./src/test build run
