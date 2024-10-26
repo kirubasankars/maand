@@ -31,10 +31,58 @@ def deploy(jobs=None):
         print(e)
 
 
-def clean():
-    import os
-    import subprocess
+def start_jobs(jobs=None):
+    try:
+        shutil.rmtree("/opt/agents")
+        l = ["bash", "/scripts/start.sh", "start_jobs"]
+        if jobs:
+            l.append(f"--jobs={jobs}")
+        subprocess.run(l)
+    except subprocess.CalledProcessError as e:
+        print(e)
 
+
+def stop_jobs(jobs=None):
+    try:
+        shutil.rmtree("/opt/agents")
+        l = ["bash", "/scripts/start.sh", "stop_jobs"]
+        if jobs:
+            l.append(f"--jobs={jobs}")
+        subprocess.run(l)
+    except subprocess.CalledProcessError as e:
+        print(e)
+
+
+def restart_jobs(jobs=None):
+    try:
+        shutil.rmtree("/opt/agents")
+        l = ["bash", "/scripts/start.sh", "restart_jobs"]
+        if jobs:
+            l.append(f"--jobs={jobs}")
+        subprocess.run(l)
+    except subprocess.CalledProcessError as e:
+        print(e)
+
+
+def run_command_no_check(command):
+    # Write to command.sh and execute the script
+    with open("/workspace/command.sh", "w") as f:
+        f.write(command)
+
+    # Run the bash script
+    subprocess.run(["bash", "/scripts/start.sh", "run_command_no_check"])
+
+
+def run_command(command):
+    # Write to command.sh and execute the script
+    with open("/workspace/command.sh", "w") as f:
+        f.write(command)
+
+    # Run the bash script
+    subprocess.run(["bash", "/scripts/start.sh", "run_command"])
+
+
+def clean():
     # List of files to delete
     files_to_delete = [
         "/workspace/variables.env",
@@ -54,13 +102,15 @@ def clean():
             pass
 
     try:
+        fix_maand_config()
         # Write to command.sh and execute the script
         with open("/workspace/command.sh", "w") as f:
             f.write("rm -rf /opt/agent")
 
         # Run the bash script
-        subprocess.run(["bash", "/scripts/start.sh", "run_command_no_check"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    except:
+        subprocess.run(["bash", "/scripts/start.sh", "run_command_no_check"])
+    except Exception as e:
+        print(e)
         pass
 
 
@@ -90,10 +140,11 @@ def agents_ip(role):
     return data
 
 
-def sync_files():
-    with open("/workspace/command.sh", "w") as f:
-        f.write('''rsync -vr --delete --rsync-path="sudo rsync" --rsh="ssh -i /workspace/homelab.key" agent@$AGENT_IP:/opt/agent/ /$AGENT_IP > /dev/null''')
-    subprocess.run(["bash", "/scripts/start.sh", "run_command_local"])
+def sync_files(agents):
+    for agent in agents:
+        with open("/workspace/command.sh", "w") as f:
+            f.write(f'rsync -vr --delete --rsync-path="sudo rsync" --rsh="ssh -i /workspace/homelab.key" agent@{agent}:/opt/agent/ /{agent} > /dev/null; sync')
+        subprocess.run(["bash", "/workspace/command.sh"])
 
 
 def tree(path):

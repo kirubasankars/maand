@@ -6,6 +6,7 @@ import maand
 agents = maand.agents_ip(None)
 agents_ip = [item.get("host") for item in agents]
 
+
 def test_update():
     maand.clean()
     maand.initialize()
@@ -139,3 +140,23 @@ def test_update_a_job():
     for agent in agents_ip:
         assert os.path.exists(f"/{agent}/jobs/a/new_file1.txt")
         assert os.path.exists(f"/{agent}/jobs/b/new_file1.txt")
+
+
+def test_update_seq():
+    maand.clean()
+    maand.initialize()
+    maand.build()
+    maand.deploy()
+    maand.sync_files()
+
+    for agent in agents_ip:
+        with open(f"/{agent}/update_seq.txt", "r") as f:
+            assert f.read().strip() == "1"
+
+    maand.deploy()
+    maand.sync_files()
+
+    for agent in agents_ip:
+        with open(f"/{agent}/update_seq.txt", "r") as f:
+            assert f.read().strip() == "2"
+

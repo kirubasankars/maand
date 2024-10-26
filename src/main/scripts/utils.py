@@ -27,7 +27,7 @@ def get_args_agents_jobs_concurrency():
     parser.add_argument('--max-order', default="100", type=int)
     parser.add_argument('--include-disabled', default=False, required=False, action='store_true')
     parser.add_argument('--concurrency', default="4", type=int)
-    args = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     if args.agents:
         args.agents = args.agents.split(',')
@@ -63,7 +63,7 @@ def get_args_jobs_concurrency():
     parser.add_argument('--max-order', default="100", required=False, type=int)
     parser.add_argument('--include-disabled', default=False, required=False, action='store_true')
     parser.add_argument('--concurrency', default="4", type=int)
-    args = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     if args.jobs:
         args.jobs = args.jobs.split(',')

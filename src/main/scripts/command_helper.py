@@ -1,6 +1,5 @@
 import subprocess
 import uuid
-from sys import stderr
 
 import utils
 

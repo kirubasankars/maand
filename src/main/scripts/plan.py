@@ -1,3 +1,4 @@
+import os.path
 import uuid
 import sqlite3
 import workspace
@@ -23,7 +24,6 @@ def __plan_agents(db):
             agent_id = str(uuid.uuid4().hex)
 
         if row:
-            print(agent_ip, agent_id)
             cursor.execute("UPDATE agent SET position = ?, detained = 0 WHERE agent_id = ?", (position, agent_id,))
         else:
             cursor.execute("INSERT INTO agent (agent_id, agent_ip, detained, position) VALUES (?, ?, 0, ?)", (agent_id, agent_ip, position,))
@@ -99,7 +99,8 @@ def __interceptor(db, action_type):
 
 def plan():
     with __get_connection() as db:
-        db.execute("ATTACH DATABASE '/workspace/maand.job.db' AS job_db;")
+        if os.path.exists("/workspace/maand.job.db"):
+            db.execute("ATTACH DATABASE '/workspace/maand.job.db' AS job_db;")
         #__interceptor(db, "pre_plan")
         __plan_agents(db)
         __plan_allocated_jobs(db)

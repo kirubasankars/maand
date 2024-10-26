@@ -10,7 +10,7 @@ exec:
 	docker run --rm --entrypoint=/bin/bash -v $(PWD)/workspace:/workspace -it $(IMAGE)
 
 clean:
-	rm -rf $(PWD)/workspace/ $(PWD)/workspace/{*.crt,*.key,command.sh,*.db,secrets.env,variables.env}
+	rm -rf $(PWD)/workspace/{ca.crt,ca.key,command.sh,*.db,secrets.env,variables.env,reports}
 
 initialize:
 	docker run --rm -v $(PWD)/workspace:/workspace $(IMAGE) initialize
