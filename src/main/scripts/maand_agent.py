@@ -2,7 +2,7 @@ import uuid
 import sqlite3
 
 def __get_connection():
-    return sqlite3.connect('/workspace/maand.agent.db')
+    return sqlite3.connect('workspace/maand.agent.db')
 
 
 def setup():

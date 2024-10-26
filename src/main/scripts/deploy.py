@@ -210,13 +210,14 @@ def sync(agent_ip):
 
     filtered_jobs, filtered = maand_agent.get_filtered_agent_jobs(agent_jobs, jobs_filter=args.jobs, min_order=args.min_order,max_order=args.max_order)
     filtered_jobs = list(filtered_jobs.keys())
-    if not filtered:
-        filtered_jobs = []
 
-    context_manager.rsync_upload_agent_files(agent_ip, filtered_jobs)
+#    print(f"job filter: {args.jobs}, agent ip: {agent_ip}, jobs: {filtered_jobs}, filtered: {filtered}")
+    context_manager.rsync_upload_agent_files(agent_ip, filtered_jobs, filtered)
+
+    agent_env = context_manager.get_agent_minimal_env(agent_ip)
+    command_helper.command_remote("sync", env=agent_env)
 
     logger.debug("Sync process completed.")
-    # TODO: update crontab if start on restart enabled
 
 
 def validate_cluster_id(agent_ip):

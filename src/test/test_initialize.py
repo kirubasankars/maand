@@ -1,10 +1,11 @@
 import os
-import maand
+
+from utils import *
 
 def test_initialize():
+    clean()
 
-    maand.clean()
-    maand.initialize()
+    command(get_maand_command("initialize"))
 
     assert os.path.exists("/workspace/ca.crt")
     assert os.path.exists("/workspace/ca.key")
@@ -15,4 +16,3 @@ def test_initialize():
     assert os.path.exists("/workspace/variables.env")
     assert os.path.exists("/workspace/command.sh")
     assert os.path.exists("/workspace/maand.config.env")
-

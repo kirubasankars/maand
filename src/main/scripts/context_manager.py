@@ -96,15 +96,17 @@ def get_agent_minimal_env(agent_ip):
     }
 
 
-def rsync_upload_agent_files(agent_ip, jobs):
+def rsync_upload_agent_files(agent_ip, jobs, filtered):
     agent_env = get_agent_minimal_env(agent_ip)
     lines = []
     if jobs:
         for job in jobs:
             lines.append(f"+ jobs/{job}\n")
+    if filtered:
         lines.append("- jobs/*\n")
-    with open("/tmp/rsync_rules.txt", "w") as f:
+    with open(f"/tmp/{agent_ip}_rsync_rules.txt", "w") as f:
         f.writelines(lines)
+
     command_helper.command_remote("mkdir -p /opt/agent", env=agent_env)
     command_helper.command_local("bash /scripts/rsync_upload.sh", env=agent_env)
 
