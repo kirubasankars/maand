@@ -20,6 +20,9 @@ elif [ "$OPERATION" == "uptime" ]; then
   python3 /scripts/uptime.py $@
 elif [ "$OPERATION" == "collect" ]; then
   python3 /scripts/collect.py $@
+elif [ "$OPERATION" == "build" ]; then
+  python3 /scripts/maand_job.py $@
+  python3 /scripts/plan.py $@
 elif [ "$OPERATION" == "build_jobs" ]; then
   python3 /scripts/maand_job.py $@
 elif [ "$OPERATION" == "plan" ]; then

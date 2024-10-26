@@ -193,9 +193,11 @@ def sync(agent_ip):
             f.write("{}={}\n".format(key, value))
 
     command_helper.command_local(f"""
-        rsync -r /agent/bin {agent_dir}/
-        mkdir -p {agent_dir}/jobs/
+        rsync -r /agent/bin {agent_dir}/    
     """)
+
+    if len(agent_jobs) > 0:
+        command_helper.command_local(f"mkdir -p {agent_dir}/jobs/")
 
     for job in agent_jobs:
         maand_job.copy_job(job, agent_dir)
