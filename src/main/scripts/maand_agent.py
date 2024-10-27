@@ -1,6 +1,8 @@
 import uuid
 import sqlite3
 
+import utils
+
 def __get_connection():
     return sqlite3.connect('workspace/maand.agent.db')
 
@@ -89,7 +91,7 @@ def get_agent_id(agent_ip):
         return row[0]
 
 
-def get_filtered_agent_jobs(jobs, jobs_filter=None, min_order=0, max_order=100):
+def get_filtered_agent_jobs(jobs, jobs_filter):
     filtered_jobs = {}
     if jobs_filter:
         for job_filter in jobs_filter:
@@ -99,15 +101,13 @@ def get_filtered_agent_jobs(jobs, jobs_filter=None, min_order=0, max_order=100):
         jobs_filter = []
         filtered_jobs = jobs
 
+    min_order, max_order = utils.get_order_min_max()
     filtered_jobs2 = {}
     for name, job in filtered_jobs.items():
         if min_order <= job["order"] < max_order:
             filtered_jobs2[name] = job
 
-    if min_order == 0 and max_order == 100:
-        filtered_jobs2 = filtered_jobs
-
-    return filtered_jobs2, len(jobs_filter) > 0 or min_order != 0 or max_order != 100
+    return filtered_jobs2, len(jobs_filter) > 0
 
 
 def get_cluster_id():

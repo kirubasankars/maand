@@ -1,4 +1,5 @@
 import os
+import sys
 
 from dotenv import dotenv_values
 
@@ -17,8 +18,8 @@ try:
     maand_job.setup()
     kv_manager.setup()
 except Exception as e:
-    logger.error(f"ERROR: {e}")
-    context_manager.stop_the_world()
+    print(f"ERROR: {e}", flush=True)
+    sys.exit(1)
 
 command_helper.command_local("""
     touch /workspace/{variables.env,secrets.env,command.sh,agents.json}

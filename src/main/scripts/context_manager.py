@@ -102,8 +102,8 @@ def rsync_upload_agent_files(agent_ip, jobs, filtered):
     if jobs:
         for job in jobs:
             lines.append(f"+ jobs/{job}\n")
-    if filtered:
-        lines.append("- jobs/*\n")
+    lines.append("- jobs/*\n")
+
     with open(f"/tmp/{agent_ip}_rsync_rules.txt", "w") as f:
         f.writelines(lines)
 

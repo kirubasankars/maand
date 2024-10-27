@@ -23,8 +23,6 @@ def get_args_agents_jobs_concurrency():
     parser = argparse.ArgumentParser()
     parser.add_argument('--agents', default="")
     parser.add_argument('--jobs', default="")
-    parser.add_argument('--min-order', default="0", type=int)
-    parser.add_argument('--max-order', default="100", type=int)
     parser.add_argument('--include-disabled', default=False, required=False, action='store_true')
     parser.add_argument('--concurrency', default="4", type=int)
     args, _ = parser.parse_known_args()
@@ -55,13 +53,14 @@ def get_args_agents_roles_concurrency():
 
     return args
 
+def get_order_min_max():
+    min_order = os.environ.get("MIN_ORDER", "0")
+    max_order = os.environ.get("MAX_ORDER", "10")
+    return int(min_order), int(max_order)
 
 def get_args_jobs_concurrency():
     parser = argparse.ArgumentParser()
     parser.add_argument('--jobs', default="", required=False)
-    parser.add_argument('--min-order', default="0", required=False, type=int)
-    parser.add_argument('--max-order', default="100", required=False, type=int)
-    parser.add_argument('--include-disabled', default=False, required=False, action='store_true')
     parser.add_argument('--concurrency', default="4", type=int)
     args, _ = parser.parse_known_args()
 

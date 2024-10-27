@@ -21,7 +21,7 @@ def get_job_manifest(job_name):
     with open(manifest_path, "r") as f:
         metadata = json.loads(f.read())
         if "order" not in metadata:
-            metadata["order"] = 99
+            metadata["order"] = 9
         if "roles" not in metadata:
             metadata["roles"] = []
         if "certs" not in metadata:

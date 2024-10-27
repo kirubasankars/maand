@@ -2,7 +2,6 @@ from utils import *
 import workspace
 
 
-
 def test_update_seq():
 
     clean()
@@ -194,3 +193,36 @@ def test_update_a_job_with_agent_role():
     agents_ip = workspace.get_agents_ip()
     for agent in agents_ip:
         assert read_file_content(f"/workspace/data/{agent}/update_seq.txt") == "4"
+
+
+def test_update_order_selector():
+    clean()
+    command(get_maand_command("initialize"))
+
+    make_job("a", roles=["group1"], order="2")
+    make_job("b", roles=["group2"], order="10")
+    make_job("c", roles=["group2"])
+    make_job("d", roles=["group2"], order="15")
+
+    command(get_maand_command("build"))
+    command(get_maand_command("deploy"))
+    sync()
+
+    group3 = workspace.get_agent_ip_by_role("group3")
+    group2 = workspace.get_agent_ip_by_role("group2")
+    agents = set(group3) - set(group2)
+    for agent in agents:
+        assert not os.path.exists(f"/workspace/data/{agent}/jobs")
+
+    group2 = workspace.get_agent_ip_by_role("group2")
+    for agent in group2:
+        assert not os.path.exists(f"/workspace/data/{agent}/jobs/b/manifest.json")
+        assert os.path.exists(f"/workspace/data/{agent}/jobs/c/manifest.json")
+        assert not os.path.exists(f"/workspace/data/{agent}/jobs/d/manifest.json")
+
+    group1 = workspace.get_agent_ip_by_role("group1")
+    for agent in group1:
+        assert os.path.exists(f"/workspace/data/{agent}/jobs/a/manifest.json")
+        assert not os.path.exists(f"/workspace/data/{agent}/jobs/b/manifest.json")
+        assert os.path.exists(f"/workspace/data/{agent}/jobs/c/manifest.json")
+        assert not os.path.exists(f"/workspace/data/{agent}/jobs/d/manifest.json")

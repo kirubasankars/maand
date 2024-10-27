@@ -8,7 +8,7 @@ import workspace
 
 
 def get_maand_command(args):
-    return f"docker run --rm -v $WORKSPACE_PATH:/workspace:z maand {args}; sync"
+    return f"docker run --rm -v $WORKSPACE_PATH:/workspace:z maand {args}"
 
 
 def command(cmd, env=None, stdout=None, stderr=None):
@@ -26,9 +26,12 @@ def clean():
     shutil.copy("/tests/fixtures/homelab.key", "/workspace/homelab.key")
     shutil.copy("/tests/fixtures/maand.config.env", "/workspace/maand.config.env")
 
-    command("echo 'rm -rf /opt/agent' > /workspace/command.sh")
-    command(get_maand_command("run_command_no_check"))
     scan_agent()
+
+    agents_ip = workspace.get_agents_ip()
+    for agent in agents_ip:
+        command("mkdir -p /workspace/data")
+        command(f"ssh -i /workspace/homelab.key agent@{agent} 'sudo rm -rf /opt/agent'")
 
 
 def sync():
@@ -44,10 +47,10 @@ def read_file_content(file_path):
         return f.read()
 
 
-def make_job(name, roles):
+def make_job(name, roles=[], order=0):
     os.makedirs(f"/workspace/jobs/{name}", exist_ok=True)
     with open(f"/workspace/jobs/{name}/manifest.json", "w") as f:
-        f.write(json.dumps({"roles": roles}))
+        f.write(json.dumps({"roles": roles, "order": order}))
 
     with open("/tests/fixtures/Makefile.sample", "rb") as rf:
         with open(f"/workspace/jobs/{name}/Makefile", "wb") as wf:
@@ -57,4 +60,4 @@ def scan_agent():
     agents_ip = workspace.get_agents_ip()
     for agent_ip in agents_ip:
         agent_file = agent_ip.replace(".", "_")
-        command(f"ssh-keyscan -H {agent_ip} > /tmp/{agent_file}.agent; cat /tmp/*.agent > ~/.ssh/known_hosts", stderr=subprocess.DEVNULL)
+        command(f"ssh-keyscan -H {agent_ip} > /tmp/{agent_file}.agent ; cat /tmp/*.agent > ~/.ssh/known_hosts", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

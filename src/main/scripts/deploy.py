@@ -206,12 +206,11 @@ def sync(agent_ip):
     update_certificates(agent_jobs, agent_ip)
 
     command_helper.command_local("rm -f /workspace/ca.srl")
-    command_helper.command_local(f"chown -R 1050:1042 {agent_dir}")
+    command_helper.command_local(f"chown -R 1061:1062 {agent_dir}")
 
-    filtered_jobs, filtered = maand_agent.get_filtered_agent_jobs(agent_jobs, jobs_filter=args.jobs, min_order=args.min_order,max_order=args.max_order)
+    filtered_jobs, filtered = maand_agent.get_filtered_agent_jobs(agent_jobs, jobs_filter=args.jobs)
     filtered_jobs = list(filtered_jobs.keys())
 
-#    print(f"job filter: {args.jobs}, agent ip: {agent_ip}, jobs: {filtered_jobs}, filtered: {filtered}")
     context_manager.rsync_upload_agent_files(agent_ip, filtered_jobs, filtered)
 
     agent_env = context_manager.get_agent_minimal_env(agent_ip)

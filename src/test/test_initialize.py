@@ -16,3 +16,7 @@ def test_initialize():
     assert os.path.exists("/workspace/variables.env")
     assert os.path.exists("/workspace/command.sh")
     assert os.path.exists("/workspace/maand.config.env")
+
+def test_initialize_failed():
+     r = command(get_maand_command("initialize"))
+     assert r.returncode == 1
