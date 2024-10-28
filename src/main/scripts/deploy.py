@@ -222,7 +222,7 @@ def validate_cluster_id(agent_ip):
     context_manager.validate_namespace_id(agent_ip, fail_if_no_namespace_id=False)
 
 
-def apply():
+def deploy():
     args = utils.get_args_jobs_concurrency()
 
     update_seq = maand_agent.get_update_seq()
@@ -236,4 +236,4 @@ def apply():
 
 
 if __name__ == "__main__":
-    apply()
+    deploy()

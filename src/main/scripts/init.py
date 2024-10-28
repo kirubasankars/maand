@@ -11,7 +11,7 @@ import maand_agent
 import utils
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--name", help="name of the namespace")
+parser.add_argument("--name", help="name of the namespace", default="default")
 args = parser.parse_args()
 
 config_parser = configparser.ConfigParser()
@@ -46,8 +46,8 @@ config_parser = utils.get_maand_conf()
 
 if not os.path.isfile('/workspace/secrets/ca.key'):
     ca_ttl = config_parser.get("default", "ca_ttl")
-    cluster_id = maand_agent.get_namespace_id()
+    namespace_id = maand_agent.get_namespace_id()
     cert_provider.generate_ca_private()
-    cert_provider.generate_ca_public(cluster_id, ca_ttl)
+    cert_provider.generate_ca_public(namespace_id, ca_ttl)
 
 command_helper.command_local("chmod 777 /workspace/{*.env,secrets/secrets.env,*.conf,command.sh,agents.json}")
