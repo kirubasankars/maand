@@ -4,7 +4,7 @@ import sqlite3
 import utils
 
 def __get_connection():
-    return sqlite3.connect('workspace/maand.agent.db')
+    return sqlite3.connect('/workspace/data/maand.agent.db')
 
 
 def setup():
@@ -30,7 +30,7 @@ def get_agent_jobs(agent_ip):
     with __get_connection() as db:
         db.execute("ATTACH DATABASE '/workspace/maand.job.db' AS job_db;")
         cursor = db.cursor()
-        cursor.execute("SELECT j.name, aj.disabled, j.position FROM agent a JOIN agent_jobs aj ON a.agent_id = aj.agent_id JOIN job_db.job j ON j.name = aj.job AND a.agent_ip = ? ORDER BY j.position", (agent_ip,))
+        cursor.execute("SELECT aj.job, aj.disabled, j.position as position FROM agent a JOIN agent_jobs aj ON a.agent_id = aj.agent_id JOIN job_db.job j ON j.name = aj.job AND a.agent_ip = ? ORDER BY j.position", (agent_ip,))
         rows = cursor.fetchall()
         return {row[0]: {"disabled": row[1], "order": row[2] } for row in rows}
 
@@ -89,25 +89,6 @@ def get_agent_id(agent_ip):
         cursor.execute(f"SELECT agent_id FROM agent WHERE agent_ip = ?", (agent_ip,))
         row = cursor.fetchone()
         return row[0]
-
-
-def get_filtered_agent_jobs(jobs, jobs_filter):
-    filtered_jobs = {}
-    if jobs_filter:
-        for job_filter in jobs_filter:
-            if job_filter in jobs:
-                filtered_jobs[job_filter] = jobs[job_filter]
-    else:
-        jobs_filter = []
-        filtered_jobs = jobs
-
-    min_order, max_order = utils.get_order_min_max()
-    filtered_jobs2 = {}
-    for name, job in filtered_jobs.items():
-        if min_order <= job["order"] < max_order:
-            filtered_jobs2[name] = job
-
-    return filtered_jobs2, len(jobs_filter) > 0
 
 
 def get_cluster_id():

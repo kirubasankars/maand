@@ -16,7 +16,7 @@ def command_local(cmd, env=None, stdout=None, stderr=None):
 
 
 def command_remote(cmd, env=None, stdout=None, stderr=None):
-    use_sudo = utils.is_sudo_enabled()
+    use_sudo = utils.is_sudo_enabled(env)
     file_id = uuid.uuid4()
     with open(f"/tmp/{file_id}", "w") as f:
         f.write("#!/bin/bash\n")
@@ -29,7 +29,7 @@ def command_remote(cmd, env=None, stdout=None, stderr=None):
 
 
 def command2_remote(file_path, env=None, stdout=None, stderr=None):
-    use_sudo = utils.is_sudo_enabled()
+    use_sudo = utils.is_sudo_enabled(env)
     sh = "sh" if not use_sudo else "sudo sh"
     return command_local(
         f"ssh -i /workspace/$SSH_KEY $SSH_USER@$AGENT_IP 'timeout 300 {sh}' < {file_path}",

@@ -1,11 +1,8 @@
 import os.path
 import uuid
-import sqlite3
 import workspace
 import maand_job
-
-def __get_connection():
-    return sqlite3.connect('/workspace/maand.agent.db')
+from maand_agent import __get_connection
 
 
 def __plan_agents(db):
@@ -65,13 +62,22 @@ def __plan_allocated_jobs(db):
 
     for agent_id, agent_ip in agents:
         cursor.execute("""
-                       SELECT j.job_id, j.name FROM job_db.job j JOIN job_db.job_roles jr WHERE jr.job_id = j.job_id AND EXISTS(
+                       SELECT j.name FROM job_db.job j JOIN job_db.job_roles jr WHERE jr.job_id = j.job_id AND EXISTS(
                             SELECT 1 FROM agent a JOIN agent_roles ar on a.agent_id = ar.agent_id AND jr.role = ar.role AND a.agent_ip = ?
                        )
                        """, (agent_ip,))
-        assigned_jobs = cursor.fetchall()
 
-        for job_id, job in assigned_jobs:
+        assigned_jobs = [row[0] for row in cursor.fetchall()]
+
+        # cursor.execute("SELECT job FROM agent_jobs WHERE agent_id = ?", (agent_id,))
+        # all_agent_jobs = [row[0] for row in cursor.fetchall()]
+        # removed_jobs = list(set(all_agent_jobs) ^ set(assigned_jobs))
+        # print(removed_jobs, "removed_jobs", flush=True)
+        # for job in removed_jobs:
+        #     print(f"DELETE FROM agent_jobs WHERE job = {job} AND agent_id = {agent_id}", flush=True)
+        #     cursor.execute("DELETE FROM agent_jobs WHERE job = ? AND agent_id = ?", (job, agent_id,))
+
+        for job in assigned_jobs:
 
             disabled = agent_ip in disabled_agents
             if not disabled:

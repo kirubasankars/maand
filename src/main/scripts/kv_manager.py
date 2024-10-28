@@ -1,7 +1,7 @@
 import sqlite3
 
 def get_connection():
-    return sqlite3.connect('/workspace/kv.db')
+    return sqlite3.connect('/workspace/data/kv.db')
 
 def setup():
     with get_connection() as connection:

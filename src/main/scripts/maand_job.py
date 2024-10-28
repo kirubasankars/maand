@@ -8,7 +8,7 @@ import uuid
 import workspace
 
 def __get_connection():
-    return sqlite3.connect('workspace/maand.job.db')
+    return sqlite3.connect('/workspace/maand.job.db')
 
 
 def setup():

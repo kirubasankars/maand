@@ -6,12 +6,12 @@ from command_helper import *
 
 
 def generate_ca_private():
-    command_local("openssl genrsa -out /workspace/ca.key 4096")
+    command_local("openssl genrsa -out /workspace/secrets/ca.key 4096")
 
 
 def generate_ca_public(common_name, ttl):
     command_local(f"openssl req -new -x509 -sha256 -days {ttl} -subj '/CN={common_name}' -key "
-                  "/workspace/ca.key -out /workspace/ca.crt")
+                  "/workspace/secrets/ca.key -out /workspace/secrets/ca.crt")
 
 
 def generate_site_private(name, path):
@@ -32,7 +32,7 @@ def generate_site_public(name, san, ttl, path):
     with open("/tmp/extfile.conf", "w") as f:
         f.writelines(f"subjectAltName={san}")
     command_local(f"openssl x509 -req -sha256 -days {ttl} -in {path}/{name}.csr "
-                  f"-CA /workspace/ca.crt -CAkey /workspace/ca.key "
+                  f"-CA /workspace/secrets/ca.crt -CAkey /workspace/secrets/ca.key "
                   f"-out {path}/{name}.crt -extfile /tmp/extfile.conf -CAcreateserial 2> /dev/null")
 
 

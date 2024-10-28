@@ -48,6 +48,8 @@ def update_certificates(jobs, agent_ip):
     get_cert_if_available(f"{agent_cert_path}.crt", f"{agent_cert_kv_path}.crt")
     get_cert_if_available(f"{agent_cert_path}.pem", f"{agent_cert_kv_path}.pem")
 
+    command_helper.command_local("tree /opt/agents")
+
     if (not os.path.isfile(f"{agent_cert_path}.key") or
             (os.path.isfile(f"{agent_cert_path}.crt") and cert_provider.is_certificate_expiring_soon(f"{agent_cert_path}.crt"))):
 
@@ -174,7 +176,7 @@ def sync(agent_ip):
 
     command_helper.command_local(f"""
         mkdir -p {agent_dir}/certs
-        rsync /workspace/ca.crt {agent_dir}/certs/
+        rsync /workspace/secrets/ca.crt {agent_dir}/certs/
     """)
 
     agent_jobs = maand_agent.get_agent_jobs(agent_ip)
@@ -205,17 +207,16 @@ def sync(agent_ip):
     transpile(agent_ip)
     update_certificates(agent_jobs, agent_ip)
 
-    command_helper.command_local("rm -f /workspace/ca.srl")
+    command_helper.command_local("rm -f /workspace/secrets/ca.srl")
     command_helper.command_local(f"chown -R 1061:1062 {agent_dir}")
 
-    filtered_jobs, filtered = maand_agent.get_filtered_agent_jobs(agent_jobs, jobs_filter=args.jobs)
-    filtered_jobs = list(filtered_jobs.keys())
+    jobs = list(agent_jobs.keys())
+    if args.jobs:
+        jobs = list(set(agent_jobs.keys()) & set(args.jobs))
 
-    context_manager.rsync_upload_agent_files(agent_ip, filtered_jobs, filtered)
-
+    context_manager.rsync_upload_agent_files(agent_ip, jobs)
     agent_env = context_manager.get_agent_minimal_env(agent_ip)
     command_helper.command_remote("sync", env=agent_env)
-
     logger.debug("Sync process completed.")
 
 

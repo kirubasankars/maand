@@ -1,3 +1,4 @@
+import argparse
 import os.path
 
 import command_helper
@@ -16,5 +17,14 @@ def run_command(agent_ip):
 
 if __name__ == "__main__":
     args = utils.get_args_agents_roles_concurrency()
-    system_manager.run(context_manager.validate_cluster_update_seq)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--no-check', action='store_true')
+    parser.set_defaults(no_check=False)
+    local_args, _ = parser.parse_known_args()
+
+    system_manager.run(command_helper.scan_agent)
+    if not local_args.no_check:
+        system_manager.run(context_manager.validate_cluster_update_seq)
+
     system_manager.run(run_command, concurrency=args.concurrency, roles_filter=args.roles, agents_filter=args.agents)

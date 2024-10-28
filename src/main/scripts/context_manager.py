@@ -13,7 +13,7 @@ logger = utils.get_logger()
 
 
 def load_secrets(values):
-    secrets = dotenv_values("/workspace/secrets.env")
+    secrets = dotenv_values("/workspace/secrets/secrets.env")
     for key, value in secrets.items():
         values[key] = value
     return values
@@ -86,22 +86,23 @@ def get_agent_dir(agent_ip):
 
 
 def get_agent_minimal_env(agent_ip):
-    config = dotenv_values("/workspace/maand.config.env")
+    config = utils.get_maand_conf()
     return {
         "AGENT_IP": agent_ip,
         "AGENT_DIR": get_agent_dir(agent_ip),
-        "SSH_USER": config.get("SSH_USER"),
-        "SSH_KEY": config.get("SSH_KEY"),
-        "USE_SUDO": config.get("USE_SUDO")
+        "SSH_USER": config.get("default", "ssh_user"),
+        "SSH_KEY": config.get("default", "ssh_key"),
+        "USE_SUDO": config.get("default", "use_sudo")
     }
 
 
-def rsync_upload_agent_files(agent_ip, jobs, filtered):
+def rsync_upload_agent_files(agent_ip, jobs):
     agent_env = get_agent_minimal_env(agent_ip)
     lines = []
-    if jobs:
-        for job in jobs:
-            lines.append(f"+ jobs/{job}\n")
+
+    for job in jobs:
+        lines.append(f"+ jobs/{job}\n")
+
     lines.append("- jobs/*\n")
 
     with open(f"/tmp/{agent_ip}_rsync_rules.txt", "w") as f:

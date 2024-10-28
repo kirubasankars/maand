@@ -1,13 +1,16 @@
 import argparse
+import configparser
 import functools
 import logging
 import os
 import fcntl
+from functools import cache
+from logging import getLogger
 
 
 @functools.cache
-def get_logger():
-    root_logger = logging.getLogger(os.getenv("AGENT_IP"))
+def get_logger(ns=None):
+    root_logger = getLogger(ns)
     console_handler = logging.StreamHandler()
     root_logger.addHandler(console_handler)
     log_level = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -15,8 +18,8 @@ def get_logger():
     return root_logger
 
 
-def is_sudo_enabled():
-    return os.environ.get("USE_SUDO", "0") == "1"
+def is_sudo_enabled(env):
+    return env.get("USE_SUDO", "0") == "1"
 
 
 def get_args_agents_jobs_concurrency():
@@ -53,11 +56,6 @@ def get_args_agents_roles_concurrency():
 
     return args
 
-def get_order_min_max():
-    min_order = os.environ.get("MIN_ORDER", "0")
-    max_order = os.environ.get("MAX_ORDER", "10")
-    return int(min_order), int(max_order)
-
 def get_args_jobs_concurrency():
     parser = argparse.ArgumentParser()
     parser.add_argument('--jobs', default="", required=False)
@@ -69,6 +67,11 @@ def get_args_jobs_concurrency():
 
     return args
 
+@cache
+def get_maand_conf():
+    config_parser = configparser.ConfigParser()
+    config_parser.read("/workspace/maand.conf")
+    return config_parser
 
 class FileMutex:
     def __init__(self, filename):

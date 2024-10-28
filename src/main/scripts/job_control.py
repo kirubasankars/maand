@@ -9,21 +9,16 @@ import utils
 
 
 def run_command(agent_ip):
-    jobs = maand_agent.get_agent_jobs(agent_ip)
-    filtered_jobs, filter_applied = maand_agent.get_filtered_agent_jobs(jobs, jobs_filter=args.jobs, min_order=args.min_order, max_order=args.max_order)
+    agent_jobs = maand_agent.get_agent_jobs(agent_ip)
 
-    if not args.include_disabled:
-        disabled_jobs = [name for name, job in jobs.items() if job.get("disabled", 0) == 1]
-        filtered_jobs = list(set(filtered_jobs.keys()) - set(disabled_jobs))
+    missing_jobs = set(args.jobs) - set(agent_jobs.keys())
+    if missing_jobs:
+        raise Exception(f"No jobs found: {missing_jobs}")
 
-    filtered_jobs = ",".join(filtered_jobs)
+    jobs = args.jobs or agent_jobs.keys()
+    filtered_jobs = ",".join(jobs)
     agent_env = context_manager.get_agent_minimal_env(agent_ip)
-
-    if filter_applied:
-        if filtered_jobs:
-            command_helper.command_remote(f"python3 /opt/agent/bin/runner.py {cmd} --jobs {filtered_jobs}", env=agent_env)
-    else:
-        command_helper.command_remote(f"python3 /opt/agent/bin/runner.py {cmd}", env=agent_env)
+    command_helper.command_remote(f"python3 /opt/agent/bin/runner.py {cmd} --jobs {filtered_jobs}", env=agent_env)
 
 
 if __name__ == "__main__":

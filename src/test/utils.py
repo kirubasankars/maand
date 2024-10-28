@@ -24,22 +24,22 @@ def clean():
     command("rm -rf /workspace/*")
     shutil.copy("/tests/fixtures/agents.json", "/workspace/agents.json")
     shutil.copy("/tests/fixtures/homelab.key", "/workspace/homelab.key")
-    shutil.copy("/tests/fixtures/maand.config.env", "/workspace/maand.config.env")
+    shutil.copy("/tests/fixtures/maand.conf", "/workspace/maand.conf")
 
     scan_agent()
 
     agents_ip = workspace.get_agents_ip()
     for agent in agents_ip:
-        command("mkdir -p /workspace/data")
+        command("mkdir -p /workspace/tmp")
         command(f"ssh -i /workspace/homelab.key agent@{agent} 'sudo rm -rf /opt/agent'")
 
 
 def sync():
     agents_ip = workspace.get_agents_ip()
     for agent in agents_ip:
-        command("mkdir -p /workspace/data")
+        command("mkdir -p /workspace/tmp")
         command(f"ssh -i /workspace/homelab.key agent@{agent} 'sync'")
-        command(f'rsync -vr --delete --rsync-path="sudo rsync" --rsh="ssh -i /workspace/homelab.key" agent@{agent}:/opt/agent/ /workspace/data/{agent} > /dev/null; sync;')
+        command(f'rsync -vr --delete --rsync-path="sudo rsync" --rsh="ssh -i /workspace/homelab.key" agent@{agent}:/opt/agent/ /workspace/tmp/{agent};')
 
 
 def read_file_content(file_path):
