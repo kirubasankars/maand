@@ -19,10 +19,10 @@ import kv_manager
 
 logger = utils.get_logger()
 
-namespace = "maand"
+kv_namespace = "maand"
 
 def get_cert_if_available(location, kv_path):
-    content = kv_manager.get_value(namespace, kv_path)
+    content = kv_manager.get_value(kv_namespace, kv_path)
     if content:
         content = base64.b64decode(content)
         with open(location, "wb") as f:
@@ -32,7 +32,7 @@ def get_cert_if_available(location, kv_path):
 def put_cert(location, kv_path):
     with open(location, "rb") as f:
         content = base64.b64encode(f.read()).decode('utf-8')
-        kv_manager.put_key_value(namespace, kv_path, content)
+        kv_manager.put_key_value(kv_namespace, kv_path, content)
 
 
 def update_certificates(jobs, agent_ip):
@@ -47,8 +47,6 @@ def update_certificates(jobs, agent_ip):
     get_cert_if_available(f"{agent_cert_path}.key", f"{agent_cert_kv_path}.key")
     get_cert_if_available(f"{agent_cert_path}.crt", f"{agent_cert_kv_path}.crt")
     get_cert_if_available(f"{agent_cert_path}.pem", f"{agent_cert_kv_path}.pem")
-
-    command_helper.command_local("tree /opt/agents")
 
     if (not os.path.isfile(f"{agent_cert_path}.key") or
             (os.path.isfile(f"{agent_cert_path}.crt") and cert_provider.is_certificate_expiring_soon(f"{agent_cert_path}.crt"))):
@@ -86,10 +84,10 @@ def update_certificates(jobs, agent_ip):
 
         update_certs = False
 
-        current_hash = kv_manager.get_value(namespace, f"{job_cert_kv_location}/md5.hash")
+        current_hash = kv_manager.get_value(kv_namespace, f"{job_cert_kv_location}/md5.hash")
         new_hash = hashlib.md5(json.dumps(certificates).encode()).hexdigest()
         if current_hash != new_hash:
-            kv_manager.put_key_value(namespace, f"{job_cert_kv_location}/md5.hash", new_hash)
+            kv_manager.put_key_value(kv_namespace, f"{job_cert_kv_location}/md5.hash", new_hash)
             update_certs = True
 
         for cert in certificates:
@@ -157,17 +155,17 @@ def transpile(agent_ip):
 
 def sync(agent_ip):
     args = utils.get_args_jobs_concurrency()
-    cluster_id = maand_agent.get_cluster_id()
+    cluster_id = maand_agent.get_namespace_id()
     agent_dir = context_manager.get_agent_dir(agent_ip)
 
     logger.debug("Starting sync process...")
 
     command_helper.command_local(f"mkdir -p {agent_dir}")
-    with open(f"{agent_dir}/cluster_id.txt", "w") as f:
+    with open(f"{agent_dir}/namespace.txt", "w") as f:
         f.write(cluster_id)
 
     agent_id = maand_agent.get_agent_id(agent_ip)
-    with open(f"{agent_dir}/agent_id.txt", "w") as f:
+    with open(f"{agent_dir}/agent.txt", "w") as f:
         f.write(agent_id)
 
     update_seq = maand_agent.get_update_seq()
@@ -221,7 +219,7 @@ def sync(agent_ip):
 
 
 def validate_cluster_id(agent_ip):
-    context_manager.validate_cluster_id(agent_ip, fail_if_no_cluster_id=False)
+    context_manager.validate_namespace_id(agent_ip, fail_if_no_namespace_id=False)
 
 
 def apply():

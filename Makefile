@@ -14,7 +14,7 @@ clean:
 	sudo rm -rf $(PWD)/workspace/{secrets,command.sh,*.db,*.env,*.conf,reports,data,tmp}
 
 init:
-	docker run --rm -v $(PWD)/workspace:/workspace:z $(IMAGE) init
+	docker run --rm -v $(PWD)/workspace:/workspace:z $(IMAGE) init $(ARGS)
 
 build_jobs:
 	docker run --rm -v $(PWD)/workspace:/workspace:z $(IMAGE) build_jobs

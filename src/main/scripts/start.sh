@@ -9,7 +9,7 @@ shift
 mkdir -p /opt/agents
 
 if [ "$OPERATION" == "init" ]; then
-  python3 /scripts/init.py
+  python3 /scripts/init.py $@
 elif [ "$OPERATION" == "uptime" ]; then
   python3 /scripts/uptime.py $@
 elif [ "$OPERATION" == "collect" ]; then

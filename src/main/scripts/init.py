@@ -1,3 +1,4 @@
+import argparse
 import os
 import sys
 
@@ -9,12 +10,16 @@ import kv_manager
 import maand_agent
 import utils
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--name", help="name of the namespace")
+args = parser.parse_args()
+
 config_parser = configparser.ConfigParser()
 logger = utils.get_logger()
 
 try:
     command_helper.command_local("mkdir -p /workspace/{data,secrets}")
-    maand_agent.setup()
+    maand_agent.setup(args.name)
     kv_manager.setup()
 except Exception as e:
     print(f"ERROR: {e}", flush=True)
@@ -41,7 +46,7 @@ config_parser = utils.get_maand_conf()
 
 if not os.path.isfile('/workspace/secrets/ca.key'):
     ca_ttl = config_parser.get("default", "ca_ttl")
-    cluster_id = maand_agent.get_cluster_id()
+    cluster_id = maand_agent.get_namespace_id()
     cert_provider.generate_ca_private()
     cert_provider.generate_ca_public(cluster_id, ca_ttl)
 

@@ -7,19 +7,19 @@ def __get_connection():
     return sqlite3.connect('/workspace/data/maand.agent.db')
 
 
-def setup():
+def setup(name):
     with __get_connection() as connection:
         cursor = connection.cursor()
 
-        cursor.execute("CREATE TABLE IF NOT EXISTS cluster (cluster_id TEXT, update_seq INT)")
+        cursor.execute("CREATE TABLE IF NOT EXISTS namespace (namespace_id TEXT, name TEXT, update_seq INT)")
         cursor.execute("CREATE TABLE IF NOT EXISTS agent (agent_id TEXT, agent_ip TEXT, detained INT, position INT)")
         cursor.execute("CREATE TABLE IF NOT EXISTS agent_roles (agent_id TEXT, role TEXT)")
         cursor.execute("CREATE TABLE IF NOT EXISTS agent_tags (agent_id TEXT, key TEXT, value INT)")
         cursor.execute("CREATE TABLE IF NOT EXISTS agent_jobs (agent_id TEXT, job TEXT, disabled INT)")
 
-        cursor.execute("SELECT cluster_id FROM cluster")
+        cursor.execute("SELECT namespace_id FROM namespace")
         if cursor.fetchone() is None:
-            cursor.execute("INSERT INTO cluster (cluster_id, update_seq) VALUES (?, ?)", (str(uuid.uuid4().hex), 0))
+            cursor.execute("INSERT INTO namespace (namespace_id, name, update_seq) VALUES (?, ?, ?)", (str(uuid.uuid4().hex), name, 0))
         else:
             raise Exception("cluster is already initialized")
 
@@ -91,10 +91,18 @@ def get_agent_id(agent_ip):
         return row[0]
 
 
-def get_cluster_id():
+def get_namespace_id():
     with __get_connection() as db:
         cursor = db.cursor()
-        cursor.execute("SELECT cluster_id FROM cluster")
+        cursor.execute("SELECT namespace_id FROM namespace")
+        row = cursor.fetchone()
+        return row[0]
+
+
+def get_namespace():
+    with __get_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("SELECT name FROM namespace")
         row = cursor.fetchone()
         return row[0]
 
@@ -102,7 +110,7 @@ def get_cluster_id():
 def get_update_seq():
     with __get_connection() as db:
         cursor = db.cursor()
-        cursor.execute("SELECT update_seq FROM cluster")
+        cursor.execute("SELECT update_seq FROM namespace")
         row = cursor.fetchone()
         return row[0]
 
@@ -110,5 +118,5 @@ def get_update_seq():
 def update_seq(seq):
     with __get_connection() as db:
         cursor = db.cursor()
-        cursor.execute("UPDATE cluster SET update_seq = ?", (seq,))
+        cursor.execute("UPDATE namespace SET update_seq = ?", (seq,))
         db.commit()

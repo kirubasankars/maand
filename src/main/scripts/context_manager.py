@@ -71,7 +71,7 @@ def _add_tags_to_values(values, agent_ip):
 def get_values(agent_ip):
     values = dotenv_values("/workspace/variables.env")
 
-    values["CLUSTER_ID"] = maand_agent.get_cluster_id()
+    values["NAMESPACE_ID"] = maand_agent.get_namespace_id()
     values["AGENT_ID"] = maand_agent.get_agent_id(agent_ip)
     values["AGENT_IP"] = agent_ip
 
@@ -92,7 +92,8 @@ def get_agent_minimal_env(agent_ip):
         "AGENT_DIR": get_agent_dir(agent_ip),
         "SSH_USER": config.get("default", "ssh_user"),
         "SSH_KEY": config.get("default", "ssh_key"),
-        "USE_SUDO": config.get("default", "use_sudo")
+        "USE_SUDO": config.get("default", "use_sudo"),
+        "NAMESPACE": maand_agent.get_namespace()
     }
 
 
@@ -108,20 +109,21 @@ def rsync_upload_agent_files(agent_ip, jobs):
     with open(f"/tmp/{agent_ip}_rsync_rules.txt", "w") as f:
         f.writelines(lines)
 
-    command_helper.command_remote("mkdir -p /opt/agent", env=agent_env)
-    command_helper.command_local("bash /scripts/rsync_upload.sh", env=agent_env)
+    namespace = agent_env.get("NAMESPACE", "")
+    command_helper.command_remote(f"mkdir -p /opt/agent/{namespace}", env=agent_env)
+    command_helper.command_local(f"bash /scripts/rsync_upload.sh", env=agent_env)
 
 
-def validate_cluster_id(agent_ip, fail_if_no_cluster_id=True):
+def validate_namespace_id(agent_ip, fail_if_no_namespace_id=True):
     try:
-        cluster_id = maand_agent.get_cluster_id()
+        namespace_id = maand_agent.get_namespace_id()
         agent_env = get_agent_minimal_env(agent_ip)
-        res = command_helper.command_remote("cat /opt/agent/cluster_id.txt", agent_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if fail_if_no_cluster_id and res.returncode != 0:
+        res = command_helper.command_remote("cat /opt/agent/default/namespace.txt", agent_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if fail_if_no_namespace_id and res.returncode != 0:
             raise Exception(f"{agent_ip} : {res.stderr}")
-        agent_cluster_id = res.stdout.decode("utf-8")
-        if res.returncode == 0 and agent_cluster_id != cluster_id:
-            raise Exception(f"Failed on cluster id validation: mismatch, agent {agent_ip}.")
+        vagent_namespace_id = res.stdout.decode("utf-8")
+        if res.returncode == 0 and vagent_namespace_id != namespace_id:
+            raise Exception(f"Failed on namespace id validation: mismatch, agent {agent_ip}.")
     except Exception as e:
         logger.error(e)
         stop_the_world()
@@ -132,7 +134,7 @@ def validate_update_seq(agent_ip):
         update_seq = str(maand_agent.get_update_seq())
         agent_env = get_agent_minimal_env(agent_ip)
 
-        res = command_helper.command_remote("cat /opt/agent/update_seq.txt", agent_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        res = command_helper.command_remote("cat /opt/agent/default/update_seq.txt", agent_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if res.returncode == 1:
             raise Exception(f"{agent_ip} : {res.stderr}")
         agent_update_seq = res.stdout.decode("utf-8")
@@ -145,7 +147,7 @@ def validate_update_seq(agent_ip):
 
 def validate_cluster_update_seq(agent_ip):
     command_helper.scan_agent(agent_ip)
-    validate_cluster_id(agent_ip)
+    validate_namespace_id(agent_ip)
     validate_update_seq(agent_ip)
 
 
