@@ -17,6 +17,8 @@ def run_command(agent_ip):
     with open(f"/workspace/reports/{alias}/{filename}.out", "a") as f:
         roles = json.dumps(maand_agent.get_agent_roles(agent_ip))
         f.write(f"Agent IP: {agent_ip}\n")
+        f.flush()
+        command_helper.command_remote("echo \"Host Name: $(hostname)\"\n", env=agent_env, stdout=f, stderr=f)
         f.write(f"Roles: {roles}\n")
         f.write(f"\n")
         f.flush()
