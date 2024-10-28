@@ -14,12 +14,11 @@ def __get_connection():
 def setup():
     with __get_connection() as db:
         cursor = db.cursor()
-        cursor.execute("CREATE TABLE IF NOT EXISTS job (job_id TEXT, name TEXT, position INT)")
+        cursor.execute("CREATE TABLE IF NOT EXISTS job (job_id TEXT, name TEXT)")
         cursor.execute("CREATE TABLE IF NOT EXISTS job_roles (job_id TEXT, role TEXT)")
         cursor.execute("CREATE TABLE IF NOT EXISTS job_certs (job_id TEXT, name TEXT, pkcs8 INT, subject TEXT)")
         cursor.execute("CREATE TABLE IF NOT EXISTS job_files (job_id TEXT, path TEXT, content BLOB, isdir BOOL)")
         cursor.execute("CREATE TABLE IF NOT EXISTS job_commands (job_id TEXT, name TEXT, executed_on TEXT, availability TEXT)")
-        cursor.execute("CREATE TABLE IF NOT EXISTS job_plugins (job_id TEXT, source_job TEXT, command TEXT, config TEXT)")
 
 
 def __build_jobs(db):
@@ -29,17 +28,14 @@ def __build_jobs(db):
     db.execute("DELETE FROM job_certs")
     db.execute("DELETE FROM job_files")
     db.execute("DELETE FROM job_commands")
-    db.execute("DELETE FROM job_plugins")
     db.execute("DELETE FROM job")
 
     for job in jobs:
         manifest = workspace.get_job_manifest(job)
 
         roles = manifest.get("roles")
-        position = manifest.get("order")
         certs = manifest.get("certs")
         commands = manifest.get("commands")
-        plugins = manifest.get("plugins")
 
         cursor = db.cursor()
         cursor.execute("SELECT * FROM job WHERE name = ?", (job,))
@@ -52,7 +48,7 @@ def __build_jobs(db):
         if row:
             cursor.execute("UPDATE job SET position = ? WHERE job_id = ?", (position, job_id,))
         else:
-            cursor.execute("INSERT INTO job (job_id, name, position) VALUES (?, ?, ?)", (job_id, job, position))
+            cursor.execute("INSERT INTO job (job_id, name) VALUES (?, ?)", (job_id, job))
 
         for role in roles:
             cursor.execute("INSERT INTO job_roles (job_id, role) VALUES (?, ?)", (job_id, role,))
@@ -71,12 +67,12 @@ def __build_jobs(db):
                 cursor.execute("INSERT INTO job_commands (job_id, name, executed_on, availability) VALUES (?, ?, ?, ?)",
                                (job_id, command, on, availability,))
 
-        for plugin in plugins:
-            source_job = plugin.get("job")
-            command = plugin.get("command")
-            config = plugin.get("config")
-            cursor.execute("INSERT INTO job_plugins (job_id, source_job, command, config) VALUES (?, ?, ?, ?)",
-                           (job_id, source_job, command, json.dumps(config)))
+        # for plugin in plugins:
+        #     source_job = plugin.get("job")
+        #     command = plugin.get("command")
+        #     config = plugin.get("config")
+        #     cursor.execute("INSERT INTO job_plugins (job_id, source_job, command, config) VALUES (?, ?, ?, ?)",
+        #                    (job_id, source_job, command, json.dumps(config)))
 
         files = workspace.get_job_files(job)
         for file in files:

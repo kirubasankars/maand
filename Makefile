@@ -30,7 +30,6 @@ build:
 	docker run --rm -v $(PWD)/workspace:/workspace:z $(IMAGE) plan
 
 deploy:
-	docker run --rm -v $(PWD)/workspace:/workspace:z $(IMAGE) update $(ARGS)
 	docker run --rm -v $(PWD)/workspace:/workspace:z $(IMAGE) deploy $(ARGS)
 
 run_command:
@@ -62,3 +61,6 @@ rolling_restart_jobs:
 
 health_check:
 	docker run --rm -v $(PWD)/workspace:/workspace:z $(IMAGE) health_check $(ARGS)
+
+cat:
+	docker run --rm -v $(PWD)/workspace:/workspace:z $(IMAGE) cat $(ARGS)

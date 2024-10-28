@@ -21,8 +21,8 @@ elif [ "$OPERATION" == "build_jobs" ]; then
   python3 /scripts/maand_job.py $@
 elif [ "$OPERATION" == "plan" ]; then
   python3 /scripts/plan.py $@
-elif [ "$OPERATION" == "deploy" ]; then
-  python3 /scripts/deploy.py $@
+elif [ "$OPERATION" == "update" ]; then
+  python3 /scripts/update.py $@
 elif [ "$OPERATION" == "run_command" ]; then
   python3 /scripts/run_command.py $@
 elif [ "$OPERATION" == "run_command_local" ]; then
@@ -39,4 +39,6 @@ elif [ "$OPERATION" == "rolling_restart_jobs" ]; then
   python3 /scripts/rolling_restart_jobs.py $@
 elif [ "$OPERATION" == "health_check" ]; then
   python3 /scripts/health_check.py $@
+elif [ "$OPERATION" == "cat" ]; then
+  python3 /scripts/cat.py $@
 fi

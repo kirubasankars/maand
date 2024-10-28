@@ -20,16 +20,12 @@ def get_job_manifest(job_name):
     manifest_path = os.path.join("/workspace/jobs", job_name, "manifest.json")
     with open(manifest_path, "r") as f:
         metadata = json.loads(f.read())
-        if "order" not in metadata:
-            metadata["order"] = 9
         if "roles" not in metadata:
             metadata["roles"] = []
         if "certs" not in metadata:
             metadata["certs"] = []
         if "commands" not in metadata:
             metadata["commands"] = {}
-        if "plugins" not in metadata:
-            metadata["plugins"] = []
         return metadata
 
 
