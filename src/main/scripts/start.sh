@@ -13,7 +13,7 @@ if [ "$OPERATION" == "init" ]; then
   python3 /scripts/init.py $@
 elif [ "$OPERATION" == "build" ]; then
   python3 /scripts/maand_job.py $@
-  python3 /scripts/manage_kv.py
+  python3 /scripts/manage_variables.py
   python3 /scripts/plan.py $@
 elif [ "$OPERATION" == "update" ]; then
   python3 /scripts/update.py $@
