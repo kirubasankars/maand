@@ -1,25 +1,25 @@
 import uuid
 import sqlite3
 
-import utils
+import const
 
 def __get_connection():
-    return sqlite3.connect('/workspace/data/maand.agent.db')
+    return sqlite3.connect(const.MAAND_DB_PATH)
 
 
-def setup(name):
+def setup():
     with __get_connection() as connection:
         cursor = connection.cursor()
 
-        cursor.execute("CREATE TABLE IF NOT EXISTS namespace (namespace_id TEXT, name TEXT, update_seq INT)")
+        cursor.execute("CREATE TABLE IF NOT EXISTS namespace (namespace_id TEXT, update_seq INT)")
         cursor.execute("CREATE TABLE IF NOT EXISTS agent (agent_id TEXT, agent_ip TEXT, detained INT, position INT)")
         cursor.execute("CREATE TABLE IF NOT EXISTS agent_roles (agent_id TEXT, role TEXT)")
         cursor.execute("CREATE TABLE IF NOT EXISTS agent_tags (agent_id TEXT, key TEXT, value INT)")
-        cursor.execute("CREATE TABLE IF NOT EXISTS agent_jobs (agent_id TEXT, job TEXT, disabled INT)")
+        cursor.execute("CREATE TABLE IF NOT EXISTS agent_jobs (agent_id TEXT, job TEXT, disabled INT, removed INT)")
 
         cursor.execute("SELECT namespace_id FROM namespace")
         if cursor.fetchone() is None:
-            cursor.execute("INSERT INTO namespace (namespace_id, name, update_seq) VALUES (?, ?, ?)", (str(uuid.uuid4().hex), name, 0))
+            cursor.execute("INSERT INTO namespace (namespace_id, update_seq) VALUES (?, ?)", (str(uuid.uuid4()), 0))
         else:
             raise Exception("cluster is already initialized")
 
@@ -28,26 +28,11 @@ def setup(name):
 
 def get_agent_jobs(agent_ip):
     with __get_connection() as db:
-        db.execute("ATTACH DATABASE '/workspace/maand.job.db' AS job_db;")
+        db.execute(f"ATTACH DATABASE '{const.JOBS_DB_PATH}' AS job_db;")
         cursor = db.cursor()
-        cursor.execute("SELECT aj.job, aj.disabled, j.position as position FROM agent a JOIN agent_jobs aj ON a.agent_id = aj.agent_id JOIN job_db.job j ON j.name = aj.job AND a.agent_ip = ? ORDER BY j.position", (agent_ip,))
+        cursor.execute("SELECT aj.job, aj.disabled FROM agent a JOIN agent_jobs aj ON a.agent_id = aj.agent_id JOIN job_db.job j ON j.name = aj.job AND a.agent_ip = ?", (agent_ip,))
         rows = cursor.fetchall()
-        return {row[0]: {"disabled": row[1], "order": row[2] } for row in rows}
-
-
-def get_agent_jobs_by_order(agent_ip):
-    with __get_connection() as db:
-        cursor = db.cursor()
-        cursor.execute("SELECT j.name, j.position FROM agent a JOIN agent_jobs aj ON a.agent_id = aj.agent_id JOIN job j ON j.job_id = aj.job_id AND a.agent_ip = ? ORDER BY position", (agent_ip,))
-        rows = cursor.fetchall()
-        jobs = {}
-        for row in rows:
-            position = row[1]
-            name = row[0]
-            if position not in jobs:
-                jobs[position] = []
-            jobs[position].append(name)
-        return jobs
+        return {row[0]: {"disabled": row[1]} for row in rows}
 
 
 def get_agents(roles_filter=None):
@@ -102,7 +87,7 @@ def get_namespace_id():
 def get_namespace():
     with __get_connection() as db:
         cursor = db.cursor()
-        cursor.execute("SELECT name FROM namespace")
+        cursor.execute("SELECT namespace_id FROM namespace")
         row = cursor.fetchone()
         return row[0]
 

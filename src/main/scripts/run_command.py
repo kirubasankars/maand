@@ -6,13 +6,15 @@ import context_manager
 import system_manager
 import utils
 
-if not os.path.exists("/workspace/command.sh"):
+import const
+
+if not os.path.exists(f"{const.WORKSPACE_PATH}/command.sh"):
     raise Exception("No command file found")
 
 
 def run_command(agent_ip):
     agent_env = context_manager.get_agent_minimal_env(agent_ip)
-    command_helper.command2_remote("/workspace/command.sh", env=agent_env)
+    command_helper.command2_remote(f"{const.WORKSPACE_PATH}/command.sh", env=agent_env)
 
 
 if __name__ == "__main__":

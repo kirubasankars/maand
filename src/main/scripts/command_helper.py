@@ -2,6 +2,7 @@ import subprocess
 import uuid
 
 import utils
+import const
 
 logger = utils.get_logger()
 
@@ -24,7 +25,7 @@ def command_remote(cmd, env=None, stdout=None, stderr=None):
     file_path = f"/tmp/{file_id}"
     sh = "sh" if not use_sudo else "sudo sh"
     return command_local(
-        f"ssh -i /workspace/$SSH_KEY $SSH_USER@$AGENT_IP 'timeout 300 {sh}' < {file_path}",
+        f"ssh -i {const.NAMESPACE_PATH}/$SSH_KEY $SSH_USER@$AGENT_IP 'timeout 300 {sh}' < {file_path}",
         env=env, stdout=stdout, stderr=stderr)
 
 
@@ -32,7 +33,7 @@ def command2_remote(file_path, env=None, stdout=None, stderr=None):
     use_sudo = utils.is_sudo_enabled(env)
     sh = "sh" if not use_sudo else "sudo sh"
     return command_local(
-        f"ssh -i /workspace/$SSH_KEY $SSH_USER@$AGENT_IP 'timeout 300 {sh}' < {file_path}",
+        f"ssh -i {const.NAMESPACE_PATH}/$SSH_KEY $SSH_USER@$AGENT_IP 'timeout 300 {sh}' < {file_path}",
         env=env, stdout=stdout, stderr=stderr)
 
 

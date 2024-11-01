@@ -1,34 +1,35 @@
+import glob
+import hashlib
 import importlib
 import json
+
+import const
 import os.path
 import sqlite3
 import sys
 import uuid
 
 import workspace
+from command_helper import command_local
+
+
 
 def __get_connection():
-    return sqlite3.connect('/workspace/maand.job.db')
+    return sqlite3.connect(const.JOBS_DB_PATH)
 
 
 def setup():
     with __get_connection() as db:
         cursor = db.cursor()
-        cursor.execute("CREATE TABLE IF NOT EXISTS job (job_id TEXT, name TEXT)")
+        cursor.execute("CREATE TABLE IF NOT EXISTS job (job_id TEXT PRIMARY KEY, name TEXT, certs_md5_hash)")
         cursor.execute("CREATE TABLE IF NOT EXISTS job_roles (job_id TEXT, role TEXT)")
         cursor.execute("CREATE TABLE IF NOT EXISTS job_certs (job_id TEXT, name TEXT, pkcs8 INT, subject TEXT)")
         cursor.execute("CREATE TABLE IF NOT EXISTS job_files (job_id TEXT, path TEXT, content BLOB, isdir BOOL)")
-        cursor.execute("CREATE TABLE IF NOT EXISTS job_commands (job_id TEXT, name TEXT, executed_on TEXT, availability TEXT)")
+        cursor.execute("CREATE TABLE IF NOT EXISTS job_commands (job_id TEXT, name TEXT, executed_on TEXT)")
 
 
 def __build_jobs(db):
     jobs = workspace.get_jobs()
-
-    db.execute("DELETE FROM job_roles")
-    db.execute("DELETE FROM job_certs")
-    db.execute("DELETE FROM job_files")
-    db.execute("DELETE FROM job_commands")
-    db.execute("DELETE FROM job")
 
     for job in jobs:
         manifest = workspace.get_job_manifest(job)
@@ -38,17 +39,9 @@ def __build_jobs(db):
         commands = manifest.get("commands")
 
         cursor = db.cursor()
-        cursor.execute("SELECT * FROM job WHERE name = ?", (job,))
-        row = cursor.fetchone()
-        if row:
-            job_id = row[0]
-        else:
-            job_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(job)).hex)
-
-        if row:
-            cursor.execute("UPDATE job SET position = ? WHERE job_id = ?", (position, job_id,))
-        else:
-            cursor.execute("INSERT INTO job (job_id, name) VALUES (?, ?)", (job_id, job))
+        job_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(job)))
+        certs_hash = hashlib.md5(json.dumps(certs).encode()).hexdigest()
+        cursor.execute("INSERT INTO job (job_id, name, certs_md5_hash) VALUES (?, ?, ?)", (job_id, job, certs_hash))
 
         for role in roles:
             cursor.execute("INSERT INTO job_roles (job_id, role) VALUES (?, ?)", (job_id, role,))
@@ -61,32 +54,23 @@ def __build_jobs(db):
                                (job_id, name, pkcs8, subject,))
 
         for command, command_obj in commands.items():
-            executed_on = command_obj.get("executed_on", [])
-            availability = command_obj.get("availability", "self")
-            for on in executed_on:
-                cursor.execute("INSERT INTO job_commands (job_id, name, executed_on, availability) VALUES (?, ?, ?, ?)",
-                               (job_id, command, on, availability,))
-
-        # for plugin in plugins:
-        #     source_job = plugin.get("job")
-        #     command = plugin.get("command")
-        #     config = plugin.get("config")
-        #     cursor.execute("INSERT INTO job_plugins (job_id, source_job, command, config) VALUES (?, ?, ?, ?)",
-        #                    (job_id, source_job, command, json.dumps(config)))
+            executed_ons = command_obj.get("executed_on", [])
+            for executed_on in executed_ons:
+                cursor.execute("INSERT INTO job_commands (job_id, name, executed_on) VALUES (?, ?, ?)",
+                               (job_id, command, executed_on,))
 
         files = workspace.get_job_files(job)
         for file in files:
-            isdir = os.path.isdir(f"/workspace/jobs/{file}")
+            isdir = os.path.isdir(f"{const.WORKSPACE_PATH}/jobs/{file}")
             content = ""
             if not isdir:
-                with open(f"/workspace/jobs/{file}", 'rb') as f:
+                with open(f"{const.WORKSPACE_PATH}/jobs/{file}", 'rb') as f:
                     content = f.read()
             cursor.execute("INSERT INTO job_files (job_id, path, content, isdir) VALUES (?, ?, ?, ?)",
                            (job_id, file, content, isdir))
 
 
 def build():
-    setup()
     with __get_connection() as db:
         __build_jobs(db)
         db.commit()
@@ -99,6 +83,14 @@ def get_jobs():
         cursor.execute("SELECT name FROM job")
         rows = cursor.fetchall()
         return [row[0] for row in rows]
+
+
+def get_job_certs(job):
+    with __get_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("SELECT jc.name, jc.pkcs8, jc.subject FROM job_certs jc JOIN job j ON j.job_id = jc.job_id WHERE j.name = ?", (job,))
+        rows = cursor.fetchall()
+        return [{"name": row[0], "pkcs8": row[1], "subject": row[2]}  for row in rows]
 
 
 def copy_job(name, agent_dir):
@@ -141,4 +133,8 @@ def execute_command(job, command, context):
 
 
 if __name__ == '__main__':
-    build()
+    command_local(f"rm -rf {const.JOBS_DB_PATH}")
+    jobs = glob.glob(f"{const.WORKSPACE_PATH}/jobs/*/manifest.json")
+    if jobs:
+        setup()
+        build()

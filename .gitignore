@@ -6,3 +6,4 @@
 *.key
 __pycache__
 workspace
+namespace

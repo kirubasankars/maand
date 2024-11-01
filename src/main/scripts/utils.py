@@ -7,6 +7,8 @@ import fcntl
 from functools import cache
 from logging import getLogger
 
+import const
+
 
 @functools.cache
 def get_logger(ns=None):
@@ -70,7 +72,7 @@ def get_args_jobs_concurrency():
 @cache
 def get_maand_conf():
     config_parser = configparser.ConfigParser()
-    config_parser.read("/workspace/maand.conf")
+    config_parser.read(const.CONF_PATH)
     return config_parser
 
 class FileMutex:

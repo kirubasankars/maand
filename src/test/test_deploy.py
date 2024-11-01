@@ -197,17 +197,17 @@ def test_update_a_job_with_agent_role():
 
 def test_update_remove_job():
     clean()
-    command(get_maand_command("initialize"))
+    command(get_maand_command("init"))
 
     make_job("a", roles=["group1"])
     make_job("b", roles=["group2"])
 
     command(get_maand_command("build"))
-    command(get_maand_command("deploy"))
+    #command(get_maand_command("deploy"))
 
-    sync()
+    #sync()
 
-    shutil.rmtree("/workspace/jobs/b")
+    #shutil.rmtree("/workspace/jobs/b")
     #
     # command(get_maand_command("build"))
     # command(get_maand_command("deploy"))

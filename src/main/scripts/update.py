@@ -14,7 +14,7 @@ import context_manager
 import system_manager
 import utils
 import maand_agent
-import workspace
+import const
 import kv_manager
 
 logger = utils.get_logger()
@@ -32,30 +32,31 @@ def get_cert_if_available(location, kv_path):
 def put_cert(location, kv_path):
     with open(location, "rb") as f:
         content = base64.b64encode(f.read()).decode('utf-8')
-        kv_manager.put_key_value(kv_namespace, kv_path, content)
+        kv_manager.put_key_value("certs", kv_path, content)
 
 
 def update_certificates(jobs, agent_ip):
-    cluster_id = os.getenv("CLUSTER_ID")
+    namespace_id = maand_agent.get_namespace_id()
     agent_dir = context_manager.get_agent_dir(agent_ip)
 
     name = "agent"
     agent_cert_location = f"{agent_dir}/certs"
-    agent_cert_path = f"{agent_cert_location}/agent"
-    agent_cert_kv_path = f"certs/{agent_ip}/agent"
+    agent_cert_path = f"{agent_cert_location}/{name}"
+    agent_cert_kv_path = f"agent/{agent_ip}/{name}"
 
     get_cert_if_available(f"{agent_cert_path}.key", f"{agent_cert_kv_path}.key")
     get_cert_if_available(f"{agent_cert_path}.crt", f"{agent_cert_kv_path}.crt")
     get_cert_if_available(f"{agent_cert_path}.pem", f"{agent_cert_kv_path}.pem")
 
-    if (not os.path.isfile(f"{agent_cert_path}.key") or
-            (os.path.isfile(f"{agent_cert_path}.crt") and cert_provider.is_certificate_expiring_soon(f"{agent_cert_path}.crt"))):
+    found = (os.path.isfile(f"{agent_cert_path}.key") and os.path.isfile(f"{agent_cert_path}.crt")
+             and os.path.isfile(f"{agent_cert_path}.pem"))
 
+    if not found or cert_provider.is_certificate_expiring_soon(f"{agent_cert_path}.crt"):
         logger.debug(f"Updating certificates {name}.key and {name}.crt")
 
         cert_provider.generate_site_private(name, agent_cert_location)
         cert_provider.generate_private_pem_pkcs_8(name, agent_cert_location)
-        cert_provider.generate_site_csr(name, f"/CN={cluster_id}", agent_cert_location)
+        cert_provider.generate_site_csr(name, f"/CN={namespace_id}", agent_cert_location)
         subject_alt_name = f"DNS.1:localhost,IP.1:127.0.0.1,IP.2:{agent_ip}"
         cert_provider.generate_site_public(name, subject_alt_name, 60, agent_cert_location)
         command_helper.command_local(f"rm -f {agent_cert_path}.csr")
@@ -73,14 +74,13 @@ def update_certificates(jobs, agent_ip):
             metadata = json.load(f)
 
         certificates = metadata.get("certs", [])
-
         if not certificates:
             continue
 
         job_cert_location = f"{agent_dir}/jobs/{job}/certs"
-        job_cert_kv_location = f"certs/{agent_ip}/{job}"
+        job_cert_kv_location = f"job/{job}/{agent_ip}"
         command_helper.command_local(f"mkdir -p {job_cert_location}")
-        command_helper.command_local(f"cp -f /workspace/ca.crt {job_cert_location}/")
+        command_helper.command_local(f"cp -f {const.SECRETS_PATH}/ca.crt {job_cert_location}/")
 
         update_certs = False
 
@@ -90,37 +90,40 @@ def update_certificates(jobs, agent_ip):
             kv_manager.put_key_value(kv_namespace, f"{job_cert_kv_location}/md5.hash", new_hash)
             update_certs = True
 
-        for cert in certificates:
-            for name, cert_config in cert.items():
-                job_cert_path = f"{job_cert_location}/{name}"
-                job_cert_kv_path = f"{job_cert_kv_location}/{name}"
+        job_certs = maand_job.get_job_certs(job)
+        for cert in job_certs:
+            name = cert.get("name")
+            job_cert_path = f"{job_cert_location}/{name}"
+            job_cert_kv_path = f"{job_cert_kv_location}/{name}"
 
-                get_cert_if_available(f"{job_cert_path}.key", f"{job_cert_kv_path}.key")
-                get_cert_if_available(f"{job_cert_path}.crt", f"{job_cert_kv_path}.crt")
-                get_cert_if_available(f"{job_cert_path}.pem", f"{job_cert_kv_path}.pem")
+            get_cert_if_available(f"{job_cert_path}.key", f"{job_cert_kv_path}.key")
+            get_cert_if_available(f"{job_cert_path}.crt", f"{job_cert_kv_path}.crt")
+            get_cert_if_available(f"{job_cert_path}.pem", f"{job_cert_kv_path}.pem")
 
-                if (update_certs or not os.path.isfile(f"{job_cert_path}.key") or
-                            (os.path.isfile(f"{job_cert_path}.key") and cert_provider.is_certificate_expiring_soon(f"{job_cert_path}.crt"))):
+            found = (os.path.isfile(f"{job_cert_path}.key") and
+                     os.path.isfile(f"{job_cert_path}.crt") and os.path.isfile(f"{job_cert_path}.pem"))
 
-                    logger.debug(f"Updating certificates {name}.key and {name}.crt")
-                    ttl = cert_config.get("ttl", 60)
-                    cert_provider.generate_site_private(name, job_cert_location)
-                    if cert_config.get("pkcs8", False):
-                        cert_provider.generate_private_pem_pkcs_8(name, job_cert_location)
+            if update_certs or not found or cert_provider.is_certificate_expiring_soon(f"{job_cert_path}.crt"):
+                logger.debug(f"Updating certificates {name}.key and {name}.crt")
 
-                    subj = cert_config.get("subject", f"/CN={cluster_id}")
-                    cert_provider.generate_site_csr(name, subj, job_cert_location)
-                    subject_alt_name = cert_config.get("subject_alt_name", f"DNS.1:localhost,IP.1:127.0.0.1,IP.2:{agent_ip}")
-                    cert_provider.generate_site_public(name, subject_alt_name, ttl, job_cert_location)
-                    command_helper.command_local(f"rm -f {job_cert_path}.csr")
+                ttl = cert.get("ttl", 60)
+                cert_provider.generate_site_private(name, job_cert_location)
+                if cert.get("pkcs8", 0) == 1:
+                    cert_provider.generate_private_pem_pkcs_8(name, job_cert_location)
 
-                    put_cert(f"{job_cert_path}.key", f"{job_cert_kv_path}.key")
-                    put_cert(f"{job_cert_path}.crt", f"{job_cert_kv_path}.crt")
-                    if cert_config.get("pkcs8", False):
-                        put_cert(f"{job_cert_path}.pem", f"{job_cert_kv_path}.pem")
+                subj = cert.get("subject", f"/CN={namespace_id}")
+                cert_provider.generate_site_csr(name, subj, job_cert_location)
+                subject_alt_name = cert.get("subject_alt_name", f"DNS.1:localhost,IP.1:127.0.0.1,IP.2:{agent_ip}")
+                cert_provider.generate_site_public(name, subject_alt_name, ttl, job_cert_location)
+                command_helper.command_local(f"rm -f {job_cert_path}.csr")
 
-                    with open(f"{job_cert_location}/reload.txt", "w") as f:
-                        f.write("")
+                put_cert(f"{job_cert_path}.key", f"{job_cert_kv_path}.key")
+                put_cert(f"{job_cert_path}.crt", f"{job_cert_kv_path}.crt")
+                if cert.get("pkcs8", False):
+                    put_cert(f"{job_cert_path}.pem", f"{job_cert_kv_path}.pem")
+
+                with open(f"{job_cert_location}/reload.txt", "w") as f:
+                    f.write("")
 
 
 def process_templates(values):
@@ -155,14 +158,14 @@ def transpile(agent_ip):
 
 def sync(agent_ip):
     args = utils.get_args_jobs_concurrency()
-    cluster_id = maand_agent.get_namespace_id()
-    agent_dir = context_manager.get_agent_dir(agent_ip)
 
     logger.debug("Starting sync process...")
+    agent_dir = context_manager.get_agent_dir(agent_ip)
 
-    command_helper.command_local(f"mkdir -p {agent_dir}")
-    with open(f"{agent_dir}/namespace.txt", "w") as f:
-        f.write(cluster_id)
+    command_helper.command_local(f"""
+        mkdir -p {agent_dir}/certs
+        rsync {const.SECRETS_PATH}/ca.crt {agent_dir}/certs/
+    """)
 
     agent_id = maand_agent.get_agent_id(agent_ip)
     with open(f"{agent_dir}/agent.txt", "w") as f:
@@ -171,15 +174,6 @@ def sync(agent_ip):
     update_seq = maand_agent.get_update_seq()
     with open(f"{agent_dir}/update_seq.txt", "w") as f:
         f.write(str(update_seq))
-
-    command_helper.command_local(f"""
-        mkdir -p {agent_dir}/certs
-        rsync /workspace/secrets/ca.crt {agent_dir}/certs/
-    """)
-
-    agent_jobs = maand_agent.get_agent_jobs(agent_ip)
-    with open(f"{agent_dir}/jobs.json", "w") as f:
-        f.writelines(json.dumps(agent_jobs))
 
     agent_roles = maand_agent.get_agent_roles(agent_ip)
     with open(f"{agent_dir}/roles.txt", "w") as f:
@@ -196,16 +190,20 @@ def sync(agent_ip):
         rsync -r /agent/bin {agent_dir}/    
     """)
 
+    agent_jobs = maand_agent.get_agent_jobs(agent_ip)
+    with open(f"{agent_dir}/jobs.json", "w") as f:
+        f.writelines(json.dumps(agent_jobs))
+
     if len(agent_jobs) > 0:
         command_helper.command_local(f"mkdir -p {agent_dir}/jobs/")
 
-    for job in agent_jobs:
-        maand_job.copy_job(job, agent_dir)
+        for job in agent_jobs:
+            maand_job.copy_job(job, agent_dir)
 
     transpile(agent_ip)
     update_certificates(agent_jobs, agent_ip)
 
-    command_helper.command_local("rm -f /workspace/secrets/ca.srl")
+    command_helper.command_local(f"rm -f {const.SECRETS_PATH}/ca.srl")
     command_helper.command_local(f"chown -R 1061:1062 {agent_dir}")
 
     jobs = list(agent_jobs.keys())
@@ -213,13 +211,12 @@ def sync(agent_ip):
         jobs = list(set(agent_jobs.keys()) & set(args.jobs))
 
     context_manager.rsync_upload_agent_files(agent_ip, jobs)
-    agent_env = context_manager.get_agent_minimal_env(agent_ip)
-    command_helper.command_remote("sync", env=agent_env)
+
     logger.debug("Sync process completed.")
 
 
-def validate_cluster_id(agent_ip):
-    context_manager.validate_namespace_id(agent_ip, fail_if_no_namespace_id=False)
+def validate_agent_namespace(agent_ip):
+    context_manager.validate_agent_namespace(agent_ip, fail_if_no_namespace_id=False)
 
 
 def update():
@@ -230,7 +227,7 @@ def update():
     maand_agent.update_seq(next_update_seq)
 
     system_manager.run(command_helper.scan_agent)
-    system_manager.run(validate_cluster_id)
+    system_manager.run(validate_agent_namespace)
     system_manager.run(sync, concurrency=args.concurrency)
     kv_manager.gc()
 

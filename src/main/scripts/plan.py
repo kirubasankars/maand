@@ -4,6 +4,7 @@ import workspace
 import maand_job
 from maand_agent import __get_connection
 
+import const
 
 def __plan_agents(db):
     agents = workspace.get_agents()
@@ -53,7 +54,7 @@ def __plan_agents(db):
 
 def __plan_allocated_jobs(db):
     disabled = workspace.get_disabled_jobs()
-    disabled_jobs = disabled.get("jobs", [])
+    disabled_jobs = disabled.get("jobs", {})
     disabled_agents = disabled.get("agents", [])
 
     cursor = db.cursor()
@@ -69,14 +70,6 @@ def __plan_allocated_jobs(db):
 
         assigned_jobs = [row[0] for row in cursor.fetchall()]
 
-        # cursor.execute("SELECT job FROM agent_jobs WHERE agent_id = ?", (agent_id,))
-        # all_agent_jobs = [row[0] for row in cursor.fetchall()]
-        # removed_jobs = list(set(all_agent_jobs) ^ set(assigned_jobs))
-        # print(removed_jobs, "removed_jobs", flush=True)
-        # for job in removed_jobs:
-        #     print(f"DELETE FROM agent_jobs WHERE job = {job} AND agent_id = {agent_id}", flush=True)
-        #     cursor.execute("DELETE FROM agent_jobs WHERE job = ? AND agent_id = ?", (job, agent_id,))
-
         for job in assigned_jobs:
 
             disabled = agent_ip in disabled_agents
@@ -91,8 +84,13 @@ def __plan_allocated_jobs(db):
             if row:
                 cursor.execute("UPDATE agent_jobs SET disabled = ? WHERE job = ? AND agent_id = ?", (disabled, job, agent_id,))
             else:
-                cursor.execute("INSERT INTO agent_jobs (job, agent_id, disabled) VALUES (?, ?, ?)", (job, agent_id, disabled))
+                cursor.execute("INSERT INTO agent_jobs (job, agent_id, disabled, removed) VALUES (?, ?, ?, 0)", (job, agent_id, disabled))
 
+        cursor.execute("SELECT job FROM agent_jobs WHERE agent_id = ?", (agent_id,))
+        all_assigned_jobs = [row[0] for row in cursor.fetchall()]
+        removed_jobs = list(set(all_assigned_jobs) ^ set(assigned_jobs))
+        for job in removed_jobs:
+            cursor.execute(f"UPDATE agent_jobs SET removed = 1 WHERE job = ? AND agent_id = ?", (job, agent_id,))
 
 def __interceptor(db, action_type):
     cursor = db.cursor()
@@ -105,12 +103,12 @@ def __interceptor(db, action_type):
 
 def plan():
     with __get_connection() as db:
-        if os.path.exists("/workspace/maand.job.db"):
-            db.execute("ATTACH DATABASE '/workspace/maand.job.db' AS job_db;")
-        #__interceptor(db, "pre_plan")
         __plan_agents(db)
-        __plan_allocated_jobs(db)
-        #__interceptor(db, "post_plan")
+        if os.path.exists(const.JOBS_DB_PATH):
+            db.execute(f"ATTACH DATABASE '{const.JOBS_DB_PATH}' AS job_db;")
+            #__interceptor(db, "pre_plan")
+            __plan_allocated_jobs(db)
+            #__interceptor(db, "post_plan")
         db.commit()
 
 

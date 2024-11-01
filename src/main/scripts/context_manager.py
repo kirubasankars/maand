@@ -9,11 +9,13 @@ from dotenv import dotenv_values
 import command_helper
 import utils
 
+import const
+
 logger = utils.get_logger()
 
 
 def load_secrets(values):
-    secrets = dotenv_values("/workspace/secrets/secrets.env")
+    secrets = dotenv_values(f"{const.WORKSPACE_PATH}/secrets.env")
     for key, value in secrets.items():
         values[key] = value
     return values
@@ -69,7 +71,7 @@ def _add_tags_to_values(values, agent_ip):
 
 
 def get_values(agent_ip):
-    values = dotenv_values("/workspace/variables.env")
+    values = dotenv_values(f"{const.WORKSPACE_PATH}/variables.env")
 
     values["NAMESPACE_ID"] = maand_agent.get_namespace_id()
     values["AGENT_ID"] = maand_agent.get_agent_id(agent_ip)
@@ -114,16 +116,13 @@ def rsync_upload_agent_files(agent_ip, jobs):
     command_helper.command_local(f"bash /scripts/rsync_upload.sh", env=agent_env)
 
 
-def validate_namespace_id(agent_ip, fail_if_no_namespace_id=True):
+def validate_agent_namespace(agent_ip, fail_if_no_namespace_id=True):
     try:
         namespace_id = maand_agent.get_namespace_id()
         agent_env = get_agent_minimal_env(agent_ip)
-        res = command_helper.command_remote("cat /opt/agent/default/namespace.txt", agent_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        res = command_helper.command_remote(f"ls /opt/agent/{namespace_id}", agent_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if fail_if_no_namespace_id and res.returncode != 0:
-            raise Exception(f"{agent_ip} : {res.stderr}")
-        vagent_namespace_id = res.stdout.decode("utf-8")
-        if res.returncode == 0 and vagent_namespace_id != namespace_id:
-            raise Exception(f"Failed on namespace id validation: mismatch, agent {agent_ip}.")
+            raise Exception(f"agent {agent_ip} : namespace not found.")
     except Exception as e:
         logger.error(e)
         stop_the_world()
@@ -133,8 +132,9 @@ def validate_update_seq(agent_ip):
     try:
         update_seq = str(maand_agent.get_update_seq())
         agent_env = get_agent_minimal_env(agent_ip)
+        namespace_id = maand_agent.get_namespace_id()
+        res = command_helper.command_remote(f"cat /opt/agent/{namespace_id}/update_seq.txt", agent_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        res = command_helper.command_remote("cat /opt/agent/default/update_seq.txt", agent_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if res.returncode == 1:
             raise Exception(f"{agent_ip} : {res.stderr}")
         agent_update_seq = res.stdout.decode("utf-8")
@@ -146,8 +146,7 @@ def validate_update_seq(agent_ip):
 
 
 def validate_cluster_update_seq(agent_ip):
-    command_helper.scan_agent(agent_ip)
-    validate_namespace_id(agent_ip)
+    validate_agent_namespace(agent_ip)
     validate_update_seq(agent_ip)
 
 

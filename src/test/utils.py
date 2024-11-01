@@ -26,12 +26,12 @@ def clean():
     shutil.copy("/tests/fixtures/homelab.key", "/workspace/homelab.key")
     shutil.copy("/tests/fixtures/maand.conf", "/workspace/maand.conf")
 
-    scan_agent()
-
-    agents_ip = workspace.get_agents_ip()
-    for agent in agents_ip:
-        command("mkdir -p /workspace/tmp")
-        command(f"ssh -i /workspace/homelab.key agent@{agent} 'sudo rm -rf /opt/agent'")
+    # scan_agent()
+    #
+    # agents_ip = workspace.get_agents_ip()
+    # for agent in agents_ip:
+    #     command("mkdir -p /workspace/tmp")
+    #     command(f"ssh -i /workspace/homelab.key agent@{agent} 'sudo rm -rf /opt/agent'")
 
 
 def sync():

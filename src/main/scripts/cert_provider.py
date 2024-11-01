@@ -3,15 +3,16 @@ from datetime import datetime, timedelta
 from OpenSSL import crypto
 
 from command_helper import *
+import const
 
 
 def generate_ca_private():
-    command_local("openssl genrsa -out /workspace/secrets/ca.key 4096")
+    command_local(f"openssl genrsa -out {const.SECRETS_PATH}/ca.key 4096")
 
 
 def generate_ca_public(common_name, ttl):
     command_local(f"openssl req -new -x509 -sha256 -days {ttl} -subj '/CN={common_name}' -key "
-                  "/workspace/secrets/ca.key -out /workspace/secrets/ca.crt")
+                  f"{const.SECRETS_PATH}/ca.key -out {const.SECRETS_PATH}/ca.crt")
 
 
 def generate_site_private(name, path):
@@ -32,7 +33,7 @@ def generate_site_public(name, san, ttl, path):
     with open("/tmp/extfile.conf", "w") as f:
         f.writelines(f"subjectAltName={san}")
     command_local(f"openssl x509 -req -sha256 -days {ttl} -in {path}/{name}.csr "
-                  f"-CA /workspace/secrets/ca.crt -CAkey /workspace/secrets/ca.key "
+                  f"-CA {const.SECRETS_PATH}/ca.crt -CAkey {const.SECRETS_PATH}/ca.key "
                   f"-out {path}/{name}.crt -extfile /tmp/extfile.conf -CAcreateserial 2> /dev/null")
 
 

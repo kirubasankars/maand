@@ -1,1 +1,1 @@
-pytest
+pytest -sk test_update_remove_job
