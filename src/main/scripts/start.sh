@@ -12,10 +12,13 @@ python3 /scripts/kv_manager.py
 if [ "$OPERATION" == "init" ]; then
   python3 /scripts/init.py $@
 elif [ "$OPERATION" == "build" ]; then
-  python3 /scripts/maand_job.py $@
-  python3 /scripts/manage_variables.py
-  python3 /scripts/plan.py $@
+  python3 /scripts/build_jobs.py
+  python3 /scripts/plan_agents.py
+  python3 /scripts/build_certs.py
+  python3 /scripts/build_variables.py
 elif [ "$OPERATION" == "update" ]; then
+  python3 /scripts/update.py $@
+elif [ "$OPERATION" == "deploy" ]; then
   python3 /scripts/update.py $@
 elif [ "$OPERATION" == "uptime" ]; then
   python3 /scripts/uptime.py $@

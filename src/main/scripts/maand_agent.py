@@ -3,12 +3,12 @@ import sqlite3
 
 import const
 
-def __get_connection():
+def get_db():
     return sqlite3.connect(const.MAAND_DB_PATH)
 
 
 def setup():
-    with __get_connection() as connection:
+    with get_db() as connection:
         cursor = connection.cursor()
 
         cursor.execute("CREATE TABLE IF NOT EXISTS namespace (namespace_id TEXT, update_seq INT)")
@@ -27,7 +27,7 @@ def setup():
 
 
 def get_agent_jobs(agent_ip):
-    with __get_connection() as db:
+    with get_db() as db:
         db.execute(f"ATTACH DATABASE '{const.JOBS_DB_PATH}' AS job_db;")
         cursor = db.cursor()
         cursor.execute("SELECT aj.job, aj.disabled FROM agent a JOIN agent_jobs aj ON a.agent_id = aj.agent_id JOIN job_db.job j ON j.name = aj.job AND a.agent_ip = ?", (agent_ip,))
@@ -40,7 +40,7 @@ def get_agents(roles_filter=None):
         roles_filter = ["agent"]
     roles_filter = [f"'{role}'" for role in roles_filter]
     roles_filter = ",".join(roles_filter)
-    with __get_connection() as db:
+    with get_db() as db:
         cursor = db.cursor()
         cursor.execute(f"SELECT DISTINCT agent_ip FROM agent a JOIN agent_roles ar ON a.agent_id = ar.agent_id WHERE a.detained = 0 AND ar.role IN ({roles_filter}) ORDER BY position;")
         rows = cursor.fetchall()
@@ -48,7 +48,7 @@ def get_agents(roles_filter=None):
 
 
 def get_agent_roles(agent_ip=None):
-    with __get_connection() as db:
+    with get_db() as db:
         cursor = db.cursor()
         if agent_ip:
             cursor.execute(
@@ -61,7 +61,7 @@ def get_agent_roles(agent_ip=None):
 
 
 def get_agent_tags(agent_ip):
-    with __get_connection() as db:
+    with get_db() as db:
         cursor = db.cursor()
         cursor.execute(f"SELECT key, value FROM agent a JOIN agent_tags at ON a.agent_id = at.agent_id WHERE a.agent_ip = ?", (agent_ip,))
         rows = cursor.fetchall()
@@ -69,7 +69,7 @@ def get_agent_tags(agent_ip):
 
 
 def get_agent_id(agent_ip):
-    with __get_connection() as db:
+    with get_db() as db:
         cursor = db.cursor()
         cursor.execute(f"SELECT agent_id FROM agent WHERE agent_ip = ?", (agent_ip,))
         row = cursor.fetchone()
@@ -77,7 +77,7 @@ def get_agent_id(agent_ip):
 
 
 def get_namespace_id():
-    with __get_connection() as db:
+    with get_db() as db:
         cursor = db.cursor()
         cursor.execute("SELECT namespace_id FROM namespace")
         row = cursor.fetchone()
@@ -85,7 +85,7 @@ def get_namespace_id():
 
 
 def get_namespace():
-    with __get_connection() as db:
+    with get_db() as db:
         cursor = db.cursor()
         cursor.execute("SELECT namespace_id FROM namespace")
         row = cursor.fetchone()
@@ -93,7 +93,7 @@ def get_namespace():
 
 
 def get_update_seq():
-    with __get_connection() as db:
+    with get_db() as db:
         cursor = db.cursor()
         cursor.execute("SELECT update_seq FROM namespace")
         row = cursor.fetchone()
@@ -101,7 +101,7 @@ def get_update_seq():
 
 
 def update_seq(seq):
-    with __get_connection() as db:
+    with get_db() as db:
         cursor = db.cursor()
         cursor.execute("UPDATE namespace SET update_seq = ?", (seq,))
         db.commit()

@@ -1,18 +1,20 @@
+import copy
 import os.path
 import uuid
 import workspace
 import maand_job
-from maand_agent import __get_connection
+import maand_agent
+import kv_manager
 
 import const
 
-def __plan_agents(db):
+
+def plan_agents(cursor):
     agents = workspace.get_agents()
     for index, agent in enumerate(agents):
         agent_ip = agent["host"]
         position = index + 1
 
-        cursor = db.cursor()
         cursor.execute("SELECT * FROM agent WHERE agent_ip = ?", (agent_ip,))
         row = cursor.fetchone()
 
@@ -40,7 +42,6 @@ def __plan_agents(db):
         for key, value in tags.items():
             cursor.execute("INSERT INTO agent_tags (agent_id, key, value) VALUES (?, ?, ?)", (agent_id, key, str(value),))
 
-    cursor = db.cursor()
     cursor.execute("SELECT agent_ip FROM agent")
     rows = cursor.fetchall()
 
@@ -52,12 +53,10 @@ def __plan_agents(db):
         cursor.execute("UPDATE agent SET detained = 1 WHERE agent_ip = ?", (agent_ip,))
 
 
-def __plan_allocated_jobs(db):
+def plan_allocated_jobs(cursor):
     disabled = workspace.get_disabled_jobs()
     disabled_jobs = disabled.get("jobs", {})
     disabled_agents = disabled.get("agents", [])
-
-    cursor = db.cursor()
     cursor.execute("SELECT agent_id, agent_ip FROM agent")
     agents = cursor.fetchall()
 
@@ -92,6 +91,73 @@ def __plan_allocated_jobs(db):
         for job in removed_jobs:
             cursor.execute(f"UPDATE agent_jobs SET removed = 1 WHERE job = ? AND agent_id = ?", (job, agent_id,))
 
+
+def get_agents(cursor, roles_filter=None):
+    if not roles_filter:
+        roles_filter = ["agent"]
+    roles_filter = [f"'{role}'" for role in roles_filter]
+    roles_filter = ",".join(roles_filter)
+    cursor.execute(f"SELECT DISTINCT agent_ip FROM agent a JOIN agent_roles ar ON a.agent_id = ar.agent_id WHERE a.detained = 0 AND ar.role IN ({roles_filter}) ORDER BY position;")
+    rows = cursor.fetchall()
+    return [row[0] for row in rows]
+
+
+def get_roles(cursor, agent_ip=None):
+    if not agent_ip:
+        cursor.execute("SELECT DISTINCT role FROM agent a JOIN agent_roles ar ON a.agent_id = ar.agent_id;")
+        rows = cursor.fetchall()
+        return [row[0] for row in rows]
+
+    cursor.execute("SELECT DISTINCT role FROM agent a JOIN agent_roles ar ON a.agent_id = ar.agent_id AND agent_ip = ?;", (agent_ip,))
+    rows = cursor.fetchall()
+    return [row[0] for row in rows]
+
+
+def build_variables(cursor):
+    agents = get_agents(cursor)
+
+    for agent_ip in agents:
+        roles = get_roles(cursor, agent_ip=None)
+        agent_roles = get_roles(cursor, agent_ip=agent_ip)
+
+        values = {}
+        for role in roles:
+            key_nodes = f"{role}_NODES".upper()
+
+            agents = get_agents(cursor, [role])
+            values[key_nodes] = ",".join(agents)
+
+            other_agents = copy.deepcopy(agents)
+            if agent_ip in other_agents:
+                other_agents.remove(agent_ip)
+
+            key = f"{role}_LENGTH".upper()
+            values[key] = str(len(agents))
+
+            if role not in agent_roles:
+                continue
+
+            key_peers = f"{role}_PEERS".upper()
+            if other_agents:
+                values[key_peers] = ",".join(other_agents)
+
+            for idx, host in enumerate(agents):
+                key = f"{role}_{idx}".upper()
+                values[key] = host
+
+                if host == agent_ip:
+                    key = f"{role}_ALLOCATION_INDEX".upper()
+                    values[key] = str(idx)
+
+            key = f"{role}_ROLE_ID".upper()
+            values[key] = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(role)))
+
+        values["ROLES"] = ",".join(sorted(agent_roles))
+
+        for key, value in values.items():
+            kv_manager.put_key_value(f"vars/agent/{agent_ip}", key, value)
+
+
 def __interceptor(db, action_type):
     cursor = db.cursor()
     cursor.execute("SELECT ( SELECT name FROM job j WHERE j.job_id = jp.job_id ) as name, source_job, command, config FROM job_db.job_plugins jp, job_db.job_commands jc WHERE jc.executed_on = ?", (action_type,))
@@ -102,13 +168,12 @@ def __interceptor(db, action_type):
 
 
 def plan():
-    with __get_connection() as db:
-        __plan_agents(db)
+    with maand_agent.get_db() as db:
+        cursor = db.cursor()
+        plan_agents(cursor)
         if os.path.exists(const.JOBS_DB_PATH):
             db.execute(f"ATTACH DATABASE '{const.JOBS_DB_PATH}' AS job_db;")
-            #__interceptor(db, "pre_plan")
-            __plan_allocated_jobs(db)
-            #__interceptor(db, "post_plan")
+            plan_allocated_jobs(cursor)
         db.commit()
 
 

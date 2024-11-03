@@ -3,27 +3,38 @@ import subprocess
 import uuid
 
 import maand_agent
-
-from dotenv import dotenv_values
-
+import kv_manager
 import command_helper
 import utils
-
-import const
 
 logger = utils.get_logger()
 
 
 def load_secrets(values):
-    secrets = dotenv_values(f"{const.WORKSPACE_PATH}/secrets.env")
-    for key, value in secrets.items():
-        values[key] = value
+    keys = kv_manager.get_keys("secrets.env")
+    for key in keys:
+        values[key] = kv_manager.get_value("secrets.env", key)
+    return values
+
+
+def get_values(agent_ip):
+    keys = kv_manager.get_keys("variables.env")
+    values = {}
+    for key in keys:
+        values[key] = kv_manager.get_value("variables.env", key)
+
+    values["NAMESPACE_ID"] = maand_agent.get_namespace_id()
+    values["AGENT_ID"] = maand_agent.get_agent_id(agent_ip)
+    values["AGENT_IP"] = agent_ip
+
+    values = _add_roles_to_values(values, agent_ip)
+    values = _add_tags_to_values(values, agent_ip)
+
     return values
 
 
 def _add_roles_to_values(values, agent_ip):
     agent_roles = maand_agent.get_agent_roles(agent_ip=agent_ip)
-
     roles = maand_agent.get_agent_roles(agent_ip=None)
 
     for role in roles:
@@ -67,19 +78,6 @@ def _add_tags_to_values(values, agent_ip):
     for k, v in tags.items():
         key = f"{k}".upper()
         values[key] = str(v)
-    return values
-
-
-def get_values(agent_ip):
-    values = dotenv_values(f"{const.WORKSPACE_PATH}/variables.env")
-
-    values["NAMESPACE_ID"] = maand_agent.get_namespace_id()
-    values["AGENT_ID"] = maand_agent.get_agent_id(agent_ip)
-    values["AGENT_IP"] = agent_ip
-
-    values = _add_roles_to_values(values, agent_ip)
-    values = _add_tags_to_values(values, agent_ip)
-
     return values
 
 

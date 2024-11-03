@@ -33,3 +33,4 @@ if __name__ == "__main__":
 
     if name == "kv":
         statement("SELECT * FROM (SELECT key, namespace, max(version) as version, ttl, created_date, rotatable, deleted FROM kv_db.key_value GROUP BY key, namespace) t ORDER BY namespace, key, version")
+        #(CASE WHEN LENGTH(value) > 50 THEN substr(value,1, 50) || '...' ELSE value END) AS value

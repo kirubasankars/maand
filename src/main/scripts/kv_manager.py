@@ -20,14 +20,16 @@ def put_key_value(namespace, key, value, ttl=-1, rotatable=0):
     with get_db() as connection:
         cursor = connection.cursor()
         cursor.execute("SELECT max(version), value, deleted FROM key_value WHERE namespace = ? AND key = ? GROUP BY key, namespace", (namespace, key))
-        row = cursor.fetchone()
+
         version = 0
+        row = cursor.fetchone()
         if row:
             version = int(row[0])
-            old_value = str(row[1])
-            deleted = row[2]
-        if old_value != value or deleted == 1:
-            cursor.execute('INSERT INTO key_value (key, value, namespace, version, ttl, created_date, rotatable, deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', (key, value, namespace, version + 1, ttl, get_global_unix_epoch(), rotatable, 0,))
+            current_value = str(row[1])
+            if current_value == value:
+                return
+
+        cursor.execute('INSERT INTO key_value (key, value, namespace, version, ttl, created_date, rotatable, deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', (key, value, namespace, version + 1, ttl, get_global_unix_epoch(), rotatable, 0,))
         connection.commit()
 
 def get_value(namespace, key):

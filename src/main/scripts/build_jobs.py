@@ -1,12 +1,10 @@
 import glob
 import hashlib
-import importlib
 import json
 
 import const
 import os.path
 import sqlite3
-import sys
 import uuid
 
 import workspace
@@ -28,7 +26,7 @@ def setup():
         cursor.execute("CREATE TABLE IF NOT EXISTS job_commands (job_id TEXT, name TEXT, executed_on TEXT)")
 
 
-def __build_jobs(db):
+def __build_jobs(cursor):
     jobs = workspace.get_jobs()
 
     for job in jobs:
@@ -38,7 +36,6 @@ def __build_jobs(db):
         certs = manifest.get("certs")
         commands = manifest.get("commands")
 
-        cursor = db.cursor()
         job_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(job)))
         certs_hash = hashlib.md5(json.dumps(certs).encode()).hexdigest()
         cursor.execute("INSERT INTO job (job_id, name, certs_md5_hash) VALUES (?, ?, ?)", (job_id, job, certs_hash))
@@ -72,72 +69,10 @@ def __build_jobs(db):
 
 def build():
     with __get_connection() as db:
-        __build_jobs(db)
+        cursor = db.cursor()
+        __build_jobs(cursor)
         db.commit()
     db.execute("vacuum")
-
-
-def get_jobs():
-    with __get_connection() as db:
-        cursor = db.cursor()
-        cursor.execute("SELECT name FROM job")
-        rows = cursor.fetchall()
-        return [row[0] for row in rows]
-
-
-def get_job_certs_config(job):
-    with __get_connection() as db:
-        cursor = db.cursor()
-        cursor.execute("SELECT jc.name, jc.pkcs8, jc.subject FROM job_certs jc JOIN job j ON j.job_id = jc.job_id WHERE j.name = ?", (job,))
-        rows = cursor.fetchall()
-        return [{"name": row[0], "pkcs8": row[1], "subject": row[2]}  for row in rows]
-
-
-def get_job_md5_hash(job):
-    with __get_connection() as db:
-        cursor = db.cursor()
-        cursor.execute("SELECT certs_md5_hash FROM job WHERE name = ?", (job,))
-        row = cursor.fetchone()
-        return row[0]
-
-
-def copy_job(name, agent_dir):
-    with __get_connection() as db:
-        cursor = db.cursor()
-        cursor.execute("SELECT path, content, isdir FROM job_files WHERE job_id = (SELECT job_id FROM job WHERE name = ?) AND path NOT LIKE ? ORDER BY isdir DESC", (name, f"{name}/_modules%"))
-        rows = cursor.fetchall()
-
-        for path, content, isdir in rows:
-            if isdir:
-                os.makedirs(f"{agent_dir}/jobs/{path}", exist_ok=True)
-                continue
-            with open(f"{agent_dir}/jobs/{path}", "wb") as f:
-                f.write(content)
-
-
-def execute_command(job, command, context):
-
-    if "/commands" not in sys.path:
-        sys.path.append("/commands")
-    os.makedirs("/commands", exist_ok=True)
-
-    with __get_connection() as db:
-        cursor = db.cursor()
-        cursor.execute("SELECT path, content, isdir FROM job_files WHERE job_id = (SELECT job_id FROM job WHERE name = ?) AND path like ? ORDER BY isdir DESC", (job, f"{job}/_modules%"))
-        rows = cursor.fetchall()
-
-        for path, content, isdir in rows:
-            if isdir:
-                os.makedirs(f"/commands/{path}", exist_ok=True)
-                continue
-            with open(f"/commands/{path}", "wb") as f:
-                f.write(content)
-
-    job_command = importlib.import_module(f'{job}._modules.command_{command}')
-    if "execute" in dir(job_command):
-        job_command.execute(context)
-    else:
-        raise Exception("No execute method defined")
 
 
 if __name__ == '__main__':
