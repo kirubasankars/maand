@@ -1,4 +1,5 @@
 import copy
+import os
 import subprocess
 import uuid
 
@@ -93,7 +94,7 @@ def get_agent_minimal_env(agent_ip):
         "SSH_USER": config.get("default", "ssh_user"),
         "SSH_KEY": config.get("default", "ssh_key"),
         "USE_SUDO": config.get("default", "use_sudo"),
-        "NAMESPACE": maand_agent.get_namespace()
+        "NAMESPACE": os.environ.get("NAMESPACE")
     }
 
 
@@ -116,9 +117,9 @@ def rsync_upload_agent_files(agent_ip, jobs):
 
 def validate_agent_namespace(agent_ip, fail_if_no_namespace_id=True):
     try:
-        namespace_id = maand_agent.get_namespace_id()
+        namespace = os.environ.get("NAMESPACE")
         agent_env = get_agent_minimal_env(agent_ip)
-        res = command_helper.command_remote(f"ls /opt/agent/{namespace_id}", agent_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        res = command_helper.command_remote(f"ls /opt/agent/{namespace}", agent_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if fail_if_no_namespace_id and res.returncode != 0:
             raise Exception(f"agent {agent_ip} : namespace not found.")
     except Exception as e:

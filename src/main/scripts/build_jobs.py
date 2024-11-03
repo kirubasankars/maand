@@ -1,32 +1,15 @@
-import glob
 import hashlib
-import json
-
-import const
-import os.path
-import sqlite3
+import os
 import uuid
+import json
+import glob
 
+import maand_job
 import workspace
-from command_helper import command_local
+import const
+import command_helper
 
-
-
-def __get_connection():
-    return sqlite3.connect(const.JOBS_DB_PATH)
-
-
-def setup():
-    with __get_connection() as db:
-        cursor = db.cursor()
-        cursor.execute("CREATE TABLE IF NOT EXISTS job (job_id TEXT PRIMARY KEY, name TEXT, certs_md5_hash TEXT)")
-        cursor.execute("CREATE TABLE IF NOT EXISTS job_roles (job_id TEXT, role TEXT)")
-        cursor.execute("CREATE TABLE IF NOT EXISTS job_certs (job_id TEXT, name TEXT, pkcs8 INT, subject TEXT)")
-        cursor.execute("CREATE TABLE IF NOT EXISTS job_files (job_id TEXT, path TEXT, content BLOB, isdir BOOL)")
-        cursor.execute("CREATE TABLE IF NOT EXISTS job_commands (job_id TEXT, name TEXT, executed_on TEXT)")
-
-
-def __build_jobs(cursor):
+def build_jobs(cursor):
     jobs = workspace.get_jobs()
 
     for job in jobs:
@@ -68,16 +51,16 @@ def __build_jobs(cursor):
 
 
 def build():
-    with __get_connection() as db:
+    with maand_job.get_db() as db:
         cursor = db.cursor()
-        __build_jobs(cursor)
+        maand_job.setup(cursor)
+        build_jobs(cursor)
         db.commit()
     db.execute("vacuum")
 
 
 if __name__ == '__main__':
-    command_local(f"rm -rf {const.JOBS_DB_PATH}")
-    jobs = glob.glob(f"{const.WORKSPACE_PATH}/jobs/*/manifest.json")
-    if jobs:
-        setup()
+    found_manifest = glob.glob(f"{const.WORKSPACE_PATH}/jobs/*/manifest.json")
+    if found_manifest:
+        command_helper.command_local(f"rm -rf {const.JOBS_DB_PATH}")
         build()

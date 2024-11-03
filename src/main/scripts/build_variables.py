@@ -9,7 +9,7 @@ import maand_agent
 import const
 
 
-def manage_kv(path):
+def build_env(path):
     namespace = os.path.basename(path)
     key_values = dotenv_values(path)
 
@@ -22,18 +22,18 @@ def manage_kv(path):
         kv_manager.delete_key(namespace, key)
 
 
-def build_variables():
-    agents = maand_agent.get_agents()
+def build_variables(agent_cursor):
+    agents = maand_agent.get_agents(agent_cursor, roles_filter=None)
 
     for agent_ip in agents:
-        roles = maand_agent.get_agent_roles(agent_ip=None)
-        agent_roles = maand_agent.get_agent_roles(agent_ip=agent_ip)
+        roles = maand_agent.get_agent_roles(agent_cursor, agent_ip=None)
+        agent_roles = maand_agent.get_agent_roles(agent_cursor, agent_ip=agent_ip)
 
         values = {}
         for role in roles:
             key_nodes = f"{role}_NODES".upper()
 
-            agents = maand_agent.get_agents([role])
+            agents = maand_agent.get_agents(agent_cursor, [role])
             values[key_nodes] = ",".join(agents)
 
             other_agents = copy.deepcopy(agents)
@@ -67,8 +67,15 @@ def build_variables():
             kv_manager.put_key_value(f"vars/{agent_ip}", key, value)
 
 
+def build():
+    build_env(f"{const.WORKSPACE_PATH}/secrets.env")
+    build_env(f"{const.WORKSPACE_PATH}/variables.env")
+    build_env(f"{const.WORKSPACE_PATH}/ports.env")
+
+    with maand_agent.get_db() as agent_db:
+        agent_cursor = agent_db.cursor()
+        build_variables(agent_cursor)
+
+
 if __name__ == "__main__":
-    manage_kv(f"{const.WORKSPACE_PATH}/secrets.env")
-    manage_kv(f"{const.WORKSPACE_PATH}/variables.env")
-    manage_kv(f"{const.WORKSPACE_PATH}/ports.env")
-    build_variables()
+    build()
