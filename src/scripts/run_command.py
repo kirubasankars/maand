@@ -28,9 +28,15 @@ if __name__ == "__main__":
 
     with maand_agent.get_db() as db:
         cursor = db.cursor()
+
         namespace = maand_agent.get_namespace_id(cursor)
         os.environ.setdefault("NAMESPACE", namespace)
+
+        update_seq = maand_agent.get_update_seq(cursor)
+        os.environ.setdefault("UPDATE_SEQ", str(update_seq))
+
         system_manager.run(cursor, command_helper.scan_agent)
+
         if not local_args.no_check:
             system_manager.run(cursor, context_manager.validate_cluster_update_seq)
 

@@ -35,11 +35,11 @@ def get_args_agents_jobs_concurrency():
     if args.agents:
         args.agents = args.agents.split(',')
     else:
-        args.agents = None
+        args.agents = []
     if args.jobs:
         args.jobs = args.jobs.split(',')
     else:
-        args.jobs = None
+        args.jobs = []
 
     return args
 
