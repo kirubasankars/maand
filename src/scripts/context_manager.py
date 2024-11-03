@@ -117,8 +117,8 @@ def rsync_upload_agent_files(agent_ip, jobs):
 
 def validate_agent_namespace(agent_ip, fail_if_no_namespace_id=True):
     try:
-        namespace = os.environ.get("NAMESPACE")
         agent_env = get_agent_minimal_env(agent_ip)
+        namespace = os.environ.get("NAMESPACE")
         res = command_helper.command_remote(f"ls /opt/agent/{namespace}", agent_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if fail_if_no_namespace_id and res.returncode != 0:
             raise Exception(f"agent {agent_ip} : namespace not found.")
@@ -129,11 +129,10 @@ def validate_agent_namespace(agent_ip, fail_if_no_namespace_id=True):
 
 def validate_update_seq(agent_ip):
     try:
-        update_seq = str(maand_agent.get_update_seq())
         agent_env = get_agent_minimal_env(agent_ip)
-        namespace_id = maand_agent.get_namespace_id()
+        update_seq = os.environ.get("UPDATE_SEQ")
+        namespace_id = os.environ.get("NAMESPACE")
         res = command_helper.command_remote(f"cat /opt/agent/{namespace_id}/update_seq.txt", agent_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
         if res.returncode == 1:
             raise Exception(f"{agent_ip} : {res.stderr}")
         agent_update_seq = res.stdout.decode("utf-8")

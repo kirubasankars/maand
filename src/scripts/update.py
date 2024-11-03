@@ -183,6 +183,8 @@ def update():
         next_update_seq = int(update_seq) + 1
         maand_agent.update_seq(agent_cursor, next_update_seq)
 
+        agent_db.commit()
+
         system_manager.run(agent_cursor, sync, concurrency=args.concurrency)
 
     kv_manager.gc()

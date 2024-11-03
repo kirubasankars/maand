@@ -1,5 +1,5 @@
 docker:
-	docker build -t maand ./src/main
+	docker build -t maand ./src
 
 alias:
 	alias maand="docker run --rm -v $(PWD)/namespace:/namespace:z maand "

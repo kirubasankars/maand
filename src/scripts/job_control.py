@@ -1,5 +1,4 @@
 import os
-import sys
 
 import maand_agent
 import command_helper
