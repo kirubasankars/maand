@@ -14,9 +14,12 @@ import const
 config_parser = configparser.ConfigParser()
 logger = utils.get_logger()
 
+db = maand_agent.get_db()
+cursor = db.cursor()
+
 try:
     command_helper.command_local("mkdir -p /namespace/{workspace,secrets}")
-    maand_agent.setup()
+    maand_agent.setup(cursor)
     kv_manager.setup()
 except Exception as e:
     print(f"ERROR: {e}", flush=True)
@@ -43,8 +46,8 @@ config_parser = utils.get_maand_conf()
 
 if not os.path.isfile('/namespace/secrets/ca.key'):
     ca_ttl = config_parser.get("default", "ca_ttl")
-    namespace_id = maand_agent.get_namespace_id()
+    namespace_id = maand_agent.get_namespace_id(cursor)
     cert_provider.generate_ca_private()
     cert_provider.generate_ca_public(namespace_id, ca_ttl)
 
-command_helper.command_local(f"chmod 777 -R {const.WORKSPACE_PATH}")
+db.commit()

@@ -18,8 +18,6 @@ elif [ "$OPERATION" == "build" ]; then
   python3 /scripts/build_certs.py
 elif [ "$OPERATION" == "update" ]; then
   python3 /scripts/update.py $@
-elif [ "$OPERATION" == "deploy" ]; then
-  python3 /scripts/update.py $@
 elif [ "$OPERATION" == "uptime" ]; then
   python3 /scripts/uptime.py $@
 elif [ "$OPERATION" == "run_command" ]; then

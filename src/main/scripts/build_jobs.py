@@ -2,12 +2,12 @@ import hashlib
 import os
 import uuid
 import json
-import glob
 
 import maand_job
 import workspace
 import const
 import command_helper
+
 
 def build_jobs(cursor):
     jobs = workspace.get_jobs()
@@ -60,7 +60,5 @@ def build():
 
 
 if __name__ == '__main__':
-    found_manifest = glob.glob(f"{const.WORKSPACE_PATH}/jobs/*/manifest.json")
-    if found_manifest:
-        command_helper.command_local(f"rm -rf {const.JOBS_DB_PATH}")
-        build()
+    command_helper.command_local(f"rm -rf {const.JOBS_DB_PATH}")
+    build()
