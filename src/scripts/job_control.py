@@ -19,14 +19,14 @@ def run_command(agent_ip):
         cursor = db.cursor()
         agent_jobs = maand_agent.get_agent_jobs(cursor, agent_ip)
 
-        missing_jobs = set(args.jobs) - set(agent_jobs.keys())
-        if missing_jobs:
-            raise Exception(f"No jobs found: {missing_jobs}")
+        jobs = list(agent_jobs.keys())
+        if args.jobs:
+            jobs = list(set(jobs) & set(args.jobs))
 
-        jobs = args.jobs or agent_jobs.keys()
-        filtered_jobs = ",".join(jobs)
-        agent_env = context_manager.get_agent_minimal_env(agent_ip)
-        command_helper.command_remote(f"python3 /opt/agent/{namespace}/bin/runner.py {namespace} {cmd} --jobs {filtered_jobs}", env=agent_env)
+        if jobs:
+            filtered_jobs = ",".join(jobs)
+            agent_env = context_manager.get_agent_minimal_env(agent_ip)
+            command_helper.command_remote(f"python3 /opt/agent/{namespace}/bin/runner.py {namespace} {cmd} --jobs {filtered_jobs}", env=agent_env)
 
 
 def run():
