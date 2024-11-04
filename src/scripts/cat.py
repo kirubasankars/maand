@@ -26,7 +26,7 @@ if __name__ == "__main__":
         statement("SELECT agent_id, agent_ip, detained, (SELECT GROUP_CONCAT(role) FROM agent_roles ar WHERE ar.agent_id = a.agent_id ORDER BY role) as roles FROM agent a")
 
     if name == "jobs":
-        statement("SELECT DISTINCT job_id, name, (SELECT GROUP_CONCAT(role) FROM job_db.job_roles jr WHERE jr.job_id = j.job_id) as roles, (CASE WHEN (SELECT COUNT(1) FROM agent_jobs aj WHERE j.name = aj.job AND aj.disabled = 0) > 0 THEN 0 ELSE 1 END) AS disabled FROM job_db.job j")
+        statement("SELECT DISTINCT job_id, name,(CASE WHEN (SELECT COUNT(1) FROM agent_jobs aj WHERE j.name = aj.job AND aj.disabled = 0) > 0 THEN 0 ELSE 1 END) AS disabled, deployment_seq, (SELECT GROUP_CONCAT(role) FROM job_db.job_roles jr WHERE jr.job_id = j.job_id) as roles FROM job_db.job j ORDER BY deployment_seq, name")
 
     if name == "allocations":
         statement("SELECT a.agent_ip, aj.job, aj.disabled, aj.removed FROM agent a JOIN agent_jobs aj ON a.agent_id = aj.agent_id LEFT JOIN job_db.job j ON j.name = aj.job")

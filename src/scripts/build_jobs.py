@@ -25,7 +25,7 @@ def build_jobs(cursor):
 
         job_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(job)))
         certs_hash = hashlib.md5(json.dumps(certs).encode()).hexdigest()
-        cursor.execute("INSERT INTO job (job_id, name, certs_md5_hash) VALUES (?, ?, ?)", (job_id, job, certs_hash))
+        cursor.execute("INSERT INTO job (job_id, name, certs_md5_hash, deployment_seq) VALUES (?, ?, ?, 0)", (job_id, job, certs_hash))
 
         for role in roles:
             cursor.execute("INSERT INTO job_roles (job_id, role) VALUES (?, ?)", (job_id, role,))
@@ -59,8 +59,6 @@ def build_jobs(cursor):
                            (job_id, file, content, isdir))
 
     sql = '''
-CREATE TABLE deployment_order_temp (job_name, deployment_seq);       
-
 WITH RECURSIVE job_command_seq AS (
     SELECT jc.job_name, 0 AS level FROM job_commands jc WHERE jc.depend_on_job IS NULL
 
@@ -70,21 +68,12 @@ WITH RECURSIVE job_command_seq AS (
     FROM
         job_commands jc INNER JOIN job_command_seq jcs ON jc.depend_on_job = jcs.job_name
 )
-INSERT INTO deployment_order_temp
+UPDATE job SET deployment_seq = t.deployment_seq FROM (
 SELECT 
     DISTINCT job_name, deployment_seq
 FROM 
     (SELECT job_name, (SELECT MAX(level) FROM job_command_seq jcs WHERE jcs.job_name = t.job_name) as deployment_seq FROM job_command_seq t) t1
-ORDER BY deployment_seq;
-
-CREATE TABLE job_deployment_order (job_name, seq);
-INSERT INTO job_deployment_order SELECT name AS job_name, 0 as seq FROM job j WHERE NOT EXISTS (SELECT 1 FROM deployment_order_temp d WHERE j.name = d.job_name);
-INSERT INTO job_deployment_order SELECT DISTINCT job_name, deployment_seq FROM deployment_order_temp;
-
-UPDATE job SET deployment_seq = t.seq FROM (SELECT seq, jd.job_name FROM job j JOIN job_deployment_order jd ON j.name = jd.job_name) t WHERE job.name = t.job_name;
-
-DROP TABLE deployment_order_temp;
-DROP TABLE job_deployment_order;
+ORDER BY deployment_seq) t WHERE job.name = t.job_name;
         '''
 
     cursor.executescript(sql)

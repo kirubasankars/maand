@@ -30,6 +30,8 @@ elif [ "$OPERATION" == "stop_jobs" ]; then
   CMD="stop" python3 /scripts/job_control.py $@
 elif [ "$OPERATION" == "restart_jobs" ]; then
   CMD="restart" python3 /scripts/job_control.py $@
+elif [ "$OPERATION" == "execute_job_command" ]; then
+  python3 /scripts/job_command_executor.py $@
 elif [ "$OPERATION" == "cat" ]; then
   python3 /scripts/cat.py $@
 elif [ "$OPERATION" == "run_command_with_health_check" ]; then
