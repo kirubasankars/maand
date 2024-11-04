@@ -8,6 +8,10 @@ import workspace
 import const
 import command_helper
 
+import utils
+
+logger = utils.get_logger()
+
 
 def build_jobs(cursor):
     jobs = workspace.get_jobs()
@@ -35,9 +39,14 @@ def build_jobs(cursor):
 
         for command, command_obj in commands.items():
             executed_ons = command_obj.get("executed_on", [])
+            depend_on = command_obj.get("depend_on", {})
             for executed_on in executed_ons:
-                cursor.execute("INSERT INTO job_commands (job_id, name, executed_on) VALUES (?, ?, ?)",
-                               (job_id, command, executed_on,))
+                depend_on_job = depend_on.get("job")
+                if depend_on_job and depend_on_job not in jobs:
+                    logger.error(f"{depend_on_job} job not found: command: {command}, depend on job: {depend_on_job}")
+                depend_on_command = depend_on.get("command")
+                depend_on_config = json.dumps(depend_on.get("config", {}))
+                cursor.execute("INSERT INTO job_commands (job_id, job_name, name, executed_on, depend_on_job, depend_on_command, depend_on_config) VALUES (?, ?, ?, ?, ?, ?, ?)", (job_id, job, command, executed_on, depend_on_job, depend_on_command, depend_on_config))
 
         files = workspace.get_job_files(job)
         for file in files:
@@ -48,6 +57,37 @@ def build_jobs(cursor):
                     content = f.read()
             cursor.execute("INSERT INTO job_files (job_id, path, content, isdir) VALUES (?, ?, ?, ?)",
                            (job_id, file, content, isdir))
+
+    sql = '''
+CREATE TABLE deployment_order_temp (job_name, deployment_seq);       
+
+WITH RECURSIVE job_command_seq AS (
+    SELECT jc.job_name, 0 AS level FROM job_commands jc WHERE jc.depend_on_job IS NULL
+
+    UNION ALL
+
+    SELECT jc.job_name, jcs.level + 1 AS level
+    FROM
+        job_commands jc INNER JOIN job_command_seq jcs ON jc.depend_on_job = jcs.job_name
+)
+INSERT INTO deployment_order_temp
+SELECT 
+    DISTINCT job_name, deployment_seq
+FROM 
+    (SELECT job_name, (SELECT MAX(level) FROM job_command_seq jcs WHERE jcs.job_name = t.job_name) as deployment_seq FROM job_command_seq t) t1
+ORDER BY deployment_seq;
+
+CREATE TABLE job_deployment_order (job_name, seq);
+INSERT INTO job_deployment_order SELECT name AS job_name, 0 as seq FROM job j WHERE NOT EXISTS (SELECT 1 FROM deployment_order_temp d WHERE j.name = d.job_name);
+INSERT INTO job_deployment_order SELECT DISTINCT job_name, deployment_seq FROM deployment_order_temp;
+
+UPDATE job SET deployment_seq = t.seq FROM (SELECT seq, jd.job_name FROM job j JOIN job_deployment_order jd ON j.name = jd.job_name) t WHERE job.name = t.job_name;
+
+DROP TABLE deployment_order_temp;
+DROP TABLE job_deployment_order;
+        '''
+
+    cursor.executescript(sql)
 
 
 def build():

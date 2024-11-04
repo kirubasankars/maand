@@ -11,11 +11,11 @@ def attach_job_db(target):
     target.execute(f"ATTACH DATABASE '{const.JOBS_DB_PATH}' AS job_db;\n")
 
 def setup(cursor):
-    cursor.execute("CREATE TABLE IF NOT EXISTS job (job_id TEXT PRIMARY KEY, name TEXT, certs_md5_hash TEXT)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS job (job_id TEXT PRIMARY KEY, name TEXT, certs_md5_hash TEXT, deployment_seq INT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS job_roles (job_id TEXT, role TEXT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS job_certs (job_id TEXT, name TEXT, pkcs8 INT, subject TEXT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS job_files (job_id TEXT, path TEXT, content BLOB, isdir BOOL)")
-    cursor.execute("CREATE TABLE IF NOT EXISTS job_commands (job_id TEXT, name TEXT, executed_on TEXT)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS job_commands (job_id TEXT, job_name TEXT, name TEXT, executed_on TEXT, depend_on_job TEXT, depend_on_command TEXT, depend_on_config TEXT)")
 
 
 def get_jobs(cursor):
