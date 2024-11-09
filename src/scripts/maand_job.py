@@ -36,6 +36,14 @@ def get_job_md5_hash(cursor, job):
     return row[0]
 
 
+def check_job_command_event(cursor, job, command, event):
+    cursor.execute("SELECT 1 FROM job_commands WHERE job_name = ? AND name = ? AND executed_on = ?", (job, command, event))
+    row = cursor.fetchone()
+    if not row:
+        return False
+    return True
+
+
 def copy_job(cursor, name, agent_dir):
     cursor.execute("SELECT path, content, isdir FROM job_files WHERE job_id = (SELECT job_id FROM job WHERE name = ?) AND path NOT LIKE ? ORDER BY isdir DESC", (name, f"{name}/_modules%"))
     rows = cursor.fetchall()

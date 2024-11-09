@@ -39,6 +39,12 @@ def get_agents(cursor, roles_filter):
     return [row[0] for row in rows]
 
 
+def get_first_agent_for_job(cursor, job):
+    cursor.execute("SELECT a.agent_ip FROM agent a JOIN agent_jobs aj ON a.agent_id = aj.agent_id INNER JOIN job_db.job j ON j.name = aj.job WHERE aj.job = ? ORDER BY a.agent_ip LIMIT 1", (job, ))
+    agent_0_ip, = cursor.fetchone()
+    return agent_0_ip
+
+
 def get_agent_roles(cursor, agent_ip):
     if agent_ip:
         cursor.execute(

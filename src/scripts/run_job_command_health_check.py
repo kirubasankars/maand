@@ -1,18 +1,36 @@
 import time
+import utils
+import job_command_executor
+import maand_job
 
-import run_job_command
 
+def health_check():
+    event = 'health_check'
 
-def health_check(agent_ip):
-    time.sleep(10)
+    selected_jobs = []
+    with maand_job.get_db() as db:
+        cursor = db.cursor()
+        jobs = maand_job.get_jobs(cursor)
+        for job in jobs:
+            if maand_job.check_job_command_event(cursor, job, event, event):
+                selected_jobs.append(job)
+
+    args = utils.get_args_jobs_concurrency()
+    jobs_filter = args.jobs
+
+    if jobs_filter:
+        selected_jobs = set(jobs_filter) & set(selected_jobs)
+
     retry = 0
     while True:
         try:
-            run_job_command.run_job_command(agent_ip, "health_check")
+            for job in selected_jobs:
+                if maand_job.check_job_command_event(cursor, job, event, event):
+                    job_command_executor.execute_command(job, event, event)
             break
         except Exception as e:
             if retry >= 100:
                 raise TimeoutError("Timed out waiting for agent to become healthy")
             retry = retry + 1
             print(f"{e} retrying...", flush=True)
-            time.sleep(5)
+            time.sleep(10)

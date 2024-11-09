@@ -13,7 +13,7 @@ if [ "$OPERATION" == "init" ]; then
   python3 /scripts/init.py
 elif [ "$OPERATION" == "build" ]; then
   python3 /scripts/build_jobs.py
-  python3 /scripts/build_agents.py
+  python3 /scripts/build_maand.py
   python3 /scripts/build_variables.py
   python3 /scripts/build_certs.py
 elif [ "$OPERATION" == "update" ]; then
@@ -30,7 +30,7 @@ elif [ "$OPERATION" == "stop_jobs" ]; then
   CMD="stop" python3 /scripts/job_control.py $@
 elif [ "$OPERATION" == "restart_jobs" ]; then
   CMD="restart" python3 /scripts/job_control.py $@
-elif [ "$OPERATION" == "execute_job_command" ]; then
+elif [ "$OPERATION" == "run_job_command" ]; then
   python3 /scripts/job_command_executor.py $@
 elif [ "$OPERATION" == "cat" ]; then
   python3 /scripts/cat.py $@
