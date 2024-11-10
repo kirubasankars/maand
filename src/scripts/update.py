@@ -81,17 +81,7 @@ def process_templates(values):
 
 def transpile(agent_ip):
     logger.debug("Transpiling templates...")
-    values = {}
-    variables = kv_manager.get_keys("variables.env")
-    for key in variables:
-        values[key] = kv_manager.get_value("variables.env", key)
-    secrets = kv_manager.get_keys("secrets.env")
-    for key in secrets:
-        values[key] = kv_manager.get_value("secrets.env", key)
-    maand_vars = kv_manager.get_keys(f"vars/{agent_ip}")
-    for key in maand_vars:
-        values[key] = kv_manager.get_value(f"vars/{agent_ip}", key)
-    values["AGENT_IP"] = agent_ip
+    values = context_manager.get_agent_env(agent_ip)
     process_templates(values)
 
 
