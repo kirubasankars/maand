@@ -4,18 +4,14 @@ import json
 import os
 
 import kv_manager
-import maand_job
-import maand_agent
 import sys
-
+import maand
 import utils
 
 logger = utils.get_logger()
 
 
 def run_job_command(job, job_command, demands, env):
-    os.path.curdir = f"/commands/{job}/_modules"
-
     with open(f"{os.path.curdir}/demands.json", "w") as f:
         f.write(json.dumps(demands))
 
@@ -30,43 +26,38 @@ def run_job_command(job, job_command, demands, env):
         return False
 
 
-def execute_command(job, command, event):
+def execute_command(cursor, job, command, event):
     if "/commands" not in sys.path:
         sys.path.append("/commands")
+
     os.makedirs("/commands", exist_ok=True)
+    if not maand.check_job_command_event(cursor, job, command, event):
+        return False
 
-    with maand_agent.get_db() as maand_db, maand_job.get_db() as job_db:
-        maand_job.attach_job_db(maand_db)
-        cursor = maand_db.cursor()
-        job_cursor = job_db.cursor()
+    agent_0_ip = maand.get_first_agent_for_job(cursor, job)
 
-        if not maand_job.check_job_command_event(job_cursor, job, command, event):
-            return False
+    for namespace in ["variables.env", "secrets.env", "ports.env", f"vars/{agent_0_ip}"]:
+        keys = kv_manager.get_keys(namespace)
+        env = {}
+        for key in keys:
+            env[key] = kv_manager.get_value(namespace, key)
 
-        agent_0_ip = maand_agent.get_first_agent_for_job(cursor, job)
+    cursor.execute("SELECT path, content, isdir FROM job_db.job_files WHERE job_id = (SELECT job_id FROM job_db.job WHERE name = ?) AND path like ? ORDER BY isdir DESC", (job, f"{job}/_modules%"))
+    rows = cursor.fetchall()
 
-        for namespace in ["variables.env", "secrets.env", "ports.env", f"vars/{agent_0_ip}"]:
-            keys = kv_manager.get_keys(namespace)
-            env = {}
-            for key in keys:
-                env[key] = kv_manager.get_value(namespace, key)
+    for path, content, isdir in rows:
+        if isdir:
+            os.makedirs(f"/commands/{path}", exist_ok=True)
+            continue
+        with open(f"/commands/{path}", "wb") as f:
+            f.write(content)
 
-        cursor.execute("SELECT path, content, isdir FROM job_db.job_files WHERE job_id = (SELECT job_id FROM job_db.job WHERE name = ?) AND path like ? ORDER BY isdir DESC", (job, f"{job}/_modules%"))
-        rows = cursor.fetchall()
+    cursor.execute("SELECT job_name, name as command_name, depend_on_config as config FROM job_db.job_commands WHERE depend_on_job = ? AND depend_on_command = ?", (job, command, ))
+    rows = cursor.fetchall()
 
-        for path, content, isdir in rows:
-            if isdir:
-                os.makedirs(f"/commands/{path}", exist_ok=True)
-                continue
-            with open(f"/commands/{path}", "wb") as f:
-                f.write(content)
-
-        cursor.execute("SELECT job_name, name as command_name, depend_on_config as config FROM job_db.job_commands WHERE depend_on_job = ? AND depend_on_command = ?", (job, command, ))
-        rows = cursor.fetchall()
-
-        demands = []
-        for job_name, command_name, config in rows:
-            demands.append({"job": job_name, "command": command_name, "config": json.loads(config) })
+    demands = []
+    for job_name, command_name, config in rows:
+        demands.append({"job": job_name, "command": command_name, "config": json.loads(config) })
     try:
         job_command = importlib.import_module(f'{job}._modules.command_{command}')
         if "execute" in dir(job_command):
@@ -82,4 +73,7 @@ if __name__ == '__main__':
     parser.add_argument('job', default="")
     parser.add_argument('command', default="")
     args, _ = parser.parse_known_args()
-    execute_command(args.job, args.command, os.environ.get("EVENT", "direct"))
+
+    with maand.get_db() as db:
+        cursor = db.cursor()
+        execute_command(cursor, args.job, args.command, os.environ.get("EVENT", "direct"))

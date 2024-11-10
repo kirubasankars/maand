@@ -1,31 +1,45 @@
-import run_job_command_health_check
+import os
 
 import maand
 import command_helper
 import context_manager
 import system_manager
 import utils
-
+import job_health_check
 
 def run_command(agent_ip):
-    filtered_jobs, filter_applied = utils.get_filtered_jobs(agent_ip, jobs_filter=args.jobs, min_order=args.min_order, max_order=args.max_order)
-    if not args.include_disabled:
-        disabled_jobs = [name for name, job in maand.get_agent_jobs(agent_ip).items() if job["disabled"]]
-        filtered_jobs = list(set(filtered_jobs) - set(disabled_jobs))
+    cmd = "restart"
+    namespace = os.getenv("NAMESPACE")
+    args = utils.get_args_agents_jobs_concurrency()
 
-    filtered_jobs = ",".join(filtered_jobs)
-    agent_env = context_manager.get_agent_minimal_env(agent_ip)
+    with maand.get_db() as db:
+        cursor = db.cursor()
 
-    run_job_command_health_check.health_check(agent_ip)
-    if filter_applied:
-        if filtered_jobs:
-            command_helper.command_remote(f"python /opt/agent/bin/runner.py restart --jobs {filtered_jobs}", env=agent_env)
-    else:
-        command_helper.command_remote(f"python /opt/agent/bin/runner.py restart", env=agent_env)
-    run_job_command_health_check.health_check(agent_ip)
+        agent_jobs = maand.get_agent_jobs(cursor, agent_ip)
+
+        jobs = list(agent_jobs.keys())
+        if args.jobs:
+            jobs = list(set(jobs) & set(args.jobs))
+
+        if jobs:
+            filtered_jobs = ",".join(jobs)
+            agent_env = context_manager.get_agent_minimal_env(agent_ip)
+
+            job_health_check.health_check(cursor)
+            command_helper.command_remote(f"python3 /opt/agent/{namespace}/bin/runner.py {namespace} {cmd} --jobs {filtered_jobs}", env=agent_env)
+            job_health_check.health_check(cursor)
+
+
+def run():
+    args = utils.get_args_agents_jobs_concurrency()
+
+    with maand.get_db() as db:
+        cursor = db.cursor()
+
+        maand.export_env_namespace_update_seq(cursor)
+        system_manager.run(cursor, context_manager.validate_cluster_update_seq)
+        system_manager.run(cursor, run_command, concurrency=args.concurrency, agents_filter=args.agents)
 
 
 if __name__ == "__main__":
-    args = utils.get_args_agents_jobs_concurrency()
-    system_manager.run(context_manager.validate_cluster_update_seq)
-    system_manager.run(run_command, concurrency=args.concurrency, agents_filter=args.agents_filter)
+    run()

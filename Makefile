@@ -12,4 +12,4 @@ exec:
 	docker run --rm --user=root --entrypoint=/bin/bash -v $(PWD)/workspace:/workspace:z -it $(IMAGE)
 
 clean:
-	sudo rm -rf $(PWD)/namespace/*
+	rm -rf $(PWD)/namespace/*

@@ -7,3 +7,5 @@
 __pycache__
 workspace
 namespace
+.venv
+venv

@@ -5,7 +5,7 @@ import uuid
 import kv_manager
 from dotenv import dotenv_values
 
-import maand_agent
+import maand
 import const
 
 
@@ -22,18 +22,18 @@ def build_env(path):
         kv_manager.delete_key(namespace, key)
 
 
-def build_variables(agent_cursor):
-    agents = maand_agent.get_agents(agent_cursor, roles_filter=None)
+def build_variables(cursor):
+    agents = maand.get_agents(cursor, roles_filter=None)
 
     for agent_ip in agents:
-        roles = maand_agent.get_agent_roles(agent_cursor, agent_ip=None)
-        agent_roles = maand_agent.get_agent_roles(agent_cursor, agent_ip=agent_ip)
+        roles = maand.get_agent_roles(cursor, agent_ip=None)
+        agent_roles = maand.get_agent_roles(cursor, agent_ip=agent_ip)
 
         values = {}
         for role in roles:
             key_nodes = f"{role}_NODES".upper()
 
-            agents = maand_agent.get_agents(agent_cursor, [role])
+            agents = maand.get_agents(cursor, [role])
             values[key_nodes] = ",".join(agents)
 
             other_agents = copy.deepcopy(agents)
@@ -72,9 +72,9 @@ def build():
     build_env(f"{const.WORKSPACE_PATH}/variables.env")
     build_env(f"{const.WORKSPACE_PATH}/ports.env")
 
-    with maand_agent.get_db() as agent_db:
-        agent_cursor = agent_db.cursor()
-        build_variables(agent_cursor)
+    with maand.get_db() as db:
+        cursor = db.cursor()
+        build_variables(cursor)
 
 
 if __name__ == "__main__":

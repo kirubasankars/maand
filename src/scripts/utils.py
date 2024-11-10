@@ -4,6 +4,7 @@ import functools
 import logging
 import os
 import fcntl
+import subprocess
 from functools import cache
 from logging import getLogger
 
@@ -75,19 +76,6 @@ def get_maand_conf():
     config_parser.read(const.CONF_PATH)
     return config_parser
 
-class FileMutex:
-    def __init__(self, filename):
-        self.filename = filename
-        self.file = None
 
-    def acquire(self):
-        self.file = open(self.filename, 'w')
-
-        fcntl.flock(self.file.fileno(), fcntl.LOCK_EX)
-
-    def release(self):
-        """Release the mutex by unlocking the file."""
-        if self.file:
-            # Release the lock on the file
-            fcntl.flock(self.file.fileno(), fcntl.LOCK_UN)
-            self.file.close()
+def stop_the_world():
+    subprocess.run("kill -TERM 1")

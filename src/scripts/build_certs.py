@@ -2,8 +2,7 @@ import base64
 import os
 
 import kv_manager
-import maand_agent
-import maand_job
+import maand
 import context_manager
 import cert_provider
 import command_helper
@@ -24,9 +23,9 @@ def put_cert(file_path, namespace, key):
         kv_manager.put_key_value(namespace, key, content)
 
 
-def build_agent_certs(agent_cursor):
-    namespace_id = maand_agent.get_namespace_id(agent_cursor)
-    agents = maand_agent.get_agents(agent_cursor, roles_filter=None)
+def build_agent_certs(cursor):
+    namespace_id = maand.get_namespace_id(cursor)
+    agents = maand.get_agents(cursor, roles_filter=None)
 
     for agent_ip in agents:
 
@@ -56,10 +55,10 @@ def build_agent_certs(agent_cursor):
             put_cert(f"{agent_cert_path}.pem", namespace, f"certs/agent.pem")
 
 
-def build_job_certs(agent_cursor, job_cursor):
-    namespace_id = maand_agent.get_namespace_id(agent_cursor)
-    agents = maand_agent.get_agents(agent_cursor, roles_filter=None)
-    jobs = maand_job.get_jobs(job_cursor)
+def build_job_certs(cursor):
+    namespace_id = maand.get_namespace_id(cursor)
+    agents = maand.get_agents(cursor, roles_filter=None)
+    jobs = maand.get_jobs(cursor)
 
     for agent_ip in agents:
         for job in jobs:
@@ -68,12 +67,12 @@ def build_job_certs(agent_cursor, job_cursor):
             job_cert_kv_location = f"{job}/certs"
             namespace = f"certs/job/{agent_ip}"
 
-            job_certs = maand_job.get_job_certs_config(job_cursor, job)
+            job_certs = maand.get_job_certs_config(cursor, job)
 
             update_certs = False
             if job_certs:
                 current_hash = kv_manager.get_value(namespace, f"{job_cert_kv_location}/md5.hash")
-                new_hash = maand_job.get_job_md5_hash(job_cursor, job)
+                new_hash = maand.get_job_md5_hash(cursor, job)
                 if current_hash != new_hash:
                     kv_manager.put_key_value(namespace, f"{job_cert_kv_location}/md5.hash", new_hash)
                     update_certs = True
@@ -111,13 +110,11 @@ def build_job_certs(agent_cursor, job_cursor):
 
 
 def build():
-    with maand_agent.get_db() as agent_db, maand_job.get_db() as job_db:
-        agent_cursor = agent_db.cursor()
-        build_agent_certs(agent_cursor)
-
-        job_cursor = job_db.cursor()
-        build_job_certs(agent_cursor, job_cursor)
-
+    with maand.get_db() as db:
+        cursor = db.cursor()
+        build_agent_certs(cursor)
+        build_job_certs(cursor)
+        db.commit()
     command_helper.command_local(f"rm -f {const.SECRETS_PATH}/ca.srl")
 
 if __name__ == "__main__":

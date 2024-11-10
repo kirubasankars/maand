@@ -1,31 +1,36 @@
+import configparser
 import os
 import sys
 
-import configparser
-
 import cert_provider
 import command_helper
-import kv_manager
-import maand_agent
-import utils
-
 import const
+import kv_manager
+import maand
+import utils
 
 config_parser = configparser.ConfigParser()
 logger = utils.get_logger()
 
-db = maand_agent.get_db()
+db = maand.get_db()
 cursor = db.cursor()
 
 try:
     command_helper.command_local("mkdir -p /namespace/{workspace,secrets}")
-    maand_agent.setup(cursor)
+    maand.setup_maand_database(cursor)
+    maand.setup_agent_database(cursor)
+    maand.setup_job_database(cursor)
     kv_manager.setup()
 except Exception as e:
     print(f"ERROR: {e}", flush=True)
     sys.exit(1)
 
 command_helper.command_local(f"touch {const.WORKSPACE_PATH}/{{variables.env,secrets.env,command.sh,agents.json}}")
+
+with open(f"{const.WORKSPACE_PATH}/agents.json", "r") as f:
+    data = f.read().strip()
+    if len(data) == 0:
+        command_helper.command_local(f"echo '[]' > {const.WORKSPACE_PATH}/agents.json")
 
 config = {
     "ca_ttl": str(365 * 10),
@@ -46,7 +51,7 @@ config_parser = utils.get_maand_conf()
 
 if not os.path.isfile('/namespace/secrets/ca.key'):
     ca_ttl = config_parser.get("default", "ca_ttl")
-    namespace_id = maand_agent.get_namespace_id(cursor)
+    namespace_id = maand.get_namespace_id(cursor)
     cert_provider.generate_ca_private()
     cert_provider.generate_ca_public(namespace_id, ca_ttl)
 

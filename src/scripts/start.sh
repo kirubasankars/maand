@@ -13,7 +13,7 @@ if [ "$OPERATION" == "init" ]; then
   python3 /scripts/init.py
 elif [ "$OPERATION" == "build" ]; then
   python3 /scripts/build_jobs.py
-  python3 /scripts/build_maand.py
+  python3 /scripts/build_agents.py
   python3 /scripts/build_variables.py
   python3 /scripts/build_certs.py
 elif [ "$OPERATION" == "update" ]; then
@@ -42,4 +42,6 @@ elif [ "$OPERATION" == "collect" ]; then
   python3 /scripts/collect.py $@
 elif [ "$OPERATION" == "health_check" ]; then
   python3 /scripts/health_check.py $@
+elif [ "$OPERATION" == "gc" ]; then
+  python3 /scripts/gc.py
 fi

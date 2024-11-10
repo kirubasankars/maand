@@ -6,12 +6,11 @@ from copy import deepcopy
 from pathlib import Path
 from string import Template
 
-import maand_job
+import maand
 import command_helper
 import context_manager
 import system_manager
 import utils
-import maand_agent
 import const
 import kv_manager
 
@@ -25,7 +24,7 @@ def write_cert(location, namespace, kv_path):
          f.write(content)
 
 
-def update_certificates(job_cursor, jobs, agent_ip):
+def update_certificates(cursor, jobs, agent_ip):
     agent_dir = context_manager.get_agent_dir(agent_ip)
 
     name = "agent"
@@ -45,7 +44,7 @@ def update_certificates(job_cursor, jobs, agent_ip):
         command_helper.command_local(f"mkdir -p {job_cert_location}")
         command_helper.command_local(f"cp -f {const.SECRETS_PATH}/ca.crt {job_cert_location}/")
 
-        job_certs = maand_job.get_job_certs_config(job_cursor, job)
+        job_certs = maand.get_job_certs_config(cursor, job)
         for cert in job_certs:
             name = cert.get("name")
             job_cert_path = f"{job_cert_location}/{name}"
@@ -97,10 +96,8 @@ def transpile(agent_ip):
 
 
 def sync(agent_ip):
-    with maand_agent.get_db() as agent_db, maand_job.get_db() as job_db:
-        maand_job.attach_job_db(agent_db)
-        agent_cursor = agent_db.cursor()
-        job_cursor = job_db.cursor()
+    with maand.get_db() as db:
+        cursor = db.cursor()
 
         args = utils.get_args_jobs_concurrency()
 
@@ -112,15 +109,15 @@ def sync(agent_ip):
             rsync {const.SECRETS_PATH}/ca.crt {agent_dir}/certs/
         """)
 
-        agent_id = maand_agent.get_agent_id(agent_cursor, agent_ip)
+        agent_id = maand.get_agent_id(cursor, agent_ip)
         with open(f"{agent_dir}/agent.txt", "w") as f:
             f.write(agent_id)
 
-        update_seq = maand_agent.get_update_seq(agent_cursor)
+        update_seq = maand.get_update_seq(cursor)
         with open(f"{agent_dir}/update_seq.txt", "w") as f:
             f.write(str(update_seq))
 
-        agent_roles = maand_agent.get_agent_roles(agent_cursor, agent_ip)
+        agent_roles = maand.get_agent_roles(cursor, agent_ip)
         with open(f"{agent_dir}/roles.txt", "w") as f:
             f.writelines("\n".join(agent_roles))
 
@@ -139,7 +136,7 @@ def sync(agent_ip):
             rsync -r /agent/bin {agent_dir}/    
         """)
 
-        agent_jobs = maand_agent.get_agent_jobs(agent_cursor, agent_ip)
+        agent_jobs = maand.get_agent_jobs(cursor, agent_ip)
         with open(f"{agent_dir}/jobs.json", "w") as f:
             f.writelines(json.dumps(agent_jobs))
 
@@ -147,10 +144,10 @@ def sync(agent_ip):
             command_helper.command_local(f"mkdir -p {agent_dir}/jobs/")
 
             for job in agent_jobs:
-                maand_job.copy_job(job_cursor, job, agent_dir)
+                maand.copy_job(cursor, job, agent_dir)
 
         transpile(agent_ip)
-        update_certificates(job_cursor, agent_jobs, agent_ip)
+        update_certificates(cursor, agent_jobs, agent_ip)
 
         command_helper.command_local(f"chown -R 1061:1062 {agent_dir}")
 
@@ -170,22 +167,22 @@ def validate_agent_namespace(agent_ip):
 def update():
     args = utils.get_args_jobs_concurrency()
 
-    with maand_agent.get_db() as agent_db:
-        agent_cursor = agent_db.cursor()
+    with maand.get_db() as db:
+        cursor = db.cursor()
 
-        namespace = maand_agent.get_namespace_id(agent_cursor)
+        namespace = maand.get_namespace_id(cursor)
         os.environ.setdefault("NAMESPACE", namespace)
 
-        system_manager.run(agent_cursor, command_helper.scan_agent)
-        system_manager.run(agent_cursor, validate_agent_namespace)
+        system_manager.run(cursor, command_helper.scan_agent)
+        system_manager.run(cursor, validate_agent_namespace)
 
-        update_seq = maand_agent.get_update_seq(agent_cursor)
+        update_seq = maand.get_update_seq(cursor)
         next_update_seq = int(update_seq) + 1
-        maand_agent.update_seq(agent_cursor, next_update_seq)
+        maand.update_seq(cursor, next_update_seq)
 
-        agent_db.commit()
+        db.commit()
 
-        system_manager.run(agent_cursor, sync, concurrency=args.concurrency)
+        system_manager.run(cursor, sync, concurrency=args.concurrency)
 
     kv_manager.gc()
 

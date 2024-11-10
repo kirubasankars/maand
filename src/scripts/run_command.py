@@ -7,15 +7,16 @@ import system_manager
 import utils
 
 import const
-import maand_agent
+import maand
+
 
 if not os.path.exists(f"{const.WORKSPACE_PATH}/command.sh"):
     raise Exception("No command file found")
 
 
 def run_command(agent_ip):
-    agent_env = context_manager.get_agent_minimal_env(agent_ip)
-    command_helper.command2_remote(f"{const.WORKSPACE_PATH}/command.sh", env=agent_env)
+    env = context_manager.get_agent_minimal_env(agent_ip)
+    command_helper.command2_remote(f"{const.WORKSPACE_PATH}/command.sh", env=env)
 
 
 if __name__ == "__main__":
@@ -26,17 +27,12 @@ if __name__ == "__main__":
     parser.set_defaults(no_check=False)
     local_args, _ = parser.parse_known_args()
 
-    with maand_agent.get_db() as db:
+    with maand.get_db() as db:
         cursor = db.cursor()
 
-        namespace = maand_agent.get_namespace_id(cursor)
-        os.environ.setdefault("NAMESPACE", namespace)
-
-        update_seq = maand_agent.get_update_seq(cursor)
-        os.environ.setdefault("UPDATE_SEQ", str(update_seq))
+        maand.export_env_namespace_update_seq(cursor)
 
         system_manager.run(cursor, command_helper.scan_agent)
-
         if not local_args.no_check:
             system_manager.run(cursor, context_manager.validate_cluster_update_seq)
 

@@ -1,7 +1,6 @@
 import os
 
-import maand_agent
-import maand_job
+import maand
 import command_helper
 import context_manager
 import system_manager
@@ -13,11 +12,10 @@ def run_command(agent_ip):
     namespace = os.getenv("NAMESPACE")
     args = utils.get_args_agents_jobs_concurrency()
 
-    with maand_agent.get_db() as db:
-        maand_job.attach_job_db(db)
-
+    with maand.get_db() as db:
         cursor = db.cursor()
-        agent_jobs = maand_agent.get_agent_jobs(cursor, agent_ip)
+
+        agent_jobs = maand.get_agent_jobs(cursor, agent_ip)
 
         jobs = list(agent_jobs.keys())
         if args.jobs:
@@ -32,14 +30,10 @@ def run_command(agent_ip):
 def run():
     args = utils.get_args_agents_jobs_concurrency()
 
-    with maand_agent.get_db() as db:
-
+    with maand.get_db() as db:
         cursor = db.cursor()
-        namespace = maand_agent.get_namespace_id(cursor)
-        os.environ.setdefault("NAMESPACE", namespace)
-        update_seq = maand_agent.get_update_seq(cursor)
-        os.environ.setdefault("UPDATE_SEQ", str(update_seq))
 
+        maand.export_env_namespace_update_seq(cursor)
         system_manager.run(cursor, context_manager.validate_cluster_update_seq)
         system_manager.run(cursor, run_command, concurrency=args.concurrency, agents_filter=args.agents)
 
