@@ -1,11 +1,11 @@
 docker:
-	docker build -t mad ./src
+	docker build -t maand ./src
 
 alias:
-	alias mad="docker run --rm -v $(PWD)/bucket:/bucket:z mad "
+	alias maand="docker run --rm -v $(PWD)/bucket:/bucket:z maand "
 
 exec:
-	docker run --rm --user=root --entrypoint=/bin/bash -v $(PWD)/workspace:/workspace:z -it mad
+	docker run --rm --user=root --entrypoint=/bin/bash -v $(PWD)/workspace:/workspace:z -it maand
 
 clean:
 	rm -rf $(PWD)/bucket/*
