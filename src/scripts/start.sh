@@ -38,8 +38,6 @@ elif [ "$OPERATION" == "run_command_with_health_check" ]; then
   python3 /scripts/run_command_with_health_check.py $@
 elif [ "$OPERATION" == "rolling_restart_jobs" ]; then
   python3 /scripts/rolling_restart_jobs.py $@
-elif [ "$OPERATION" == "collect" ]; then
-  python3 /scripts/collect.py $@
 elif [ "$OPERATION" == "health_check" ]; then
   python3 /scripts/health_check.py $@
 elif [ "$OPERATION" == "gc" ]; then

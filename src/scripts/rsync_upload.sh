@@ -6,6 +6,7 @@ if [[ "$USE_SUDO" -eq 1 ]]; then
 fi
 
 RSYNC_OPTIONS=" \
+  -p -g -o \
   --ignore-times \
   --verbose \
   --force \
@@ -20,5 +21,5 @@ RSYNC_OPTIONS=" \
   --filter='merge /tmp/${AGENT_IP}_rsync_rules.txt' \
 "
 
-rsync_command="rsync --rsync-path=\"$RSYNC_PATH\" $RSYNC_OPTIONS --rsh=\"ssh -i /namespace/$SSH_KEY\" $AGENT_DIR/ $SSH_USER@$AGENT_IP:/opt/agent/$NAMESPACE"
+rsync_command="rsync --rsync-path=\"$RSYNC_PATH\" $RSYNC_OPTIONS --rsh=\"ssh -i /bucket/$SSH_KEY\" $AGENT_DIR/ $SSH_USER@$AGENT_IP:/opt/agent/$BUCKET"
 bash -c "$rsync_command" > /dev/null

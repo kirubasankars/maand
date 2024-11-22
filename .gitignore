@@ -1,11 +1,6 @@
 .DS_Store
 .idea
-*.pem
-*.pub
-*.crt
-*.key
 __pycache__
-workspace
-namespace
+bucket
 .venv
 venv

@@ -1,15 +1,11 @@
 docker:
-	docker build -t maand ./src
+	docker build -t mad ./src
 
 alias:
-	alias maand="docker run --rm -v $(PWD)/namespace:/namespace:z maand "
-
-test:
-	docker build -t maand_test ./src/test
-	docker run --rm --privileged -e NAMESPACE_PATH=$(PWD)/namespace -v $(PWD)/namespace:/namespace:z -v /var/run/docker.sock:/var/run/docker.sock -it maand_test
+	alias mad="docker run --rm -v $(PWD)/bucket:/bucket:z mad "
 
 exec:
-	docker run --rm --user=root --entrypoint=/bin/bash -v $(PWD)/workspace:/workspace:z -it $(IMAGE)
+	docker run --rm --user=root --entrypoint=/bin/bash -v $(PWD)/workspace:/workspace:z -it mad
 
 clean:
-	rm -rf $(PWD)/namespace/*
+	rm -rf $(PWD)/bucket/*

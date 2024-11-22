@@ -1,14 +1,11 @@
 import time
-import utils
 import job_command_executor
 
 import job_data
 
 
-def health_check(cursor):
+def health_check(cursor, jobs_filter, no_wait):
     event = 'health_check'
-    args = utils.get_args_jobs_concurrency()
-    jobs_filter = args.jobs
 
     selected_jobs = []
     jobs = job_data.get_jobs(cursor)
@@ -24,16 +21,34 @@ def health_check(cursor):
         if job_data.check_job_command_event(cursor, job, event, event):
             jobs.append(job)
 
-    for job in jobs:
-        retry = 0
-        while True:
+    failed = False
+    if not no_wait:
+        for job in jobs:
+            retry = 0
+            while True:
+                try:
+                    if not job_command_executor.execute_command(cursor, job, event, event):
+                        raise Exception(f'health check failed : {job}')
+                    print(f'health check succeeded : {job}', flush=True)
+                    break
+                except Exception as e:
+                    if retry >= 10:
+                        failed = True
+                        print(f'health check failed : {job}', flush=True)
+                        break
+                    retry = retry + 1
+                    print(f"health check failed {job}. retrying...", flush=True)
+                    time.sleep(1)
+
+    if no_wait:
+        for job in jobs:
             try:
                 if not job_command_executor.execute_command(cursor, job, event, event):
-                    raise Exception(f'job: {job} health check failed')
-                break
+                    print(f'health check failed : {job}', flush=True)
+                    failed = True
+                else:
+                    print(f'health check succeeded : {job}', flush=True)
             except Exception as e:
-                if retry >= 100:
-                    raise TimeoutError("Timed out waiting for agent to become healthy")
-                retry = retry + 1
-                print(f"{e} retrying...", flush=True)
-                time.sleep(10)
+                pass
+
+    return failed

@@ -18,9 +18,13 @@ def run_command(agent_ip):
     env = context_manager.get_agent_env(agent_ip)
     with maand.get_db() as db:
         cursor = db.cursor()
-        job_health_check.health_check(cursor)
-        command_helper.command2_remote(f"{const.WORKSPACE_PATH}/command.sh", env=env)
-        job_health_check.health_check(cursor)
+
+        jobs = maand.get_agent_jobs(cursor, agent_ip)
+        job_health_check.health_check(cursor, jobs, True)
+        command_helper.capture_command_file_remote(f"{const.WORKSPACE_PATH}/command.sh", env,
+                                                   log_file=f'{const.BUCKET_PATH}/logs/{agent_ip}.log',
+                                                   prefix=agent_ip)
+        job_health_check.health_check(cursor, jobs, False)
 
 
 if __name__ == "__main__":
@@ -28,6 +32,6 @@ if __name__ == "__main__":
 
     with maand.get_db() as db:
         cursor = db.cursor()
-        maand.export_env_namespace_update_seq(cursor)
+        maand.export_env_bucket_update_seq(cursor)
         system_manager.run(cursor, context_manager.validate_cluster_update_seq)
         system_manager.run(cursor, run_command, concurrency=args.concurrency, roles_filter=args.roles, agents_filter=args.agents)

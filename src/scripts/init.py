@@ -16,7 +16,7 @@ db = maand.get_db()
 cursor = db.cursor()
 
 try:
-    command_helper.command_local("mkdir -p /namespace/{workspace,secrets}")
+    command_helper.command_local(f"mkdir -p {const.BUCKET_PATH}/{{workspace,secrets,logs,data}}")
     maand.setup_maand_database(cursor)
     maand.setup_agent_database(cursor)
     maand.setup_job_database(cursor)
@@ -49,10 +49,10 @@ if not os.path.isfile(const.CONF_PATH):
 
 config_parser = utils.get_maand_conf()
 
-if not os.path.isfile('/namespace/secrets/ca.key'):
+if not os.path.isfile(f'{const.BUCKET_PATH}/secrets/ca.key'):
     ca_ttl = config_parser.get("default", "ca_ttl")
-    namespace_id = maand.get_namespace_id(cursor)
+    bucket_id = maand.get_bucket_id(cursor)
     cert_provider.generate_ca_private()
-    cert_provider.generate_ca_public(namespace_id, ca_ttl)
+    cert_provider.generate_ca_public(bucket_id, ca_ttl)
 
 db.commit()

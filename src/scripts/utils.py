@@ -29,9 +29,8 @@ def get_args_agents_jobs_concurrency():
     parser = argparse.ArgumentParser()
     parser.add_argument('--agents', default="")
     parser.add_argument('--jobs', default="")
-    parser.add_argument('--include-disabled', default=False, required=False, action='store_true')
     parser.add_argument('--concurrency', default="4", type=int)
-    args, _ = parser.parse_known_args()
+    args = parser.parse_args()
 
     if args.agents:
         args.agents = args.agents.split(',')
@@ -45,12 +44,17 @@ def get_args_agents_jobs_concurrency():
     return args
 
 
-def get_args_agents_roles_concurrency():
+def get_args_agents_roles_concurrency(allow_no_check=False):
     parser = argparse.ArgumentParser()
     parser.add_argument('--agents', default="")
     parser.add_argument('--roles', default="")
     parser.add_argument('--concurrency', default="4", type=int)
-    args, _ = parser.parse_known_args()
+
+    if allow_no_check:
+        parser.add_argument('--no-check', action='store_true')
+        parser.set_defaults(no_check=False)
+
+    args = parser.parse_args()
 
     if args.agents:
         args.agents = args.agents.split(',')
@@ -59,16 +63,31 @@ def get_args_agents_roles_concurrency():
 
     return args
 
+
 def get_args_jobs_concurrency():
     parser = argparse.ArgumentParser()
     parser.add_argument('--jobs', default="", required=False)
     parser.add_argument('--concurrency', default="4", type=int)
-    args, _ = parser.parse_known_args()
+    args = parser.parse_args()
 
     if args.jobs:
         args.jobs = args.jobs.split(',')
 
     return args
+
+
+def get_args_healthcheck():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--jobs', default="", required=False)
+    parser.add_argument('--no-wait', action='store_true')
+    parser.set_defaults(no_wait=False)
+    args = parser.parse_args()
+
+    if args.jobs:
+        args.jobs = args.jobs.split(',')
+
+    return args
+
 
 @cache
 def get_maand_conf():

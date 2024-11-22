@@ -15,32 +15,32 @@ def get_db():
 
 
 def setup_maand_database(cursor):
-    cursor.execute("CREATE TABLE IF NOT EXISTS namespace (namespace_id TEXT, update_seq INT)")
-    cursor.execute("SELECT namespace_id FROM namespace")
+    cursor.execute("CREATE TABLE IF NOT EXISTS bucket (bucket_id TEXT, update_seq INT)")
+    cursor.execute("SELECT bucket_id FROM bucket")
     if cursor.fetchone() is None:
-        cursor.execute("INSERT INTO namespace (namespace_id, update_seq) VALUES (?, ?)", (str(uuid.uuid4()), 0))
+        cursor.execute("INSERT INTO bucket (bucket_id, update_seq) VALUES (?, ?)", (str(uuid.uuid4()), 0))
     else:
         raise Exception("cluster is already initialized")
 
 
-def get_namespace_id(cursor):
-    cursor.execute("SELECT namespace_id FROM namespace")
+def get_bucket_id(cursor):
+    cursor.execute("SELECT bucket_id FROM bucket")
     row = cursor.fetchone()
     return row[0]
 
 
 def get_update_seq(cursor):
-    cursor.execute("SELECT update_seq FROM namespace")
+    cursor.execute("SELECT update_seq FROM bucket")
     row = cursor.fetchone()
     return row[0]
 
 
 def update_seq(cursor, seq):
-    cursor.execute("UPDATE namespace SET update_seq = ?", (seq,))
+    cursor.execute("UPDATE bucket SET update_seq = ?", (seq,))
 
 
-def export_env_namespace_update_seq(cursor):
-    namespace = get_namespace_id(cursor)
-    os.environ.setdefault("NAMESPACE", namespace)
+def export_env_bucket_update_seq(cursor):
+    bucket = get_bucket_id(cursor)
+    os.environ.setdefault("BUCKET", bucket)
     update_seq = get_update_seq(cursor)
     os.environ.setdefault("UPDATE_SEQ", str(update_seq))

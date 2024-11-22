@@ -21,7 +21,7 @@ def get_agent_minimal_env(agent_ip):
         "SSH_USER": config.get("default", "ssh_user"),
         "SSH_KEY": config.get("default", "ssh_key"),
         "USE_SUDO": config.get("default", "use_sudo"),
-        "NAMESPACE": os.environ.get("NAMESPACE")
+        "BUCKET": os.environ.get("BUCKET")
     }
 
 
@@ -46,18 +46,18 @@ def rsync_upload_agent_files(agent_ip, jobs):
     with open(f"/tmp/{agent_ip}_rsync_rules.txt", "w") as f:
         f.writelines(lines)
 
-    namespace = agent_env.get("NAMESPACE", "")
-    command_helper.command_remote(f"mkdir -p /opt/agent/{namespace}", env=agent_env)
+    bucket = agent_env.get("BUCKET", "")
+    command_helper.command_remote(f"mkdir -p /opt/agent/{bucket}", env=agent_env)
     command_helper.command_local(f"bash /scripts/rsync_upload.sh", env=agent_env)
 
 
-def validate_agent_namespace(agent_ip, fail_if_no_namespace_id=True):
+def validate_agent_namespace(agent_ip, fail_if_no_bucket_id=True):
     try:
         agent_env = get_agent_minimal_env(agent_ip)
-        namespace = os.environ.get("NAMESPACE")
-        res = command_helper.command_remote(f"ls /opt/agent/{namespace}", agent_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if fail_if_no_namespace_id and res.returncode != 0:
-            raise Exception(f"agent {agent_ip} : namespace not found.")
+        bucket = os.environ.get("BUCKET")
+        res = command_helper.command_remote(f"ls /opt/agent/{bucket}", agent_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if fail_if_no_bucket_id and res.returncode != 0:
+            raise Exception(f"agent {agent_ip} : bucket not found.")
     except Exception as e:
         logger.error(e)
         utils.stop_the_world()
@@ -67,8 +67,8 @@ def validate_update_seq(agent_ip):
     try:
         agent_env = get_agent_minimal_env(agent_ip)
         update_seq = os.environ.get("UPDATE_SEQ")
-        namespace_id = os.environ.get("NAMESPACE")
-        res = command_helper.command_remote(f"cat /opt/agent/{namespace_id}/update_seq.txt", agent_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        bucket_id = os.environ.get("BUCKET")
+        res = command_helper.command_remote(f"cat /opt/agent/{bucket_id}/update_seq.txt", agent_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if res.returncode == 1:
             raise Exception(f"{agent_ip} : {res.stderr}")
         agent_update_seq = res.stdout.decode("utf-8")

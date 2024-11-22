@@ -24,7 +24,7 @@ def put_cert(file_path, namespace, key):
 
 
 def build_agent_certs(cursor):
-    namespace_id = maand.get_namespace_id(cursor)
+    bucket_id = maand.get_bucket_id(cursor)
     agents = maand.get_agents(cursor, roles_filter=None)
 
     for agent_ip in agents:
@@ -46,7 +46,7 @@ def build_agent_certs(cursor):
         if not found or cert_provider.is_certificate_expiring_soon(f"{agent_cert_path}.crt"):
             cert_provider.generate_site_private("agent", agent_cert_location)
             cert_provider.generate_private_pem_pkcs_8("agent", agent_cert_location)
-            cert_provider.generate_site_csr("agent", f"/CN={namespace_id}", agent_cert_location)
+            cert_provider.generate_site_csr("agent", f"/CN={bucket_id}", agent_cert_location)
             subject_alt_name = f"DNS.1:localhost,IP.1:127.0.0.1,IP.2:{agent_ip}"
             cert_provider.generate_site_public("agent", subject_alt_name, 60, agent_cert_location)
 
@@ -56,7 +56,7 @@ def build_agent_certs(cursor):
 
 
 def build_job_certs(cursor):
-    namespace_id = maand.get_namespace_id(cursor)
+    bucket_id = maand.get_bucket_id(cursor)
     agents = maand.get_agents(cursor, roles_filter=None)
     jobs = maand.get_jobs(cursor)
 
@@ -96,7 +96,7 @@ def build_job_certs(cursor):
                     if cert.get("pkcs8", 0) == 1:
                         cert_provider.generate_private_pem_pkcs_8(name, job_cert_location)
 
-                    subj = cert.get("subject", f"/CN={namespace_id}")
+                    subj = cert.get("subject", f"/CN={bucket_id}")
                     cert_provider.generate_site_csr(name, subj, job_cert_location)
                     subject_alt_name = cert.get("subject_alt_name", f"DNS.1:localhost,IP.1:127.0.0.1,IP.2:{agent_ip}")
                     cert_provider.generate_site_public(name, subject_alt_name, ttl, job_cert_location)
@@ -116,6 +116,7 @@ def build():
         build_job_certs(cursor)
         db.commit()
     command_helper.command_local(f"rm -f {const.SECRETS_PATH}/ca.srl")
+
 
 if __name__ == "__main__":
     build()

@@ -72,8 +72,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('job', default="")
     parser.add_argument('command', default="")
-    args, _ = parser.parse_known_args()
+    args = parser.parse_args()
 
     with maand.get_db() as db:
         cursor = db.cursor()
-        execute_command(cursor, args.job, args.command, os.environ.get("EVENT", "direct"))
+
+        event = os.environ.get("EVENT", "direct")
+        if not maand.check_job_command_event(cursor, args.job, args.command, event):
+            raise Exception(f"job: {args.job}, command: {args.command}, event {event} not found")
+
+        execute_command(cursor, args.job, args.command, event)
