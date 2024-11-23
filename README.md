@@ -1,127 +1,141 @@
+### Maand: A Brokerless Job Orchestration Framework
 
-**Maand** is a static job orchestration framework that efficiently manages and executes tasks across multiple agents. It coordinates job execution on virtual machines (VMs) within a cluster to streamline task management.
+Maand is a lightweight, brokerless framework designed for efficient task orchestration across multiple agents within a cluster. It automates job execution, coordinating tasks between agents while optimizing performance and scalability. 
 
-**Inspiration**: The name "Maand" is inspired by the Indian classical music raaga "Maand," symbolizing the framework’s role in harmonizing job execution across a cluster.
+### Inspiration:
 
-### Key Concepts
+The name "Maand" is inspired by the Indian classical raaga "Maand," which symbolizes harmony and structured flow, much like how Maand orchestrates tasks across a cluster.
 
-- **Agent**: A Linux machine identified by its IP address and roles listed in the `agents.json` file.
-- **Job**: A directory containing a `manifest.json` file and a `Makefile` with defined targets.
-- **Role**: A string that links jobs to agents. Jobs are assigned to agents based on matching roles in `manifest.json` and `agents.json`, allowing for static service discovery.
-- **Cluster**: A group of agents working together.
+### Key Concepts:
 
-**Maand** supports various tasks by associating jobs with `make` targets, enabling the execution of binaries, Docker commands, Docker Compose tasks, and systemd jobs.
+- **Agent**: A Linux machine identified by its IP address and role, as defined in the `agents.json` file.
+- **Job**: A directory containing a `manifest.json` file and a `Makefile` with defined targets for job execution.
+- **Role**: A label that associates jobs with specific agents. Jobs are assigned to agents based on matching roles in both the `manifest.json` and `agents.json` files, enabling static service discovery.
+- **Cluster**: A group of agents working together to execute jobs.
 
-### Example `agents.json` File
+Maand supports various tasks, including executing binaries, Docker commands, Docker Compose tasks, and systemd jobs.
+
+### Prerequisites:
+
+Before using Maand, ensure the following:
+
+- Each agent must have `make` and `rsync` installed.
+- SSH keys are required for secure communication between the controller and agents.
+
+### Setting Up Your Project:
+
+1. **Initialize the Project Folder**: To create the necessary project structure, run:
+
+```shell
+$ maand init
+$ tree
+.
+├── data
+│   ├── agents.db
+│   ├── jobs.db
+│   ├── kv.db
+│   └── maand.db
+├── logs
+├── maand.conf
+├── secrets
+│   ├── ca.crt
+│   └── ca.key
+└── workspace
+    ├── agents.json
+    ├── command.sh
+    ├── secrets.env
+    └── variables.env
+
+5 directories, 11 files
+```
+
+2. **Configure Agent Information**: Define the IP addresses, SSH user, and SSH key for each agent in the `agents.json` and `maand.conf` files.
+
+**Example `workspace/agents.json`**:
 
 ```json
 [
   {
-    "host": "192.168.1.110",
-    "roles": ["ROLE1", "ROLE2"]
+    "host": "10.27.221.181"
   },
   {
-    "host": "192.168.1.119",
-    "roles": ["ROLE1"]
+    "host": "10.27.221.144"
   },
   {
-    "host": "192.168.1.134",
-    "roles": ["ROLE1"]
+    "host": "10.27.221.170"
   }
 ]
 ```
 
-### Prerequisites
-
-Ensure that each agent has `make` and `rsync` installed. **Maand** also requires SSH keys for secure communication between the controller and agents.
-
-1. **Create a Workspace Folder**: Place `agents.json` inside:
-
-```shell
-$ tree ./workspace
-workspace
-└── agents.json
-```
-
-2. **Add SSH Key and Secrets**: Include your SSH key and create a `secrets.env` file with the following content:
-
-**Example `secrets.env` File**
+**Example `maand.conf`**:
 
 ```text
-SSH_USER=root
-SSH_KEY=agent-key.pem
+[default]
+ca_ttl = 3650
+use_sudo = 1
+ssh_user = agent
+ssh_key = secrets/homelab.key
 ```
 
-**Workspace Structure**
+Ensure your SSH key is placed in the `secrets` folder.
+
+### Verifying Connectivity:
+
+After setup, check agent connectivity by running:
 
 ```shell
-$ tree ./workspace
-workspace
-└── agents.json
-└── agent-key.pem
-└── secrets.env
-└── command.sh
+$ maand uptime
+[10.27.221.181]  14:39:54 up  1:06,  1 user,  load average: 0.11, 0.07, 0.01
+[10.27.221.170]  14:39:54 up  1:06,  1 user,  load average: 0.03, 0.08, 0.08
+[10.27.221.144]  14:39:54 up  1:06,  1 user,  load average: 0.12, 0.05, 0.01
 ```
 
-You may also include:
+This command ensures the agents are connected and provides insights into their system load.
 
-- `variables.env` for generic key-value pairs
-- `ports.env` for port-related configurations
+### Running Shell Commands on Agents:
 
-### Running Commands on Agents
-
-Create a `command.sh` file in your workspace to execute Linux commands on agents. For example, to run `uptime`:
+To execute commands on agents, update the `command.sh` file in your workspace. For example, to run `uname -a` on all agents:
 
 ```shell
-make run_command_no_check
+$ maand run_command --no-check
+[10.27.221.181] Linux fedora 6.11.8-200.fc40.x86_64 #1 SMP PREEMPT_DYNAMIC Thu Nov 14 20:38:18 UTC 2024 x86_64 GNU/Linux
+[10.27.221.144] Linux agent2 6.11.8-200.fc40.x86_64 #1 SMP PREEMPT_DYNAMIC Thu Nov 14 20:38:18 UTC 2024 x86_64 GNU/Linux
+[10.27.221.170] Linux agent3 6.11.8-200.fc40.x86_64 #1 SMP PREEMPT_DYNAMIC Thu Nov 14 20:38:18 UTC 2024 x86_64 GNU/Linux
 ```
 
-### Cluster Initialization
+### Files Generated by `maand init`
 
-Initialize the cluster with:
-
-```shell
-make initialize
-```
-
-This generates:
-
-1. **ca.key** – Certificate authority private key.
-2. **ca.crt** – Certificate authority public certificate.
-3. **cluster_id.txt** – Unique GUID for the cluster.
-4. **update_seq.txt** – Counter that increments with each `make update` command.
-
-**Maand** will manage and generate certificates as needed. The `cluster_id.txt` groups agents into a cluster, while `update_seq.txt` tracks updates.
+1. **secrets/ca.key** – Private key for the certificate authority.
+2. **secrets/ca.crt** – Public certificate for the certificate authority.
+3. **logs/*.log** – Log files, one per agent, generated each time a command is run.
+4. **data/*.db** – Internal database files used by Maand (SQLite).
+5. **workspace/variables.env** – Stores environment variables in key-value pairs.
+6. **workspace/secrets.env** – Stores sensitive environment variables that aren't exported to `context.env`.
 
 ### Setting Up a Job
 
-Create a `jobs` folder in the `workspace`. Within `jobs`, add a subfolder for each job (e.g., `sample_job`) containing a `manifest.json` and `Makefile`.
+To create jobs, add a `jobs` folder inside `workspace`. For each job, create a subfolder (e.g., `sample_job`) containing a `manifest.json` and `Makefile`.
 
-**Example Job Structure**
+**Example Job Structure**:
 
 ```shell
 $ tree ./workspace
 workspace
-└── agents.json
-└── agent-key.pem
-└── secrets.env
-└── command.sh
 └── jobs
     └── sample_job
         └── manifest.json
         └── Makefile
 ```
 
-**Example `manifest.json`**
+**Example `manifest.json`**:
 
 ```json
 {
-  "roles": ["ROLE1"],
-  "order": 6
+  "roles": ["ROLE1"]
 }
 ```
 
-**Example `Makefile`**
+**Example `Makefile`**:
 
 ```text
 start:
@@ -134,29 +148,26 @@ restart:
 
 ### Understanding `manifest.json`
 
-The `manifest.json` file specifies which agents should receive a job. Jobs are assigned based on role matches in `manifest.json` and `agents.json`, ensuring proper job distribution.
-
-`order` attribute used for order filter and order of start, stop and restart jobs.
+The `manifest.json` file defines which agents should execute a given job. The job is assigned to agents based on role matches in both the `manifest.json` and `agents.json` files.
 
 ### Running Updates
 
-To copy or update job files in the agents’ `/opt/agent/` directory:
+To deploy or update job files on all agents in the `/opt/agent/[bucket_guid]` directory, run:
 
 ```shell
-make update
+$ maand update
 ```
 
-This command deploys changes to all agents.
+This command pushes the updated job files to all agents.
 
 ### Agent Directory Structure
 
-On each agent, the `/opt/agent` directory will include:
+On each agent, the `/opt/agent/[bucket_guid]` directory will contain:
 
 ```shell
-$ tree /opt/agent
-/opt/agent
-├── cluster_id.txt
-├── agent_id.txt
+$ tree /opt/agent/[bucket_guid]
+/opt/agent/[bucket_guid]
+├── agent.txt
 ├── update_seq.txt
 ├── context.env
 ├── roles.txt
@@ -175,17 +186,16 @@ $ tree /opt/agent
         └── Makefile
 ```
 
-- **`cluster_id.txt`**: Unique identifier for the cluster.
-- **`agent_id.txt`**: Unique identifier for the agent.
-- **`update_seq.txt`**: Tracks the update count and increments with each update command.
-- **`roles.txt`**: Lists of roles assigned to the agent.
-- **`jobs.txt`**: Lists of jobs assigned to the agent.
-- **`disabled_jobs.txt`**: Lists of disabled jobs to the agent.
+- **`agent.txt`**: Contains the agent's unique identifier.
+- **`update_seq.txt`**: Tracks the update sequence, incremented with each update.
+- **`roles.txt`**: Lists the roles assigned to the agent.
+- **`jobs.txt`**: Lists the jobs assigned to the agent.
+- **`disabled_jobs.txt`**: Lists the jobs disabled for the agent.
 - **`certs`**: Contains the agent’s private and public certificates (`agent.key` and `agent.crt`).
-- **`jobs`**: Directory for job files, with each job having its own folder containing `manifest.json` and `Makefile`.
-- **`context.env`**: Environment variables set by **Maand**.
+- **`jobs`**: Contains job directories with each job's `manifest.json` and `Makefile`.
+- **`context.env`**: Environment variables set by Maand.
 
-The update command also renews agent and job certificates if they expire within 15 days or if configurations change.
+The update command also renews agent and job certificates if they expire within 15 days or when configuration changes occur.
 
 ### Variable Substitution
 
@@ -223,7 +233,7 @@ OPENSEARCH1=$OPENSEARCH_1
 **On the Agent**
 
 ```shell
-$ cat /opt/agent/jobs/sample_job/config.env
+$ cat /opt/agent/[bucket_guid]/jobs/sample_job/config.env
 LEADER=0
 LEADER_COUNT=1
 OPENSEARCH1=192.168.1.119
@@ -266,7 +276,7 @@ ROLES=opensearch
 ## values from variables.env, secrets.env, and ports.env
 ```
 
-**Note**: Variables are also available in `/opt/agent/context.env`, but `secrets.env` is not included.
+**Note**: Variables are also available in `/opt/agent/[bucket_guid]/context.env`, but `secrets.env` is not included.
 
 These dynamically generated variables enable **Maand** to handle complex orchestration scenarios effectively, using roles and attributes defined in `agents.json`.
 
@@ -274,36 +284,32 @@ These dynamically generated variables enable **Maand** to handle complex orchest
 
 The `command.sh` script in the workspace can be used for ad-hoc command execution. 
 
-- Running `make run_command` executes `command.sh` on each agent after verifying cluster membership using `cluster_id.txt` between the agent and workspace.
-- Running `make run_command_no_check` executes `command.sh` on each agent without cluster validation.
-- Running `make run_command_local` executes `command.sh` locally on
+- Running `maand run_command` executes `command.sh` on each agent after verifying cluster membership using `bucket_guid` between the agent and workspace.
+- Running `maand run_command --no-check` executes `command.sh` on each agent without cluster validation.
+- Running `maand run_command_local` executes `command.sh` locally on
 
  the **Maand** controller while validating cluster membership under agent context.
-- Running `make run_command_health_check` executes `command.sh` on each agent, performing health checks before execution.
+- Running `maand run_command_health_check` executes `command.sh` on each agent, performing health checks before execution.
 
 The above commands supports roles and agents filters. 
 
 ```shell
-$ make run_command ARGS='--roles=role1,role2'
-$ make run_command ARGS='--agents=x.x.x.x,x.x.x.x'
+$ maand run_command --roles=role1,role2
+$ maand run_command --agents=x.x.x.x,x.x.x.x
 ```
 
 ### Job Control
 
-- Running `make start_jobs` executes `/opt/agent/bin/runner.py`, which runs the `start` target from the `Makefile` of each job on the agent.
-- Running `make stop_jobs` executes `/opt/agent/bin/runner.py`, which runs the `stop` target from the `Makefile` of each job on the agent.
-- Running `make restart_jobs` executes `/opt/agent/bin/runner.py`, which runs the `restart` target from the `Makefile` of each job on the agent.
-- Running `make rolling_restart_jobs` executes `/opt/agent/bin/runner.py`, which runs the `restart` target from the `Makefile` of each job on the agent and runs health checks before and after per each agent.
+- Running `maand start_jobs` executes `/opt/agent/[bucket_guid]/bin/runner.py`, which runs the `start` target from the `Makefile` of each job on the agent.
+- Running `maand stop_jobs` executes `/opt/agent/[bucket_guid]/bin/runner.py`, which runs the `stop` target from the `Makefile` of each job on the agent.
+- Running `maand restart_jobs` executes `/opt/agent/[bucket_guid]/bin/runner.py`, which runs the `restart` target from the `Makefile` of each job on the agent.
+- Running `maand rolling_restart_jobs` executes `/opt/agent/[bucket_guid]/bin/runner.py`, which runs the `restart` target from the `Makefile` of each job on the agent and runs health checks before and after per each agent.
 
 The above commands supports jobs, order and agents filters. 
 
 ```shell
-$ make start_jobs ARGS='--jobs=sample_job'
-$ make start_jobs ARGS='--min-order=5'
-$ make restart_jobs ARGS='--max-order=5'
-$ make start_jobs ARGS='--min-order=1 --max-order=5'
-$ make start_jobs ARGS='--agents=x.x.x.x,x.x.x.x'
-$ make stop_jobs ARGS='--include-disabled'
+$ maand start_jobs --jobs=sample_job
+$ maand start_jobs --agents=x.x.x.x,x.x.x.x
 ```
 
 ** Disabled Jobs **
@@ -322,24 +328,16 @@ To disable jobs for specific agents or roles, use a `disabled.json` file in the 
 }
 ```
 
+### Job command
+
+Each job folder can include a `_modules` directory and can include job command in their. 
+
 ### Health Check
 
-Each job folder can include a `_commands` directory and a `run.sh` file. The `run.sh` file is executed with the agent context on the Maand controller node and should include health checks for the job. These health checks are also used for safe rolling restarts.
+Each job folder can include a `_modules` directory and a `run.sh` file. The `run.sh` file is executed with the agent context on the Maand controller node and should include health checks for the job. These health checks are also used for safe rolling restarts.
 
 To perform a health check, use the following command:
 
 ```shell
 make health_check
 ```
-
-The above commands supports jobs and order filters. 
-
-```shell
-$ make health_check ARGS='--jobs=sample_job'
-$ make health_check ARGS='--min-order=5'
-$ make health_check ARGS='--max-order=5'
-$ make health_check ARGS='--min-order=1 --max-order=5'
-$ make health_check ARGS='--include-disabled'
-```
-
-
