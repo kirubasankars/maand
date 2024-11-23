@@ -64,8 +64,10 @@ def execute_command(cursor, job, command, event):
             return run_job_command(job, job_command, demands, env)
         else:
             logger.error(f"execute method not found: command_{command}")
+            return False
     except ModuleNotFoundError:
         logger.error(f"command not found: job = {job}, command = command_{command}")
+        return False
 
 
 if __name__ == '__main__':
@@ -81,4 +83,6 @@ if __name__ == '__main__':
         if not maand.check_job_command_event(cursor, args.job, args.command, event):
             raise Exception(f"job: {args.job}, command: {args.command}, event {event} not found")
 
-        execute_command(cursor, args.job, args.command, event)
+        r = execute_command(cursor, args.job, args.command, event)
+        if not r:
+            sys.exit(1)
