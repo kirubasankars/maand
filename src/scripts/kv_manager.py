@@ -43,7 +43,6 @@ def delete_key(namespace, key):
     with get_db() as connection:
         c = connection.cursor()
         c.execute('INSERT INTO key_value (key, value, namespace, version, ttl, created_date, rotatable, deleted) SELECT key, value, namespace, max(version) + 1 as version, ttl, created_date, rotatable, 1 FROM key_value WHERE namespace = ? AND key = ? GROUP BY key, namespace', (namespace, key,))
-        print(c.rowcount)
         connection.commit()
 
 def get_keys(namespace):
@@ -67,7 +66,7 @@ def gc():
 
 def setup_global_unix_epoch():
     if not os.path.exists("/tmp/unix_epoch"):
-        with get_db() as connection:
+        with sqlite3.connect(":memory:") as connection:
             c = connection.cursor()
             c.execute("SELECT unixepoch()")
             row = c.fetchone()
