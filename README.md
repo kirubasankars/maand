@@ -300,16 +300,16 @@ $ maand run_command --agents=x.x.x.x,x.x.x.x
 
 ### Job Control
 
-- Running `maand start_jobs` executes `/opt/agent/[bucket_guid]/bin/runner.py`, which runs the `start` target from the `Makefile` of each job on the agent.
-- Running `maand stop_jobs` executes `/opt/agent/[bucket_guid]/bin/runner.py`, which runs the `stop` target from the `Makefile` of each job on the agent.
-- Running `maand restart_jobs` executes `/opt/agent/[bucket_guid]/bin/runner.py`, which runs the `restart` target from the `Makefile` of each job on the agent.
-- Running `maand rolling_restart_jobs` executes `/opt/agent/[bucket_guid]/bin/runner.py`, which runs the `restart` target from the `Makefile` of each job on the agent and runs health checks before and after per each agent.
+- Running `maand job start` executes `/opt/agent/[bucket_guid]/bin/runner.py`, which runs the `start` target from the `Makefile` of each job on the agent.
+- Running `maand job stop` executes `/opt/agent/[bucket_guid]/bin/runner.py`, which runs the `stop` target from the `Makefile` of each job on the agent.
+- Running `maand job restart` executes `/opt/agent/[bucket_guid]/bin/runner.py`, which runs the `restart` target from the `Makefile` of each job on the agent.
+- Running `maand job rolling_restart` executes `/opt/agent/[bucket_guid]/bin/runner.py`, which runs the `restart` target from the `Makefile` of each job on the agent and runs health checks before and after per each agent.
 
 The above commands supports jobs, order and agents filters. 
 
 ```shell
-$ maand start_jobs --jobs=sample_job
-$ maand start_jobs --agents=x.x.x.x,x.x.x.x
+$ maand job start --jobs=sample_job
+$ maand job start --agents=x.x.x.x,x.x.x.x
 ```
 
 ** Disabled Jobs **
@@ -327,6 +327,8 @@ To disable jobs for specific agents or roles, use a `disabled.json` file in the 
   "agents": ["x.x.x.x"] # All jobs at the particluar agent are disabled
 }
 ```
+
+`maand update` apply changes
 
 ### Job command
 

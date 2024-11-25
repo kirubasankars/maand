@@ -85,6 +85,7 @@ def build_allocated_jobs(cursor):
         for job in removed_jobs:
             cursor.execute(f"UPDATE agent_db.agent_jobs SET removed = 1 WHERE job = ? AND agent_id = ?", (job, agent_id,))
 
+        cursor.execute("UPDATE agent_db.agent_jobs SET disabled = 1 WHERE agent_id IN (SELECT agent_id FROM agent_db.agent WHERE agent_ip = ? AND detained = 1)",(agent_ip,))
 
 def build():
     with maand.get_db() as db:

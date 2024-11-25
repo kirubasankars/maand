@@ -177,9 +177,7 @@ def validate_agent_namespace(agent_ip):
 
 
 def update():
-
     args = utils.get_args_jobs_concurrency()
-
     with maand.get_db() as db:
         cursor = db.cursor()
 
@@ -195,8 +193,6 @@ def update():
         db.commit()
 
         system_manager.run(cursor, sync, concurrency=args.concurrency)
-
-    kv_manager.gc()
 
 
 if __name__ == "__main__":

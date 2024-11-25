@@ -1,6 +1,7 @@
 import functools
 import os.path
 import sqlite3
+from datetime import datetime
 
 import const
 
@@ -55,14 +56,25 @@ def get_keys(namespace):
 def gc():
     with get_db() as connection:
         cursor = connection.cursor()
-        cursor.execute('SELECT namespace, key, max(version) FROM key_value group by key')
+        cursor.execute('SELECT namespace, key, max(version), deleted, created_date FROM key_value group by key, namespace')
         rows = cursor.fetchall()
+
+        current_datetime = datetime.now()
+
         for row in rows:
-            namespace, key, version = row
+            namespace, key, version, deleted, created_date = row
+
+            created_datetime = datetime.fromtimestamp(int(created_date))
+            date_diff = current_datetime - created_datetime
+
+            if deleted == 1 and date_diff.days >= 15: # delete all versions if latest version is deleted and older then 15 days
+                cursor.execute("DELETE FROM key_value WHERE namespace = ? AND key = ?", (namespace, key,))
+
             version = version - 7
             if version < 1:
                 continue
             cursor.execute("DELETE FROM key_value WHERE namespace = ? AND key = ? AND version = ?", (namespace, key, version))
+
 
 def setup_global_unix_epoch():
     if not os.path.exists("/tmp/unix_epoch"):

@@ -43,4 +43,4 @@ if __name__ == "__main__":
         statement("SELECT job_name, name as command_name, executed_on, depend_on_job, depend_on_command, depend_on_config  FROM job_commands ORDER BY job_name, name", "no commands found")
 
     if name == "kv":
-        statement("SELECT * FROM (SELECT key, namespace, max(version) as version, ttl, created_date, rotatable, deleted FROM kv_db.key_value GROUP BY key, namespace) t ORDER BY namespace, key, version", "no key values found")
+        statement("SELECT * FROM (SELECT key, namespace, max(version) as version, ttl, created_date, deleted FROM kv_db.key_value GROUP BY key, namespace) t ORDER BY namespace, key, version", "no key values found")

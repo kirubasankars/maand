@@ -76,6 +76,21 @@ def build():
         cursor = db.cursor()
         build_variables(cursor)
 
+        cursor.execute("SELECT agent_ip FROM agent_db.agent WHERE detained = 1")
+        rows = cursor.fetchall()
+        agents_ip = {row[0] for row in rows}
+
+        for agent_ip in agents_ip:
+            namespace = f"certs/{agent_ip}"
+            keys = kv_manager.get_keys(namespace)
+            for key in keys:
+                kv_manager.delete_key(namespace, key)
+
+            namespace = f"vars/{agent_ip}"
+            keys = kv_manager.get_keys(namespace)
+            for key in keys:
+                kv_manager.delete_key(namespace, key)
+
 
 if __name__ == "__main__":
     build()
