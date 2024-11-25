@@ -1,7 +1,9 @@
 #!/bin/bash
 set -ueo pipefail
+
 echo "StrictHostKeyChecking accept-new" >> /etc/ssh/ssh_config
 
+# Display usage if no operation is provided
 if [ -z "${1+x}" ]; then
   echo "Usage: maand <operation>"
   echo "Operations:"
@@ -20,44 +22,69 @@ if [ -z "${1+x}" ]; then
   exit 1
 fi
 
-export UPDATE_CERTS=${UPDATE_CERTS:-0}
 export OPERATION=$1
 shift
 
+# Set up working directories
 rm -rf /bucket/logs/*
 mkdir -p /opt/agents
 python3 /scripts/kv_manager.py
 
-if [ "$OPERATION" == "init" ]; then
-  python3 /scripts/init.py
-elif [ "$OPERATION" == "build" ]; then
-  python3 /scripts/build_jobs.py
-  python3 /scripts/build_agents.py
-  python3 /scripts/build_variables.py
-  python3 /scripts/build_certs.py
-elif [ "$OPERATION" == "update" ]; then
-  python3 /scripts/update.py $@
-elif [ "$OPERATION" == "uptime" ]; then
-  python3 /scripts/uptime.py $@
-elif [ "$OPERATION" == "run_command" ]; then
-  python3 /scripts/run_command.py $@
-elif [ "$OPERATION" == "run_command_local" ]; then
-  python3 /scripts/run_command_local.py $@
-elif [ "$OPERATION" == "job" ]; then
-  export CMD="$1" && shift
-  if [ "$CMD" == "rolling_restart" ]; then
-    python3 /scripts/rolling_restart_jobs.py $@
-  else
-    python3 /scripts/job_control.py $@
-  fi
-elif [ "$OPERATION" == "run_job_command" ]; then
-  python3 /scripts/job_command_executor.py $@
-elif [ "$OPERATION" == "cat" ]; then
-  python3 /scripts/cat.py $@
-elif [ "$OPERATION" == "run_command_with_health_check" ]; then
-  python3 /scripts/run_command_with_health_check.py $@
-elif [ "$OPERATION" == "health_check" ]; then
-  python3 /scripts/health_check.py $@
-elif [ "$OPERATION" == "gc" ]; then
-  python3 /scripts/gc.py
-fi
+# Operation-specific functions
+function run_python_script {
+    script=$1
+    shift
+    python3 "/scripts/$script" "$@"
+}
+
+case "$OPERATION" in
+  "init")
+    run_python_script "init.py"
+    ;;
+  "build")
+    run_python_script "build_jobs.py"
+    run_python_script "build_agents.py"
+    run_python_script "build_variables.py"
+    run_python_script "build_certs.py"
+    ;;
+  "update")
+    run_python_script "update.py" "$@"
+    ;;
+  "uptime")
+    run_python_script "uptime.py" "$@"
+    ;;
+  "run_command")
+    run_python_script "run_command.py" "$@"
+    ;;
+  "run_command_local")
+    run_python_script "run_command_local.py" "$@"
+    ;;
+  "job")
+    export CMD="$1"
+    shift
+    if [ "$CMD" == "rolling_restart" ]; then
+      run_python_script "rolling_restart_jobs.py" "$@"
+    else
+      run_python_script "job_control.py" "$@"
+    fi
+    ;;
+  "run_job_command")
+    run_python_script "job_command_executor.py" "$@"
+    ;;
+  "cat")
+    run_python_script "cat.py" "$@"
+    ;;
+  "run_command_with_health_check")
+    run_python_script "run_command_with_health_check.py" "$@"
+    ;;
+  "health_check")
+    run_python_script "health_check.py" "$@"
+    ;;
+  "gc")
+    run_python_script "gc.py"
+    ;;
+  *)
+    echo "Unknown operation: $OPERATION"
+    exit 1
+    ;;
+esac

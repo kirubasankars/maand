@@ -53,7 +53,7 @@ def rsync_upload_agent_files(agent_ip, jobs, agent_removed_jobs):
     command_helper.command_local(f"bash /scripts/rsync_upload.sh", env=agent_env)
 
 
-def validate_agent_namespace(agent_ip, fail_if_no_bucket_id=True):
+def validate_agent_bucket(agent_ip, fail_if_no_bucket_id=True):
     try:
         agent_env = get_agent_minimal_env(agent_ip)
         bucket = os.environ.get("BUCKET")
@@ -82,5 +82,5 @@ def validate_update_seq(agent_ip):
 
 
 def validate_cluster_update_seq(agent_ip):
-    validate_agent_namespace(agent_ip)
+    validate_agent_bucket(agent_ip)
     validate_update_seq(agent_ip)

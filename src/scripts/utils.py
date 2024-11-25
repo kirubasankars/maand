@@ -97,4 +97,4 @@ def get_maand_conf():
 
 
 def stop_the_world():
-    subprocess.run("kill -TERM 1")
+    subprocess.run(["kill", "-TERM", "1"])

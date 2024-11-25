@@ -173,7 +173,7 @@ def sync(agent_ip):
 
 
 def validate_agent_namespace(agent_ip):
-    context_manager.validate_agent_namespace(agent_ip, fail_if_no_bucket_id=False)
+    context_manager.validate_agent_bucket(agent_ip, fail_if_no_bucket_id=False)
 
 
 def update():
