@@ -19,7 +19,7 @@ def run_command(agent_ip):
     command_helper.capture_command_local(
     f"sh {const.WORKSPACE_PATH}/command.sh",
         env=env,
-        log_file=f'/namespace/logs/{agent_ip}.log',
+        log_file=f'/bucket/logs/{agent_ip}.log',
         prefix=agent_ip,
     )
 

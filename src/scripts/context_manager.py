@@ -34,11 +34,13 @@ def get_agent_env(agent_ip):
     return env
 
 
-def rsync_upload_agent_files(agent_ip, jobs):
+def rsync_upload_agent_files(agent_ip, jobs, agent_removed_jobs):
     agent_env = get_agent_minimal_env(agent_ip)
     lines = []
 
     for job in jobs:
+        lines.append(f"+ jobs/{job}\n")
+    for job in agent_removed_jobs:
         lines.append(f"+ jobs/{job}\n")
 
     lines.append("- jobs/*\n")

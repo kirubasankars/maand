@@ -7,9 +7,21 @@ def setup_agent_database(cursor):
 
 
 def get_agent_jobs(cursor, agent_ip):
-    cursor.execute("SELECT aj.job, aj.disabled FROM agent_db.agent a JOIN agent_db.agent_jobs aj ON a.agent_id = aj.agent_id JOIN job_db.job j ON j.name = aj.job AND a.agent_ip = ?", (agent_ip,))
+    cursor.execute("SELECT aj.job, aj.disabled FROM agent_db.agent a JOIN agent_db.agent_jobs aj ON a.agent_id = aj.agent_id JOIN job_db.job j ON j.name = aj.job AND aj.removed = 0 AND a.agent_ip = ?", (agent_ip,))
     rows = cursor.fetchall()
     return {row[0]: {"disabled": row[1]} for row in rows}
+
+
+def get_agent_removed_jobs(cursor, agent_ip):
+    cursor.execute("select aj.job from agent_db.agent_jobs aj JOIN agent_db.agent a ON a.agent_id = aj.agent_id WHERE aj.removed = 1 AND agent_ip = ?", (agent_ip,))
+    rows = cursor.fetchall()
+    return [row[0] for row in rows]
+
+
+def get_agent_disabled_jobs(cursor, agent_ip):
+    cursor.execute("select aj.job from agent_db.agent_jobs aj JOIN agent_db.agent a ON a.agent_id = aj.agent_id WHERE aj.disabled = 1 AND agent_ip = ?", (agent_ip,))
+    rows = cursor.fetchall()
+    return [row[0] for row in rows]
 
 
 def get_agents(cursor, roles_filter):

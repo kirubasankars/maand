@@ -19,7 +19,7 @@ def capture_command_local(cmd, env, log_file, prefix):
     dir_name = os.path.dirname(log_file)
     os.makedirs(dir_name, exist_ok=True)
 
-    with open(log_file, 'w') as file:
+    with open(log_file, 'w+') as file:
         process = subprocess.Popen(
             ["sh", file_path],
             env=env,

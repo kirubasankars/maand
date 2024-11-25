@@ -1,6 +1,5 @@
 import base64
 import json
-import os
 
 from copy import deepcopy
 from pathlib import Path
@@ -74,7 +73,7 @@ def process_templates(values):
     agent_ip = values["AGENT_IP"]
     agent_dir = context_manager.get_agent_dir(agent_ip)
     logger.debug("Processing templates...")
-    for ext in ["*.json", "*.service", "*.conf", "*.yml", "*.yaml", "*.env", "*.token", "*.txt"]:
+    for ext in ["*.json", "*.service", "*.conf", "*.yml", "*.yaml", "*.env", "*.txt"]:
         for f in Path(f"{agent_dir}/").rglob(ext):
             try:
                 with open(f, "r") as file:
@@ -135,11 +134,7 @@ def sync(agent_ip):
                 value = values.get(key)
                 f.write("{}={}\n".format(key, value))
 
-        command_helper.command_local(
-            f"""
-            rsync -r /agent/bin {agent_dir}/    
-        """
-        )
+        command_helper.command_local(f"rsync -r /agent/bin {agent_dir}/")
 
         agent_jobs = maand.get_agent_jobs(cursor, agent_ip)
         with open(f"{agent_dir}/jobs.json", "w") as f:
@@ -156,11 +151,23 @@ def sync(agent_ip):
 
         command_helper.command_local(f"chown -R 1061:1062 {agent_dir}")
 
+        removed_jobs = maand.get_agent_removed_jobs(cursor, agent_ip)
+        disabled_jobs = maand.get_agent_disabled_jobs(cursor, agent_ip)
         jobs = list(agent_jobs.keys())
         if args.jobs:
             jobs = list(set(agent_jobs.keys()) & set(args.jobs))
+            removed_jobs = list(set(jobs) & set(removed_jobs))
+            disabled_jobs = list(set(jobs) & set(disabled_jobs))
 
-        context_manager.rsync_upload_agent_files(agent_ip, jobs)
+        agent_env = context_manager.get_agent_minimal_env(agent_ip)
+        bucket = agent_env.get("BUCKET")
+        if removed_jobs:
+            command_helper.capture_command_remote(f"test -f /opt/agent/{bucket}/bin/runner.py && python3 /opt/agent/{bucket}/bin/runner.py {bucket} stop --jobs {','.join(removed_jobs)}", env=agent_env, log_file=f'/bucket/logs/{agent_ip}.log', prefix=agent_ip)
+
+        if disabled_jobs:
+            command_helper.capture_command_remote(f"test -f /opt/agent/{bucket}/bin/runner.py && python3 /opt/agent/{bucket}/bin/runner.py {bucket} stop --jobs {','.join(disabled_jobs)}", env=agent_env, log_file=f'/bucket/logs/{agent_ip}.log', prefix=agent_ip)
+
+        context_manager.rsync_upload_agent_files(agent_ip, jobs, removed_jobs)
 
         logger.debug("Sync process completed.")
 
