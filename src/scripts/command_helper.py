@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 import uuid
 
 import utils
@@ -30,10 +31,12 @@ def capture_command_local(cmd, env, log_file, prefix):
         for line in process.stdout:
             print(f"{prefix[:30]:<15} {line}", end='')
             file.write(line)
+            sys.stdout.flush()
 
         for line in process.stderr:
             print(f"{prefix[:30]:<15} {line}", end='')
             file.write(line)
+            sys.stdout.flush()
 
         process.wait()
 

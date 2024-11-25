@@ -74,7 +74,7 @@ def process_templates(values):
     agent_ip = values["AGENT_IP"]
     agent_dir = context_manager.get_agent_dir(agent_ip)
     logger.debug("Processing templates...")
-    for ext in ["*.json", "*.service", "*.conf", "*.yml", "*.env", "*.token", "*.txt"]:
+    for ext in ["*.json", "*.service", "*.conf", "*.yml", "*.yaml", "*.env", "*.token", "*.txt"]:
         for f in Path(f"{agent_dir}/").rglob(ext):
             try:
                 with open(f, "r") as file:
