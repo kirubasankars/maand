@@ -50,7 +50,7 @@ def delete_key(namespace, key):
 def get_keys(namespace):
     with get_db() as connection:
         cursor = connection.cursor()
-        cursor.execute('SELECT key FROM key_value WHERE namespace = ? AND deleted = 0',(namespace, ))
+        cursor.execute('SELECT key FROM (SELECT namespace, key, max(version), deleted, created_date FROM key_value group by key, namespace) t WHERE namespace = ? AND deleted = 0',(namespace, ))
         rows = cursor.fetchall()
         return [row[0] for row in rows]
 
