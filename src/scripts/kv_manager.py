@@ -27,7 +27,8 @@ def put_key_value(namespace, key, value, ttl=-1, rotatable=0):
         if row:
             version = int(row[0])
             current_value = str(row[1])
-            if current_value == value:
+            deleted = int(row[2])
+            if deleted == 0 and current_value == value:
                 return
 
         cursor.execute('INSERT INTO key_value (key, value, namespace, version, ttl, created_date, rotatable, deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', (key, value, namespace, version + 1, ttl, get_global_unix_epoch(), rotatable, 0,))

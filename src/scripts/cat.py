@@ -26,7 +26,7 @@ def statement(sql, no_rows_found_msg):
 
 if __name__ == "__main__":
 
-    name = "namespace"
+    name = "info"
     if len(sys.argv) > 1:
         name = sys.argv[1]
 
@@ -44,3 +44,9 @@ if __name__ == "__main__":
 
     if name == "kv":
         statement("SELECT * FROM (SELECT key, namespace, max(version) as version, ttl, created_date, deleted FROM kv_db.key_value GROUP BY key, namespace) t ORDER BY namespace, key, version", "no key values found")
+
+    if name == "ports":
+        statement("SELECT key, value, namespace FROM (SELECT key, value, namespace, deleted, max(version) as version FROM kv_db.key_value GROUP BY key, namespace) t WHERE deleted = 0 AND namespace = 'ports.env' ORDER BY namespace, key", "no ports found")
+
+    if name == "info":
+        statement("SELECT bucket_id as bucket, update_seq FROM bucket", "no info found")

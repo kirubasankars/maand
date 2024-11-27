@@ -1,9 +1,6 @@
 #!/bin/bash
 set -ueo pipefail
 
-echo "StrictHostKeyChecking accept-new" >> /etc/ssh/ssh_config
-
-# Display usage if no operation is provided
 if [ -z "${1+x}" ]; then
   echo "Usage: maand <operation>"
   echo "Operations:"
@@ -25,12 +22,12 @@ fi
 export OPERATION=$1
 shift
 
-# Set up working directories
+echo "StrictHostKeyChecking accept-new" >> /etc/ssh/ssh_config
+test -f /bucket/setup.sh && sh /bucket/setup.sh
 rm -rf /bucket/logs/*
 mkdir -p /opt/agents
 python3 /scripts/kv_manager.py
 
-# Operation-specific functions
 function run_python_script {
     script=$1
     shift

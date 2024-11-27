@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess
 import sys
 import uuid
@@ -8,6 +9,11 @@ import const
 
 logger = utils.get_logger()
 
+
+def remove_color(output):
+    # Regular expression to remove ANSI color codes
+    ansi_escape = re.compile(r'\x1b\[.*?m')
+    return ansi_escape.sub('', output)
 
 def capture_command_local(cmd, env, log_file, prefix):
     file_id = uuid.uuid4()
@@ -29,11 +35,13 @@ def capture_command_local(cmd, env, log_file, prefix):
         )
         prefix = f"[{prefix}]"
         for line in process.stdout:
+            line = remove_color(line)
             print(f"{prefix[:30]:<15} {line}", end='')
             file.write(line)
             sys.stdout.flush()
 
         for line in process.stderr:
+            line = remove_color(line)
             print(f"{prefix[:30]:<15} {line}", end='')
             file.write(line)
             sys.stdout.flush()
