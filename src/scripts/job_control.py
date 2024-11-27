@@ -1,4 +1,5 @@
 import os
+import sys
 
 import maand
 import command_helper
@@ -11,11 +12,14 @@ def run_command(agent_ip):
     cmd = os.getenv("CMD")
     bucket = os.getenv("BUCKET")
     args = utils.get_args_agents_jobs_concurrency()
+    cmd = cmd.lower()
 
     with maand.get_db() as db:
         cursor = db.cursor()
 
         agent_jobs = maand.get_agent_jobs(cursor, agent_ip)
+        if cmd != "stop":
+            agent_jobs = {key: value for key, value in agent_jobs.items() if value.get("disabled") == 0}
 
         jobs = list(agent_jobs.keys())
         if args.jobs:

@@ -43,7 +43,7 @@ if __name__ == "__main__":
         statement("SELECT job_name, name as command_name, executed_on, depend_on_job, depend_on_command, depend_on_config  FROM job_commands ORDER BY job_name, name", "no commands found")
 
     if name == "kv":
-        statement("SELECT * FROM (SELECT key, namespace, max(version) as version, ttl, created_date, deleted FROM kv_db.key_value GROUP BY key, namespace) t ORDER BY namespace, key, version", "no key values found")
+        statement("SELECT * FROM (SELECT key, CASE WHEN LENGTH(value) > 50 THEN substr(value, 1, 50) || '...' ELSE value END as value, namespace, max(version) as version, ttl, created_date, deleted FROM kv_db.key_value GROUP BY key, namespace) t ORDER BY namespace, key, version", "no key values found")
 
     if name == "ports":
         statement("SELECT key, value, namespace FROM (SELECT key, value, namespace, deleted, max(version) as version FROM kv_db.key_value GROUP BY key, namespace) t WHERE deleted = 0 AND namespace = 'ports.env' ORDER BY namespace, key", "no ports found")

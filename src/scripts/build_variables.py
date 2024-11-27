@@ -63,8 +63,14 @@ def build_variables(cursor):
 
         values["ROLES"] = ",".join(sorted(agent_roles))
 
+        namespace = f"vars/{agent_ip}"
         for key, value in values.items():
-            kv_manager.put_key_value(f"vars/{agent_ip}", key, value)
+            kv_manager.put_key_value(namespace, key, value)
+
+        all_keys = kv_manager.get_keys(namespace)
+        missing_keys = list(set(all_keys) ^ set(values.keys()))
+        for key in missing_keys:
+            kv_manager.delete_key(namespace, key)
 
 
 def build():
