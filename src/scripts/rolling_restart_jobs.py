@@ -18,6 +18,8 @@ def run_command(agent_ip):
         cursor = db.cursor()
 
         agent_jobs = maand.get_agent_jobs(cursor, agent_ip)
+        agent_jobs = {key: value for key, value in agent_jobs.items() if value.get("disabled") == 0}
+
         jobs = list(agent_jobs.keys())
         if args.jobs:
             jobs = list(set(jobs) & set(args.jobs))
@@ -31,7 +33,7 @@ def run_command(agent_ip):
                                                   env=agent_env,
                                                   log_file=f'{const.LOGS_FOLDER}/{agent_ip}.log',
                                                   prefix=agent_ip)
-            job_health_check.health_check(cursor, jobs, False)
+            job_health_check.health_check(cursor, jobs, False, 2, 50)
 
 
 def run():

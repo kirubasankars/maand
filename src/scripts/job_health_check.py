@@ -4,7 +4,7 @@ import job_command_executor
 import job_data
 
 
-def health_check(cursor, jobs_filter, no_wait):
+def health_check(cursor, jobs_filter, no_wait, interval=1, times=10):
     event = 'health_check'
 
     selected_jobs = []
@@ -32,13 +32,13 @@ def health_check(cursor, jobs_filter, no_wait):
                     print(f'health check succeeded : {job}', flush=True)
                     break
                 except Exception as e:
-                    if retry >= 10:
+                    if retry >= times:
                         failed = True
                         print(f'health check failed : {job}', flush=True)
                         break
                     retry = retry + 1
                     print(f"health check failed {job}. retrying...", flush=True)
-                    time.sleep(1)
+                    time.sleep(interval)
 
     if no_wait:
         for job in jobs:
