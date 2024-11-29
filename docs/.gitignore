@@ -1,5 +1,0 @@
-/.observablehq/cache/
-.DS_Store
-/dist/
-node_modules/
-yarn-error.log
