@@ -1,34 +1,14 @@
 testing API
 deploy jobs execution plan
-  stop removed jobs
-  stop removed jobs on agents
-  stop jobs on disabled agents
-  stop disabled jobs
-  stop job on particular agent if disabled
-  update jobs
   working on group 0 (if health check successful rolling restart else start)
   working on group 1
   ...
-gc
 command flow
 agent user
-health check returns like cat jobs
 restart order
-ports.env and cat ports
 resource handling (sizing) - single value no selector
 
-maad job start
-maad job stop
-maad job restart
-maad job rolling_restart
-maad job health_check
-
 job versioning and if version changes
-maad command run
-create job scaffolding
-extract previous history and rollback jobs
-manifest file - count, every zone get same count and zone variables - simple
-cat
 kv get value and versions
 kv ttl
 rotation kv

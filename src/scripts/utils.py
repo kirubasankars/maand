@@ -67,7 +67,7 @@ def get_args_agents_roles_concurrency(allow_no_check=False):
 def get_args_jobs_concurrency():
     parser = argparse.ArgumentParser()
     parser.add_argument('--jobs', default="", required=False)
-    parser.add_argument('--concurrency', default="4", type=int)
+    parser.add_argument('--concurrency', default="1", type=int)
     args = parser.parse_args()
 
     if args.jobs:

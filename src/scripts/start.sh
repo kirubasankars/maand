@@ -38,6 +38,9 @@ case "$OPERATION" in
   "init")
     run_python_script "init.py"
     ;;
+  "info")
+    run_python_script "cat.py" info
+    ;;
   "build")
     run_python_script "build_jobs.py"
     run_python_script "build_agents.py"
