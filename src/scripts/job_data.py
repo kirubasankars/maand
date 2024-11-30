@@ -8,11 +8,19 @@ def setup_job_database(cursor):
     cursor.execute("CREATE TABLE IF NOT EXISTS job_db.job_commands (job_id TEXT, job_name TEXT, name TEXT, executed_on TEXT, depend_on_job TEXT, depend_on_command TEXT, depend_on_config TEXT)")
 
 
-def get_jobs(cursor):
-    cursor.execute("SELECT name FROM job_db.job")
+def get_jobs(cursor, deployment_seq = -1):
+    if deployment_seq == -1:
+        cursor.execute("SELECT name FROM job_db.job")
+    else:
+        cursor.execute("SELECT name FROM job_db.job WHERE deployment_seq = ?", (deployment_seq,))
     rows = cursor.fetchall()
     return [row[0] for row in rows]
 
+
+def get_max_deployment_seq(cursor):
+    cursor.execute("SELECT max(deployment_seq) FROM job_db.job")
+    row = cursor.fetchone()
+    return row[0]
 
 def get_job_certs_config(cursor, job):
     cursor.execute("SELECT jc.name, jc.pkcs8, jc.subject FROM job_db.job_certs jc JOIN job j ON j.job_id = jc.job_id WHERE j.name = ?", (job,))

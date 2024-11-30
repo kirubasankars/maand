@@ -10,7 +10,7 @@ if [ -z "${1+x}" ]; then
   echo "  uptime                        Check connectivity or uptime"
   echo "  run_command                   Run a command on the agents"
   echo "  run_command_local             Run a command locally"
-  echo "  job                           Run job control operations (start, stop, restart, and rolling_restart)"
+  echo "  job                           Run job control operations (start, stop and restart)"
   echo "  run_job_command               Run job-related commands"
   echo "  cat                           Cat info from build action (agents, jobs, allocations, kv)"
   echo "  run_command_with_health_check Run command with health check"
@@ -60,13 +60,7 @@ case "$OPERATION" in
     run_python_script "run_command_local.py" "$@"
     ;;
   "job")
-    export CMD="$1"
-    shift
-    if [ "$CMD" == "rolling_restart" ]; then
-      run_python_script "rolling_restart_jobs.py" "$@"
-    else
-      run_python_script "job_control.py" "$@"
-    fi
+    run_python_script "job_control.py" "$@"
     ;;
   "run_job_command")
     run_python_script "job_command_executor.py" "$@"

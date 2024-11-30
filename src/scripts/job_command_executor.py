@@ -34,7 +34,8 @@ def execute_command(cursor, job, command, event):
     if not maand.check_job_command_event(cursor, job, command, event):
         return False
 
-    agent_0_ip = maand.get_first_agent_for_job(cursor, job)
+    allocations = maand.get_allocations(cursor, job)
+    agent_0_ip = allocations[0]
 
     for namespace in ["variables.env", "secrets.env", "ports.env", f"vars/{agent_0_ip}"]:
         keys = kv_manager.get_keys(namespace)

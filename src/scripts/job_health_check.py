@@ -4,7 +4,7 @@ import job_command_executor
 import job_data
 
 
-def health_check(cursor, jobs_filter, no_wait, interval=1, times=10):
+def health_check(cursor, jobs_filter, no_wait, interval=5, times=10):
     event = 'health_check'
 
     selected_jobs = []

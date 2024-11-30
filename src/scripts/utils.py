@@ -44,6 +44,28 @@ def get_args_agents_jobs_concurrency():
     return args
 
 
+def get_args_agents_jobs_health_check():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--agents', default="")
+    parser.add_argument('--jobs', default="")
+    parser.add_argument('--target', default="", required=True)
+    parser.add_argument('--health_check', action='store_true')
+    parser.set_defaults(health_check=False)
+
+    args = parser.parse_args()
+
+    if args.agents:
+        args.agents = args.agents.split(',')
+    else:
+        args.agents = []
+    if args.jobs:
+        args.jobs = args.jobs.split(',')
+    else:
+        args.jobs = []
+
+    return args
+
+
 def get_args_agents_roles_concurrency(allow_no_check=False):
     parser = argparse.ArgumentParser()
     parser.add_argument('--agents', default="")
