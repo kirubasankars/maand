@@ -28,11 +28,8 @@ def build_jobs(cursor):
         job_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(job)))
         certs_hash = hashlib.md5(json.dumps(certs).encode()).hexdigest()
 
-        custom_job_control = 0
-        if f"{job}/_modules/job_control.py" in files:
-            custom_job_control = 1
-        cursor.execute("INSERT INTO job_db.job (job_id, name, certs_md5_hash, deployment_seq, custom_job_control) VALUES (?, ?, ?, 0, ?)",
-                       (job_id, job, certs_hash, custom_job_control))
+        cursor.execute("INSERT INTO job_db.job (job_id, name, certs_md5_hash, deployment_seq) VALUES (?, ?, ?, 0)",
+                       (job_id, job, certs_hash))
 
         for role in roles:
             cursor.execute("INSERT INTO job_db.job_roles (job_id, role) VALUES (?, ?)", (job_id, role,))

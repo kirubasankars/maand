@@ -1,41 +1,16 @@
 import argparse
 import configparser
-import functools
-import logging
-import os
-import fcntl
 import subprocess
 from functools import cache
-from logging import getLogger
 
 import const
 
+from log_manager import LoggerManager
 
-@functools.cache
-def get_logger(ns=None):
-    root_logger = getLogger(ns)
-    console_handler = logging.StreamHandler()
-    root_logger.addHandler(console_handler)
+log_manager = LoggerManager()
 
-    log_level = os.getenv("LOG_LEVEL", "INFO").upper()
-    root_logger.setLevel(log_level)
-
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.ERROR)
-
-    file_handler = logging.FileHandler(f"/bucket/logs/{ns}.log")
-    file_handler.setLevel(logging.INFO)
-
-    console_format = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    file_format = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-
-    console_handler.setFormatter(console_format)
-    file_handler.setFormatter(file_format)
-
-    root_logger.addHandler(console_handler)
-    root_logger.addHandler(file_handler)
-
-    return root_logger
+def get_logger(ns="maand"):
+    return log_manager.get_logger(ns)
 
 
 def is_sudo_enabled(env):

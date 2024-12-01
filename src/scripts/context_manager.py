@@ -6,9 +6,6 @@ import utils
 import kv_manager
 
 
-logger = utils.get_logger()
-
-
 def get_agent_dir(agent_ip):
     return f"/opt/agents/{agent_ip}"
 
@@ -61,6 +58,7 @@ def validate_agent_bucket(agent_ip, fail_if_no_bucket_id=True):
         if fail_if_no_bucket_id and res.returncode != 0:
             raise Exception(f"agent {agent_ip} : bucket not found.")
     except Exception as e:
+        logger = utils.get_logger(ns=agent_ip)
         logger.error(e)
         utils.stop_the_world()
 
@@ -77,6 +75,7 @@ def validate_update_seq(agent_ip):
         if res.returncode == 0 and agent_update_seq != update_seq:
             raise AssertionError(f"Failed on update_seq validation: mismatch, agent {agent_ip}.")
     except Exception as e:
+        logger = utils.get_logger(ns=agent_ip)
         logger.error(e)
         utils.stop_the_world()
 

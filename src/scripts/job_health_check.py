@@ -1,12 +1,13 @@
+from venv import logger
+
 import time
 import job_command_executor
 
 import job_data
 import utils
 
-logger = utils.get_logger()
-
 def health_check(cursor, jobs_filter, no_wait, interval=5, times=10):
+    logger = utils.get_logger()
     event = 'health_check'
 
     jobs = job_data.get_jobs(cursor)
@@ -23,8 +24,8 @@ def health_check(cursor, jobs_filter, no_wait, interval=5, times=10):
                     for command in job_commands:
                         if not job_command_executor.execute_job_event_command(cursor, job, command, event):
                             raise Exception(f'health check failed : {job}')
-                        logger.info(f'health check succeeded : {job}')
-                        break
+                    logger.info(f'health check succeeded : {job}')
+                    break
                 except Exception as e:
                     if retry >= times:
                         failed = True

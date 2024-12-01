@@ -12,7 +12,6 @@ import utils
 
 logger = utils.get_logger()
 
-
 def executor(job_command, demands, env):
     with open(f"{os.path.curdir}/demands.json", "w") as f:
         f.write(json.dumps(demands))
@@ -33,9 +32,6 @@ def execute_job_event_command(cursor, job, command, event):
     maand.export_env_bucket_update_seq(cursor)
     os.environ.setdefault("JOB", job)
 
-    allocations = maand.get_allocations(cursor, job)
-    maand.copy_job_modules(cursor, job)
-
     cursor.execute("SELECT depend_on_job, depend_on_command, depend_on_config FROM job_db.job_commands WHERE job_name = ? AND name = ? AND executed_on = ?", (job, command, event,))
     rows = cursor.fetchall()
 
@@ -43,32 +39,22 @@ def execute_job_event_command(cursor, job, command, event):
     for depend_on_job, depend_on_command, depend_on_config in rows:
         demands.append({"job": depend_on_job, "command": depend_on_command, "config": json.loads(depend_on_config) })
 
-    try:
-        spec = importlib.util.spec_from_file_location(job, f"/modules/{job}/_modules/command_{command}.py")
-        job_command = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(job_command)
+    maand.copy_job_modules(cursor, job)
+    spec = importlib.util.spec_from_file_location(job, f"/modules/{job}/_modules/command_{command}.py")
+    job_command = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(job_command)
 
+    allocations = maand.get_allocations(cursor, job)
+    agent_0_ip = allocations[0]
+    env = context_manager.get_agent_env(agent_0_ip)
+    env["JOB"] = job
 
-        if "execute" in dir(job_command):
-            agent_0_ip = allocations[0]
-            env = context_manager.get_agent_env(agent_0_ip)
-            env["JOB"] = job
-
-            if "on_context" in dir(job_command):
-                selector = job_command.on_context()
-                agent_ip = env.get(selector)
-                env = context_manager.get_agent_env(agent_ip)
-
-            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-                result = executor(job_command, demands, env)
-            return result
-        else:
-            logger.error(f"execute method not found: command_{command}")
-            return False
-
-    except ModuleNotFoundError:
-        logger.error(f"command not found: job = {job}, command = command_{command}")
-        return False
+    if "on_context" in dir(job_command):
+        selector = job_command.on_context()
+        agent_ip = env.get(selector)
+        env = context_manager.get_agent_env(agent_ip)
+    #with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+    return executor(job_command, demands, env)
 
 
 def main():
