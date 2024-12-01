@@ -14,15 +14,12 @@ logger = utils.get_logger()
 
 try:
     command_helper.command_local(f"mkdir -p {const.BUCKET_PATH}/{{workspace,secrets,logs,data}}")
-
     db = maand.get_db()
     cursor = db.cursor()
     maand.setup_maand_database(cursor)
     maand.setup_agent_database(cursor)
     maand.setup_job_database(cursor)
-
     kv_manager.setup()
-
 except Exception as e:
     print(f"ERROR: {e}", flush=True)
     sys.exit(1)

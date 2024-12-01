@@ -1,7 +1,13 @@
+import importlib.util
+import json
 import os
+import subprocess
+
+import sys
+
 
 def setup_job_database(cursor):
-    cursor.execute("CREATE TABLE IF NOT EXISTS job_db.job (job_id TEXT PRIMARY KEY, name TEXT, certs_md5_hash TEXT, deployment_seq INT)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS job_db.job (job_id TEXT PRIMARY KEY, name TEXT, certs_md5_hash TEXT, deployment_seq INT, custom_job_control INT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS job_db.job_roles (job_id TEXT, role TEXT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS job_db.job_certs (job_id TEXT, name TEXT, pkcs8 INT, subject TEXT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS job_db.job_files (job_id TEXT, path TEXT, content BLOB, isdir BOOL)")
@@ -15,6 +21,12 @@ def get_jobs(cursor, deployment_seq = -1):
         cursor.execute("SELECT name FROM job_db.job WHERE deployment_seq = ?", (deployment_seq,))
     rows = cursor.fetchall()
     return [row[0] for row in rows]
+
+
+def has_custom_job_control(cursor, job):
+    cursor.execute("SELECT custom_job_control FROM job_db.job where name = ?", (job,))
+    row = cursor.fetchone()
+    return row[0] == 1
 
 
 def get_max_deployment_seq(cursor):
@@ -34,12 +46,13 @@ def get_job_md5_hash(cursor, job):
     return row[0]
 
 
-def check_job_command_event(cursor, job, command, event):
-    cursor.execute("SELECT 1 FROM job_db.job_commands WHERE job_name = ? AND name = ? AND executed_on = ?", (job, command, event))
-    row = cursor.fetchone()
-    if not row:
-        return False
-    return True
+def get_job_commands(cursor, job, event):
+    cursor.execute("SELECT DISTINCT name as command_name FROM job_db.job_commands WHERE job_name = ? AND executed_on = ?", (job, event, ))
+    rows = cursor.fetchall()
+    commands = []
+    for command_name, in rows:
+        commands.append(command_name)
+    return commands
 
 
 def copy_job(cursor, name, agent_dir):
@@ -51,4 +64,15 @@ def copy_job(cursor, name, agent_dir):
             os.makedirs(f"{agent_dir}/jobs/{path}", exist_ok=True)
             continue
         with open(f"{agent_dir}/jobs/{path}", "wb") as f:
+            f.write(content)
+
+def copy_job_modules(cursor, job):
+    cursor.execute("SELECT path, content, isdir FROM job_db.job_files WHERE job_id = (SELECT job_id FROM job_db.job WHERE name = ?) AND path like ? ORDER BY isdir DESC", (job, f"{job}/_modules%"))
+    rows = cursor.fetchall()
+
+    for path, content, isdir in rows:
+        if isdir:
+            os.makedirs(f"/modules/{path}", exist_ok=True)
+            continue
+        with open(f"/modules/{path}", "wb") as f:
             f.write(content)

@@ -1,9 +1,11 @@
 import argparse
+import contextlib
 import importlib
+import io
 import json
 import os
 
-import kv_manager
+import context_manager
 import sys
 import maand
 import utils
@@ -11,79 +13,84 @@ import utils
 logger = utils.get_logger()
 
 
-def run_job_command(job, job_command, demands, env):
+def executor(job_command, demands, env):
     with open(f"{os.path.curdir}/demands.json", "w") as f:
         f.write(json.dumps(demands))
-
     for k, v in env.items():
         os.environ.setdefault(k, v)
-    os.environ.setdefault("JOB", job)
     try:
-        job_command.execute()
-        return True
+        result = job_command.execute()
+        if result is None:
+            return True
+        else:
+            return result
     except Exception as e:
         logger.error(e)
         return False
 
 
-def execute_command(cursor, job, command, event):
-    if "/commands" not in sys.path:
-        sys.path.append("/commands")
-
-    os.makedirs("/commands", exist_ok=True)
-    if not maand.check_job_command_event(cursor, job, command, event):
-        return False
+def execute_job_event_command(cursor, job, command, event):
+    maand.export_env_bucket_update_seq(cursor)
+    os.environ.setdefault("JOB", job)
 
     allocations = maand.get_allocations(cursor, job)
-    agent_0_ip = allocations[0]
+    maand.copy_job_modules(cursor, job)
 
-    for namespace in ["variables.env", "secrets.env", "ports.env", f"vars/{agent_0_ip}"]:
-        keys = kv_manager.get_keys(namespace)
-        env = {}
-        for key in keys:
-            env[key] = kv_manager.get_value(namespace, key)
-
-    cursor.execute("SELECT path, content, isdir FROM job_db.job_files WHERE job_id = (SELECT job_id FROM job_db.job WHERE name = ?) AND path like ? ORDER BY isdir DESC", (job, f"{job}/_modules%"))
-    rows = cursor.fetchall()
-
-    for path, content, isdir in rows:
-        if isdir:
-            os.makedirs(f"/commands/{path}", exist_ok=True)
-            continue
-        with open(f"/commands/{path}", "wb") as f:
-            f.write(content)
-
-    cursor.execute("SELECT job_name, name as command_name, depend_on_config as config FROM job_db.job_commands WHERE depend_on_job = ? AND depend_on_command = ?", (job, command, ))
+    cursor.execute("SELECT depend_on_job, depend_on_command, depend_on_config FROM job_db.job_commands WHERE job_name = ? AND name = ? AND executed_on = ?", (job, command, event,))
     rows = cursor.fetchall()
 
     demands = []
-    for job_name, command_name, config in rows:
-        demands.append({"job": job_name, "command": command_name, "config": json.loads(config) })
+    for depend_on_job, depend_on_command, depend_on_config in rows:
+        demands.append({"job": depend_on_job, "command": depend_on_command, "config": json.loads(depend_on_config) })
+
     try:
-        job_command = importlib.import_module(f'{job}._modules.command_{command}')
+        spec = importlib.util.spec_from_file_location(job, f"/modules/{job}/_modules/command_{command}.py")
+        job_command = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(job_command)
+
+
         if "execute" in dir(job_command):
-            return run_job_command(job, job_command, demands, env)
+            agent_0_ip = allocations[0]
+            env = context_manager.get_agent_env(agent_0_ip)
+            env["JOB"] = job
+
+            if "on_context" in dir(job_command):
+                selector = job_command.on_context()
+                agent_ip = env.get(selector)
+                env = context_manager.get_agent_env(agent_ip)
+
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                result = executor(job_command, demands, env)
+            return result
         else:
             logger.error(f"execute method not found: command_{command}")
             return False
+
     except ModuleNotFoundError:
         logger.error(f"command not found: job = {job}, command = command_{command}")
         return False
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('job', default="")
-    parser.add_argument('command', default="")
+    parser.add_argument('--job', default="", required=True)
+    parser.add_argument('--command', default="", required=True)
     args = parser.parse_args()
+
+    event = os.environ.get("EVENT", "direct")
 
     with maand.get_db() as db:
         cursor = db.cursor()
 
-        event = os.environ.get("EVENT", "direct")
-        if not maand.check_job_command_event(cursor, args.job, args.command, event):
+        commands = maand.get_job_commands(cursor, args.job, event)
+        if args.command not in commands:
             raise Exception(f"job: {args.job}, command: {args.command}, event {event} not found")
 
-        r = execute_command(cursor, args.job, args.command, event)
-        if not r:
+        result = execute_job_event_command(cursor, args.job, args.command, event)
+        if not result:
             sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()
+

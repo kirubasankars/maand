@@ -4,3 +4,4 @@ python-dotenv
 pyopenssl
 retry
 docker
+cassandra-driver

@@ -50,6 +50,18 @@ case "$OPERATION" in
   "update")
     run_python_script "update.py" "$@"
     ;;
+  "job")
+    run_python_script "job_control.py" "$@"
+    ;;
+  "health_check")
+    run_python_script "health_check.py" "$@"
+    ;;
+  "job_command")
+    run_python_script "job_command_executor.py" "$@"
+    ;;
+  "cat")
+    run_python_script "cat.py" "$@"
+    ;;
   "uptime")
     run_python_script "uptime.py" "$@"
     ;;
@@ -59,20 +71,8 @@ case "$OPERATION" in
   "run_command_local")
     run_python_script "run_command_local.py" "$@"
     ;;
-  "job")
-    run_python_script "job_control.py" "$@"
-    ;;
-  "run_job_command")
-    run_python_script "job_command_executor.py" "$@"
-    ;;
-  "cat")
-    run_python_script "cat.py" "$@"
-    ;;
   "run_command_with_health_check")
     run_python_script "run_command_with_health_check.py" "$@"
-    ;;
-  "health_check")
-    run_python_script "health_check.py" "$@"
     ;;
   "gc")
     run_python_script "gc.py"
