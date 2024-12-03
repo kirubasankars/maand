@@ -1,11 +1,12 @@
-docker:
-	docker build -t maand ./src
+build:
+	docker build -t maand ./src/main
 
-alias:
-	alias maand="docker run --rm -v $(PWD)/bucket:/bucket:z maand "
+test: build
+	docker build -t maand_test ./src/tests
+	docker run --user=root --rm --privileged -e BUCKET_PATH=$(PWD)/bucket -v $(PWD)/bucket:/bucket:z -v /var/run/docker.sock:/var/run/docker.sock -it maand_test
 
 exec:
 	docker run --rm --user=root --entrypoint=/bin/bash -v $(PWD)/workspace:/workspace:z -it maand
 
-clean:
-	rm -rf $(PWD)/bucket/*
+alias:
+	alias maand="docker run --rm -v $(PWD)/bucket:/bucket:z maand "

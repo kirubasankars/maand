@@ -1,3 +1,4 @@
+import configparser
 import copy
 import os.path
 import uuid
@@ -14,6 +15,7 @@ def build_env(path):
     key_values = dotenv_values(path)
 
     for key, value in key_values.items():
+        key = key.upper()
         kv_manager.put_key_value(namespace, key, value)
 
     all_keys = kv_manager.get_keys(namespace)
@@ -31,7 +33,7 @@ def build_variables(cursor):
 
         values = {}
         for role in roles:
-            key_nodes = f"{role}_NODES".upper()
+            key_nodes = f"{role}_nodes".upper()
 
             agents = maand.get_agents(cursor, [role])
             values[key_nodes] = ",".join(agents)
@@ -40,13 +42,13 @@ def build_variables(cursor):
             if agent_ip in other_agents:
                 other_agents.remove(agent_ip)
 
-            key = f"{role}_LENGTH".upper()
+            key = f"{role}_length".upper()
             values[key] = str(len(agents))
 
             if role not in agent_roles:
                 continue
 
-            key_peers = f"{role}_PEERS".upper()
+            key_peers = f"{role}_peers".upper()
             if other_agents:
                 values[key_peers] = ",".join(other_agents)
 
@@ -55,10 +57,10 @@ def build_variables(cursor):
                 values[key] = host
 
                 if host == agent_ip:
-                    key = f"{role}_ALLOCATION_INDEX".upper()
+                    key = f"{role}_allocation_index".upper()
                     values[key] = str(idx)
 
-            key = f"{role}_ROLE_ID".upper()
+            key = f"{role}_role_id".upper()
             values[key] = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(role)))
 
         values["ROLES"] = ",".join(sorted(agent_roles))
@@ -73,6 +75,40 @@ def build_variables(cursor):
             kv_manager.delete_key(namespace, key)
 
 
+def build_maand_jobs_conf(cursor, path):
+    # TODO: reversed key check
+    if os.path.exists(path):
+        config_parser = configparser.ConfigParser()
+        config_parser.read(path)
+
+        jobs = maand.get_jobs(cursor)
+        for job in jobs:
+            namespace = f"vars/job/{job}"
+            name = f"{job}.variables"
+            keys = []
+            if config_parser.has_section(name):
+                keys = config_parser.options(name)
+                for key in keys:
+                    key = key.upper()
+                    value =  config_parser.get(name, key)
+                    kv_manager.put_key_value(namespace, key, value)
+
+            keys = [key.upper() for key in keys]
+            all_keys = kv_manager.get_keys(namespace)
+            missing_keys = list(set(all_keys) ^ set(keys))
+            for key in missing_keys:
+                kv_manager.delete_key(namespace, key)
+
+        agents = maand.get_agents(cursor, roles_filter=None)
+        for agent_ip in agents:
+            agent_removed_jobs = maand.get_agent_removed_jobs(cursor, agent_ip)
+            for job in agent_removed_jobs:
+                for namespace in [f"job/{job}", f"vars/job/{job}"]:
+                    deleted_keys = kv_manager.get_keys(namespace)
+                    for key in deleted_keys:
+                        kv_manager.delete_key(namespace, key)
+
+
 def build():
     build_env(f"{const.WORKSPACE_PATH}/secrets.env")
     build_env(f"{const.WORKSPACE_PATH}/variables.env")
@@ -80,7 +116,9 @@ def build():
 
     with maand.get_db() as db:
         cursor = db.cursor()
+
         build_variables(cursor)
+        build_maand_jobs_conf(cursor, f"{const.WORKSPACE_PATH}/maand.jobs.conf")
 
         cursor.execute("SELECT agent_ip FROM agent_db.agent WHERE detained = 1")
         rows = cursor.fetchall()

@@ -1,0 +1,10 @@
+.PHONY: start stop restart
+
+start:
+	@echo $$(($(shell cat start 2>/dev/null || echo 0) + 1)) > start
+
+stop:
+	@echo $$(($(shell cat stop 2>/dev/null || echo 0) + 1)) > stop
+
+restart:
+	@echo $$(($(shell cat restart 2>/dev/null || echo 0) + 1)) > restart

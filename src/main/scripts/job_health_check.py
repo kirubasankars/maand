@@ -1,5 +1,3 @@
-from venv import logger
-
 import time
 import job_command_executor
 

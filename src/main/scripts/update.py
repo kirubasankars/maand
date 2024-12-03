@@ -66,7 +66,7 @@ def update_certificates(cursor, jobs, agent_ip):
                 write_cert(f"{job_cert_path}.pem", namespace, f"{job_cert_kv_path}.pem")
 
 
-def process_templates(values):
+def process_templates(values, jobs):
     values = deepcopy(values)
     for k, v in values.items():
         values[k] = v.replace("$$", "$")
@@ -74,25 +74,33 @@ def process_templates(values):
     agent_dir = context_manager.get_agent_dir(agent_ip)
     logger.debug("Processing templates...")
     for ext in ["*.json", "*.service", "*.conf", "*.yml", "*.yaml", "*.env", "*.txt"]:
-        for f in Path(f"{agent_dir}/").rglob(ext):
-            try:
-                with open(f, "r") as file:
-                    data = file.read()
-                template = Template(data)
-                content = template.substitute(values)
-                if content != data:
-                    with open(f, "w") as file:
-                        file.write(content)
-                logger.debug(f"Processed template: {f}")
-            except Exception as e:
-                logger.error(f"Error processing file {f}: {e}")
-                raise e
+        for job in jobs:
+            values = deepcopy(values)
+
+            job_namespace = f"vars/job/{job}"
+            job_keys = kv_manager.get_keys(job_namespace)
+            for key in job_keys:
+                values[key] = kv_manager.get_value(job_namespace, key)
+
+            for f in Path(f"{agent_dir}/jobs/{job}").rglob(ext):
+                try:
+                    with open(f, "r") as file:
+                        data = file.read()
+                    template = Template(data)
+                    content = template.substitute(values)
+                    if content != data:
+                        with open(f, "w") as file:
+                            file.write(content)
+                    logger.debug(f"Processed template: {f}")
+                except Exception as e:
+                    logger.error(f"Error processing file {f}: {e}")
+                    raise e
 
 
-def transpile(agent_ip):
+def transpile(agent_ip, jobs):
     logger.debug("Transpiling templates...")
     values = context_manager.get_agent_env(agent_ip)
-    process_templates(values)
+    process_templates(values, jobs)
 
 
 def sync(agent_ip):
@@ -134,7 +142,7 @@ def sync(agent_ip):
                 value = values.get(key)
                 f.write("{}={}\n".format(key, value))
 
-        command_helper.command_local(f"rsync -r /agent/bin {agent_dir}/")
+        command_helper.command_local(f"rsync -r /scripts/agent/bin {agent_dir}/")
 
         agent_jobs = maand.get_agent_jobs(cursor, agent_ip)
         with open(f"{agent_dir}/jobs.json", "w") as f:
@@ -146,7 +154,7 @@ def sync(agent_ip):
             for job in agent_jobs:
                 maand.copy_job(cursor, job, agent_dir)
 
-        transpile(agent_ip)
+        transpile(agent_ip, agent_jobs.keys())
         update_certificates(cursor, agent_jobs, agent_ip)
 
         command_helper.command_local(f"chown -R 1061:1062 {agent_dir}")
@@ -162,10 +170,10 @@ def sync(agent_ip):
         agent_env = context_manager.get_agent_minimal_env(agent_ip)
         bucket = agent_env.get("BUCKET")
         if removed_jobs:
-            command_helper.capture_command_remote(f"test -f /opt/agent/{bucket}/bin/runner.py && python3 /opt/agent/{bucket}/bin/runner.py {bucket} stop --jobs {','.join(removed_jobs)}", env=agent_env, log_file=f'/bucket/logs/{agent_ip}.log', prefix=agent_ip)
+            command_helper.capture_command_remote(f"test -f /opt/agent/{bucket}/bin/runner.py && python3 /opt/agent/{bucket}/bin/runner.py {bucket} stop --jobs {','.join(removed_jobs)}", env=agent_env, prefix=agent_ip)
 
         if disabled_jobs:
-            command_helper.capture_command_remote(f"test -f /opt/agent/{bucket}/bin/runner.py && python3 /opt/agent/{bucket}/bin/runner.py {bucket} stop --jobs {','.join(disabled_jobs)}", env=agent_env, log_file=f'/bucket/logs/{agent_ip}.log', prefix=agent_ip)
+            command_helper.capture_command_remote(f"test -f /opt/agent/{bucket}/bin/runner.py && python3 /opt/agent/{bucket}/bin/runner.py {bucket} stop --jobs {','.join(disabled_jobs)}", env=agent_env, prefix=agent_ip)
 
         context_manager.rsync_upload_agent_files(agent_ip, jobs, removed_jobs)
 
