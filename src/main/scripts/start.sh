@@ -37,6 +37,7 @@ function run_python_script {
 case "$OPERATION" in
   "init")
     run_python_script "init.py"
+    bash /scripts/start.sh build
     ;;
   "info")
     run_python_script "cat.py" info

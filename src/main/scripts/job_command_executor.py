@@ -2,8 +2,11 @@ import argparse
 import importlib
 import json
 import os
+import io
+from multiprocessing import Process
 
 import context_manager
+import contextlib
 import sys
 import maand
 import utils
@@ -43,16 +46,30 @@ def execute_job_event_command(cursor, job, command, event):
     spec.loader.exec_module(job_command)
 
     allocations = maand.get_allocations(cursor, job)
-    agent_0_ip = allocations[0]
-    env = context_manager.get_agent_env(agent_0_ip)
-    env["JOB"] = job
+    agent_context = allocations
 
     if "on_context" in dir(job_command):
         selector = job_command.on_context()
-        agent_ip = env.get(selector)
+        env = context_manager.get_agent_env(allocations[0])
+        selector_agents_ip = env.get(selector, "")
+        agent_context = selector_agents_ip.split(",")
+
+    result = True
+    for agent_ip in agent_context:
         env = context_manager.get_agent_env(agent_ip)
-    #with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-    return executor(job_command, demands, env)
+        env["JOB"] = job
+        #with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+        try:
+            p = Process(target=executor, args=(job_command, demands, env,))
+            p.start()
+            p.join()
+            if p.exitcode != 0:
+                logger.info(f"Health check failed for {job} and allocation {agent_ip}.")
+                result = False
+        except:
+            logger.info(f"Health check failed for {job} and allocation {agent_ip}.")
+            result = False
+    return result
 
 
 def main():
@@ -77,4 +94,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

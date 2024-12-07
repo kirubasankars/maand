@@ -8,12 +8,9 @@ def wait_for_host(target_host, target_port=22):
 
     while True:
         try:
-            # Attempt to resolve the target host's IP address
             target_ip = socket.gethostbyname(target_host)
-
-            # Attempt to connect to the target host and SSH port
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.settimeout(1)  # Set a 1-second timeout for the connection attempt
+                s.settimeout(1)
                 s.connect((target_ip, target_port))
 
             print(f"Machine is up and reachable on {target_host}:{target_port}", flush=True)

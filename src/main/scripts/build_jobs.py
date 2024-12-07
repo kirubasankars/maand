@@ -42,9 +42,9 @@ def build_jobs(cursor):
                                (job_id, name, pkcs8, subject,))
 
         for command, command_obj in commands.items():
-            executed_ons = command_obj.get("executed_on", [])
+            executed_on = command_obj.get("executed_on")
             depend_on = command_obj.get("depend_on", {})
-            for executed_on in executed_ons:
+            if executed_on:
                 depend_on_job = depend_on.get("job")
                 if depend_on_job and depend_on_job not in jobs:
                     logger.error(f"{depend_on_job} job not found: command: {command}, depend on job: {depend_on_job}")
@@ -63,21 +63,21 @@ def build_jobs(cursor):
                            (job_id, file, content, isdir))
 
     sql = '''
-WITH RECURSIVE job_command_seq AS (
-    SELECT jc.job_name, 0 AS level FROM job_db.job_commands jc WHERE jc.depend_on_job IS NULL
+            WITH RECURSIVE job_command_seq AS (
+                SELECT jc.job_name, 0 AS level FROM job_db.job_commands jc WHERE jc.depend_on_job IS NULL
 
-    UNION ALL
+                UNION ALL
 
-    SELECT jc.job_name, jcs.level + 1 AS level
-    FROM
-        job_db.job_commands jc INNER JOIN job_command_seq jcs ON jc.depend_on_job = jcs.job_name
-)
-UPDATE job_db.job SET deployment_seq = t.deployment_seq FROM (
-SELECT 
-    DISTINCT job_name, deployment_seq
-FROM 
-    (SELECT job_name, (SELECT MAX(level) FROM job_command_seq jcs WHERE jcs.job_name = t.job_name) as deployment_seq FROM job_command_seq t) t1
-ORDER BY deployment_seq) t WHERE job.name = t.job_name;
+                SELECT jc.job_name, jcs.level + 1 AS level
+                FROM
+                    job_db.job_commands jc INNER JOIN job_command_seq jcs ON jc.depend_on_job = jcs.job_name
+            )
+            UPDATE job_db.job SET deployment_seq = t.deployment_seq FROM (
+            SELECT
+                DISTINCT job_name, deployment_seq
+            FROM
+                (SELECT job_name, (SELECT MAX(level) FROM job_command_seq jcs WHERE jcs.job_name = t.job_name) as deployment_seq FROM job_command_seq t) t1
+            ORDER BY deployment_seq) t WHERE job.name = t.job_name;
         '''
 
     cursor.executescript(sql)

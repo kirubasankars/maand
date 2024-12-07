@@ -13,12 +13,7 @@ if not os.path.exists(f"{const.WORKSPACE_PATH}/command.sh"):
 
 def run_command(agent_ip):
     env = context_manager.get_agent_env(agent_ip)
-    command_helper.capture_command_local(
-    f"sh {const.WORKSPACE_PATH}/command.sh",
-        env=env,
-        log_file=f'/bucket/logs/{agent_ip}.log',
-        prefix=agent_ip,
-    )
+    command_helper.capture_command_local(f"sh {const.WORKSPACE_PATH}/command.sh", env=env, prefix=agent_ip)
 
 
 if __name__ == "__main__":

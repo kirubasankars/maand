@@ -55,3 +55,5 @@ if not os.path.isfile(f'{const.BUCKET_PATH}/secrets/ca.key'):
     cert_provider.generate_ca_public(bucket_id, ca_ttl)
 
 db.commit()
+
+command_helper.command_local("chmod -R 700 /bucket; chmod -R 600 /bucket/secrets/*")

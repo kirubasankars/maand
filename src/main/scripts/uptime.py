@@ -6,7 +6,7 @@ import utils
 
 def run_command(agent_ip):
     agent_env = context_manager.get_agent_minimal_env(agent_ip)
-    command_helper.capture_command_remote(f"uptime", env=agent_env, prefix=agent_ip)
+    command_helper.capture_command_remote("uptime", env=agent_env, prefix=agent_ip)
 
 if __name__ == "__main__":
     args = utils.get_args_agents_roles_concurrency()

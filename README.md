@@ -1,19 +1,15 @@
-### Maand: A Brokerless Job Orchestration Framework
+### Maand: A Agentless Job Orchestration Framework
 
-Maand is a lightweight, brokerless framework designed for efficient task orchestration across multiple agents within a cluster. It automates job execution, coordinating tasks between agents while optimizing performance and scalability. 
-
-### Inspiration:
-
-The name "Maand" is inspired by the Indian classical raaga "Maand," which symbolizes harmony and structured flow, much like how Maand orchestrates tasks across a cluster.
+Maand is a lightweight, agentless framework designed for efficient task orchestration across multiple agents within a cluster. It automates job execution, coordinating tasks between agents.
 
 ### Key Concepts:
 
 - **Agent**: A Linux machine identified by its IP address and role, as defined in the `agents.json` file.
 - **Job**: A directory containing a `manifest.json` file and a `Makefile` with defined targets for job execution.
 - **Role**: A label that associates jobs with specific agents. Jobs are assigned to agents based on matching roles in both the `manifest.json` and `agents.json` files, enabling static service discovery.
-- **Cluster**: A group of agents working together to execute jobs.
+- **Bucket**: Logical grouping of related jobs for better organization.
 
-Maand supports various tasks, including executing binaries, Docker commands, Docker Compose tasks, and systemd jobs.
+Maand uses make file to executing jobs, one can call binaries, Docker commands, Docker Compose tasks, and systemd jobs.
 
 ### Prerequisites:
 
@@ -84,6 +80,7 @@ Ensure your SSH key is placed in the `secrets` folder.
 After setup, check agent connectivity by running:
 
 ```shell
+$ maand build
 $ maand uptime
 [10.27.221.181]  14:39:54 up  1:06,  1 user,  load average: 0.11, 0.07, 0.01
 [10.27.221.170]  14:39:54 up  1:06,  1 user,  load average: 0.03, 0.08, 0.08
@@ -155,6 +152,7 @@ The `manifest.json` file defines which agents should execute a given job. The jo
 To deploy or update job files on all agents in the `/opt/agent/[bucket_guid]` directory, run:
 
 ```shell
+$ maand build
 $ maand update
 ```
 
@@ -282,7 +280,7 @@ These dynamically generated variables enable **Maand** to handle complex orchest
 
 ### Executing Commands
 
-The `command.sh` script in the workspace can be used for ad-hoc command execution. 
+The `command.sh` script in the workspace can be used for ad-hoc command execution.
 
 - Running `maand run_command` executes `command.sh` on each agent after verifying cluster membership using `bucket_guid` between the agent and workspace.
 - Running `maand run_command --no-check` executes `command.sh` on each agent without cluster validation.
@@ -291,7 +289,7 @@ The `command.sh` script in the workspace can be used for ad-hoc command executio
  the **Maand** controller while validating cluster membership under agent context.
 - Running `maand run_command_health_check` executes `command.sh` on each agent, performing health checks before execution.
 
-The above commands supports roles and agents filters. 
+The above commands supports roles and agents filters.
 
 ```shell
 $ maand run_command --roles=role1,role2
@@ -305,7 +303,7 @@ $ maand run_command --agents=x.x.x.x,x.x.x.x
 - Running `maand job restart` executes `/opt/agent/[bucket_guid]/bin/runner.py`, which runs the `restart` target from the `Makefile` of each job on the agent.
 - Running `maand job rolling_restart` executes `/opt/agent/[bucket_guid]/bin/runner.py`, which runs the `restart` target from the `Makefile` of each job on the agent and runs health checks before and after per each agent.
 
-The above commands supports jobs, order and agents filters. 
+The above commands supports jobs, order and agents filters.
 
 ```shell
 $ maand job start --jobs=sample_job
@@ -319,7 +317,7 @@ To disable jobs for specific agents or roles, use a `disabled.json` file in the 
 ```json
 {
   "jobs":{
-    "job1": {}, # This disables a job 
+    "job1": {}, # This disables a job
     "job2": {
       "agents": ["x.x.x.x"] # This disables a job at the particluar agent
     }
@@ -332,7 +330,7 @@ To disable jobs for specific agents or roles, use a `disabled.json` file in the 
 
 ### Job command
 
-Each job folder can include a `_modules` directory and can include job command in their. 
+Each job folder can include a `_modules` directory and can include job command in their.
 
 ### Health Check
 

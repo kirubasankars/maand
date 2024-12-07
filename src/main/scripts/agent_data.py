@@ -43,20 +43,20 @@ def get_allocations(cursor, job):
 
 def get_agent_roles(cursor, agent_ip):
     if agent_ip:
-        cursor.execute(f"SELECT DISTINCT role FROM agent_db.agent a JOIN agent_db.agent_roles ar ON a.agent_id = ar.agent_id AND agent_ip = ?;", (agent_ip,))
+        cursor.execute("SELECT DISTINCT role FROM agent_db.agent a JOIN agent_db.agent_roles ar ON a.agent_id = ar.agent_id AND agent_ip = ?;", (agent_ip,))
     else:
-        cursor.execute(f"SELECT DISTINCT role FROM agent_db.agent a JOIN agent_db.agent_roles ar ON a.agent_id = ar.agent_id;",)
+        cursor.execute("SELECT DISTINCT role FROM agent_db.agent a JOIN agent_db.agent_roles ar ON a.agent_id = ar.agent_id;",)
     rows = cursor.fetchall()
     return [row[0] for row in rows]
 
 
 def get_agent_tags(cursor, agent_ip):
-    cursor.execute(f"SELECT key, value FROM agent_db.agent a JOIN agent_db.agent_tags at ON a.agent_id = at.agent_id WHERE a.agent_ip = ?", (agent_ip,))
+    cursor.execute("SELECT key, value FROM agent_db.agent a JOIN agent_db.agent_tags at ON a.agent_id = at.agent_id WHERE a.agent_ip = ?", (agent_ip,))
     rows = cursor.fetchall()
     return {row[0]:row[1] for row in rows}
 
 
 def get_agent_id(cursor, agent_ip):
-    cursor.execute(f"SELECT agent_id FROM agent_db.agent WHERE agent_ip = ?", (agent_ip,))
+    cursor.execute("SELECT agent_id FROM agent_db.agent WHERE agent_ip = ?", (agent_ip,))
     row = cursor.fetchone()
     return row[0]

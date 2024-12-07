@@ -21,9 +21,7 @@ def run_command(agent_ip):
 
         jobs = maand.get_agent_jobs(cursor, agent_ip)
         job_health_check.health_check(cursor, jobs, True)
-        command_helper.capture_command_file_remote(f"{const.WORKSPACE_PATH}/command.sh", env,
-                                                   log_file=f'{const.BUCKET_PATH}/logs/{agent_ip}.log',
-                                                   prefix=agent_ip)
+        command_helper.capture_command_file_remote(f"{const.WORKSPACE_PATH}/command.sh", env, prefix=agent_ip)
         job_health_check.health_check(cursor, jobs, False)
 
 

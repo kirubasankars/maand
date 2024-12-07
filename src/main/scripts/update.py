@@ -19,9 +19,10 @@ logger = utils.get_logger()
 
 def write_cert(location, namespace, kv_path):
     content = kv_manager.get_value(namespace, kv_path)
-    content = base64.b64decode(content)
-    with open(location, "wb") as f:
-        f.write(content)
+    if content:
+        content = base64.b64decode(content)
+        with open(location, "wb") as f:
+            f.write(content)
 
 
 def update_certificates(cursor, jobs, agent_ip):
