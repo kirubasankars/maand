@@ -8,6 +8,8 @@ import job_data
 import workspace
 import const
 import command_helper
+import kv_manager
+import configparser
 
 import utils
 
@@ -83,7 +85,45 @@ def build_jobs(cursor):
     cursor.executescript(sql)
 
 
+def build_maand_jobs_conf(cursor, path):
+    # TODO: reversed key check
+    if os.path.exists(path):
+        config_parser = configparser.ConfigParser()
+        config_parser.read(path)
+
+        jobs = maand.get_jobs(cursor)
+        for job in jobs:
+            namespace = f"vars/job/{job}"
+            name = f"{job}.variables"
+            keys = []
+            if config_parser.has_section(name):
+                keys = config_parser.options(name)
+                for key in keys:
+                    key = key.upper()
+                    value =  config_parser.get(name, key)
+                    kv_manager.put_key_value(namespace, key, value)
+
+            keys = [key.upper() for key in keys]
+            all_keys = kv_manager.get_keys(namespace)
+            missing_keys = list(set(all_keys) ^ set(keys))
+            for key in missing_keys:
+                kv_manager.delete_key(namespace, key)
+
+        agents = maand.get_agents(cursor, roles_filter=None)
+        for agent_ip in agents:
+            agent_removed_jobs = maand.get_agent_removed_jobs(cursor, agent_ip)
+            for job in agent_removed_jobs:
+                for namespace in [f"job/{job}", f"vars/job/{job}"]:
+                    deleted_keys = kv_manager.get_keys(namespace)
+                    for key in deleted_keys:
+                        kv_manager.delete_key(namespace, key)
+
+
 def build():
+    jobs = workspace.get_jobs()
+    if jobs:
+        command_helper.command_local(f"rm -rf {const.JOBS_DB_PATH}")
+
     with maand.get_db() as db:
         cursor = db.cursor()
         job_data.setup_job_database(cursor)
@@ -93,5 +133,4 @@ def build():
 
 
 if __name__ == '__main__':
-    command_helper.command_local(f"rm -rf {const.JOBS_DB_PATH}")
     build()

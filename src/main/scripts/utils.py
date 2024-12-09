@@ -12,11 +12,6 @@ log_manager = LoggerManager()
 def get_logger(ns="maand"):
     return log_manager.get_logger(ns)
 
-
-def is_sudo_enabled(env):
-    return env.get("USE_SUDO", "0") == "1"
-
-
 def get_args_agents_jobs_concurrency():
     parser = argparse.ArgumentParser()
     parser.add_argument('--agents', default="")
@@ -108,6 +103,12 @@ def get_maand_conf():
     config_parser = configparser.ConfigParser()
     config_parser.read(const.CONF_PATH)
     return config_parser
+
+
+def split_list(input_list, chunk_size=3):
+    return [
+        input_list[i : i + chunk_size] for i in range(0, len(input_list), chunk_size)
+    ]
 
 
 def stop_the_world():

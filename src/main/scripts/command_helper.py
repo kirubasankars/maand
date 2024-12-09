@@ -47,7 +47,7 @@ def command_local(cmd, env=None, stdout=None, stderr=None):
 
 
 def capture_command_remote(cmd, env, prefix):
-    use_sudo = utils.is_sudo_enabled(env)
+    use_sudo = env.get("USE_SUDO", "0") == "1"
     file_id = uuid.uuid4()
     with open(f"/tmp/{file_id}", "w") as f:
         f.write("#!/bin/bash\n")
@@ -60,7 +60,7 @@ def capture_command_remote(cmd, env, prefix):
 
 
 def command_remote(cmd, env=None, stdout=None, stderr=None):
-    use_sudo = utils.is_sudo_enabled(env)
+    use_sudo = env.get("USE_SUDO", "0") == "1"
     file_id = uuid.uuid4()
     with open(f"/tmp/{file_id}", "w") as f:
         f.write("#!/bin/bash\n")
@@ -73,7 +73,7 @@ def command_remote(cmd, env=None, stdout=None, stderr=None):
 
 
 def command_file_remote(file_path, env=None, stdout=None, stderr=None):
-    use_sudo = utils.is_sudo_enabled(env)
+    use_sudo = env.get("USE_SUDO", "0") == "1"
     sh = "sh" if not use_sudo else "sudo sh"
     return command_local(
         f"ssh -i {const.BUCKET_PATH}/$SSH_KEY $SSH_USER@$AGENT_IP 'timeout 300 {sh}' < {file_path}",
@@ -81,7 +81,7 @@ def command_file_remote(file_path, env=None, stdout=None, stderr=None):
 
 
 def capture_command_file_remote(file_path, env, prefix):
-    use_sudo = utils.is_sudo_enabled(env)
+    use_sudo = env.get("USE_SUDO", "0") == "1"
     sh = "sh" if not use_sudo else "sudo sh"
     return capture_command_local(
         f"ssh -i {const.BUCKET_PATH}/$SSH_KEY $SSH_USER@$AGENT_IP 'timeout 300 {sh}' < {file_path}",

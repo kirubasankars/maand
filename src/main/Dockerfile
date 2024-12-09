@@ -8,7 +8,6 @@ RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r re
 
 COPY scripts /scripts
 RUN chmod +x /scripts/*.sh
-
 ENV PYTHONPATH=/scripts
 
 ENTRYPOINT ["tini", "-g", "-p", "SIGTERM", "--", "bash", "/scripts/start.sh"]

@@ -8,7 +8,6 @@ def health_check(cursor, jobs_filter, no_wait, interval=5, times=10):
     logger = utils.get_logger()
     event = 'health_check'
 
-    # Get filtered jobs
     jobs = job_data.get_jobs(cursor)
     if jobs_filter:
         jobs = set(jobs_filter) & set(jobs)
@@ -16,12 +15,11 @@ def health_check(cursor, jobs_filter, no_wait, interval=5, times=10):
     failed = False
 
     def execute_health_check(job):
-        """Executes health check commands for a single job."""
         nonlocal failed
         try:
             job_commands = job_data.get_job_commands(cursor, job, event)
             for command in job_commands:
-                if not job_command_executor.execute_job_event_command(cursor, job, command, event):
+                if not job_command_executor.execute_job_event_command(cursor, job, command, event, {}):
                     failed = True
                     return False
             logger.info(f'Health check succeeded: {job}')
@@ -32,7 +30,6 @@ def health_check(cursor, jobs_filter, no_wait, interval=5, times=10):
             return False
 
     if not no_wait:
-        # Perform health checks with retries
         for job in jobs:
             for attempt in range(times):
                 if execute_health_check(job):

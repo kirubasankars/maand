@@ -1,20 +1,29 @@
 import copy
-import multiprocessing
 import os
 
 import job_command_executor
-
+import job_health_check
 import utils
 import maand
-import target_executor
+import command_helper
+import context_manager
 
 
-def run_target(job, allocations):
-    work_items = []
-    for agent_ip in allocations:
-        work_items.append((job, agent_ip,))
-    with multiprocessing.Pool(processes=len(work_items)) as pool:
-        pool.map(target_executor.execute, work_items)
+def run_target(target, job, allocations):
+    args = utils.get_args_agents_jobs_health_check()
+
+    with maand.get_db() as db:
+        cursor = db.cursor()
+
+        work_items = utils.split_list(allocations, 1)
+        for work_item in work_items:
+            for agent_ip in work_item:
+                bucket = os.getenv("BUCKET")
+                agent_env = context_manager.get_agent_minimal_env(agent_ip)
+                command_helper.capture_command_remote(f"python3 /opt/agent/{bucket}/bin/runner.py {bucket} {target} --jobs {job}", env=agent_env, prefix=agent_ip)
+
+            if args.health_check:
+                job_health_check.health_check(cursor, [job], False)
 
 
 def main():
@@ -51,16 +60,14 @@ def main():
                 if allocations:
                     job_allocations[job] = allocations
 
-            os.environ.setdefault("TARGET", args.target)
-
             for job, allocations in job_allocations.items():
                 event = "job_control"
                 job_commands = maand.get_job_commands(cursor, job, event)
                 if job_commands:
                     for command in job_commands:
-                        job_command_executor.execute_job_event_command(cursor, job, command, event)
+                        job_command_executor.execute_job_event_command(cursor, job, command, event, { "TARGET": args.target})
                 else:
-                    run_target(job, allocations)
+                    run_target(args.target, job, allocations)
 
 
 if __name__ == "__main__":

@@ -7,7 +7,6 @@ def test_update_seq():
     clean()
     scan_agent()
     command(get_maand_command("init"))
-    command(get_maand_command("build"))
     command(get_maand_command("update"))
 
     sync()

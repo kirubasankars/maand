@@ -23,7 +23,6 @@ export OPERATION=$1
 shift
 
 echo "StrictHostKeyChecking accept-new" >> /etc/ssh/ssh_config
-test -f /bucket/setup.sh && sh /bucket/setup.sh
 rm -rf /bucket/logs/*
 mkdir -p /opt/agents
 python3 /scripts/kv_manager.py
@@ -58,6 +57,10 @@ case "$OPERATION" in
     run_python_script "health_check.py" "$@"
     ;;
   "job_command")
+    export JOB=$1
+    shift
+    export COMMAND=$1
+    shift
     run_python_script "job_command_executor.py" "$@"
     ;;
   "cat")
