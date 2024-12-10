@@ -45,7 +45,7 @@ def build_jobs(cursor):
         for command, command_obj in commands.items():
             executed_on = command_obj.get("executed_on")
             depend_on = command_obj.get("depend_on", {})
-            if executed_on and executed_on in ["direct", "job_control", "health_check"]:
+            if executed_on:
                 depend_on_job = depend_on.get("job")
                 if depend_on_job and depend_on_job not in jobs:
                     logger.error(f"{depend_on_job} job not found: command: {command}, depend on job: {depend_on_job}")
@@ -54,8 +54,7 @@ def build_jobs(cursor):
                 cursor.execute("INSERT INTO job_db.job_commands (job_id, job_name, name, executed_on, depend_on_job, depend_on_command, depend_on_config) VALUES (?, ?, ?, ?, ?, ?, ?)",
                                (job_id, job, command, executed_on, depend_on_job, depend_on_command, depend_on_config))
             else:
-                logger.error("The commands must include an 'executed_on'. The 'value' must be one of the following: 'direct', 'health_check', or 'job_control'.")
-                logger.error(f"job: {job}, command: {command}")
+                logger.error(f"The commands must include an 'executed_on'. job: {job}, command: {command}")
 
         for file in files:
             isdir = os.path.isdir(f"{const.WORKSPACE_PATH}/jobs/{file}")

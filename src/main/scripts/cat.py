@@ -40,7 +40,7 @@ if __name__ == "__main__":
     if name == "allocations":
         statement("SELECT a.agent_ip, aj.job, aj.disabled, aj.removed FROM agent a JOIN agent_jobs aj ON a.agent_id = aj.agent_id LEFT JOIN job_db.job j ON j.name = aj.job ORDER BY aj.job", "no allocations found")
 
-    if name == "job_commands":
+    if name == "alloc_commands":
         statement("SELECT job_name, name as command_name, executed_on, depend_on_job, depend_on_command, depend_on_config  FROM job_commands ORDER BY job_name, name", "no commands found")
 
     if name == "kv":
