@@ -1,3 +1,4 @@
+import argparse
 import base64
 import json
 from copy import deepcopy
@@ -15,8 +16,19 @@ import utils
 logger = utils.get_logger()
 
 
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--jobs', default="", required=False)
+    parser.add_argument('--concurrency', default="1", type=int)
+    args = parser.parse_args()
+
+    if args.jobs:
+        args.jobs = args.jobs.split(',')
+
+    return args
+
 def write_cert(location, namespace, kv_path):
-    content = kv_manager.get_value(namespace, kv_path)
+    content = kv_manager.get(namespace, kv_path)
     if content:
         content = base64.b64decode(content)
         with open(location, "wb") as f:
@@ -79,7 +91,7 @@ def process_templates(values, jobs):
             job_namespace = f"vars/job/{job}"
             job_keys = kv_manager.get_keys(job_namespace)
             for key in job_keys:
-                values[key] = kv_manager.get_value(job_namespace, key)
+                values[key] = kv_manager.get(job_namespace, key)
 
             for f in Path(f"{agent_dir}/jobs/{job}").rglob(ext):
                 try:
@@ -106,8 +118,7 @@ def sync(agent_ip):
     with maand.get_db() as db:
         cursor = db.cursor()
 
-        args = utils.get_args_jobs_concurrency()
-
+        args = get_args()
         logger.debug("Starting sync process...")
         agent_dir = context_manager.get_agent_dir(agent_ip)
 
@@ -133,7 +144,7 @@ def sync(agent_ip):
         values = {}
         maand_vars = kv_manager.get_keys(f"vars/{agent_ip}")
         for key in maand_vars:
-            values[key] = kv_manager.get_value(f"vars/{agent_ip}", key)
+            values[key] = kv_manager.get(f"vars/{agent_ip}", key)
         values["AGENT_IP"] = agent_ip
         with open(f"{agent_dir}/context.env", "w") as f:
             keys = sorted(values.keys())
@@ -184,7 +195,7 @@ def validate_agent_namespace(agent_ip):
 
 
 def update():
-    args = utils.get_args_jobs_concurrency()
+    args = get_args()
     with maand.get_db() as db:
         cursor = db.cursor()
 

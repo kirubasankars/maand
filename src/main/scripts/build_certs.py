@@ -10,7 +10,7 @@ import maand
 
 
 def get_cert_if_available(file_path, namespace, key):
-    content = kv_manager.get_value(namespace, key)
+    content = kv_manager.get(namespace, key)
     if content:
         content = base64.b64decode(content)
         with open(file_path, "wb") as f:
@@ -20,7 +20,7 @@ def get_cert_if_available(file_path, namespace, key):
 def put_cert(file_path, namespace, key):
     with open(file_path, "rb") as f:
         content = base64.b64encode(f.read()).decode('utf-8')
-        kv_manager.put_key_value(namespace, key, content)
+        kv_manager.put(namespace, key, content)
 
 
 def build_agent_certs(cursor):
@@ -71,10 +71,10 @@ def build_job_certs(cursor):
 
             update_certs = False
             if job_certs:
-                current_hash = kv_manager.get_value(namespace, f"{job_cert_kv_location}/md5.hash")
+                current_hash = kv_manager.get(namespace, f"{job_cert_kv_location}/md5.hash")
                 new_hash = maand.get_job_md5_hash(cursor, job)
                 if current_hash != new_hash:
-                    kv_manager.put_key_value(namespace, f"{job_cert_kv_location}/md5.hash", new_hash)
+                    kv_manager.put(namespace, f"{job_cert_kv_location}/md5.hash", new_hash)
                     update_certs = True
 
             for cert in job_certs:

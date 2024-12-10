@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 
 from OpenSSL import crypto
 
-import const
 from command_helper import *
 
 

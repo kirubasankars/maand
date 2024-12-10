@@ -48,6 +48,7 @@ def prepare_command(cursor, job, command):
     maand.copy_job_modules(cursor, job)
 
     shutil.copy("/scripts/demands.py", f"/modules/{job}/_modules/demands.py")
+    shutil.copy("/scripts/kv_manager.py", f"/modules/{job}/_modules/kv_manager.py")
     cursor.execute("SELECT job_name, name, depend_on_config FROM job_db.job_commands WHERE depend_on_job = ? AND depend_on_command = ?", (job, command))
     rows = cursor.fetchall()
     demands = []

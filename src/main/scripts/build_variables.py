@@ -15,12 +15,12 @@ def build_env(path):
 
     for key, value in key_values.items():
         key = key.upper()
-        kv_manager.put_key_value(namespace, key, value)
+        kv_manager.put(namespace, key, value)
 
     all_keys = kv_manager.get_keys(namespace)
     missing_keys = list(set(all_keys) ^ set(key_values.keys()))
     for key in missing_keys:
-        kv_manager.delete_key(namespace, key)
+        kv_manager.delete(namespace, key)
 
 
 def build_variables(cursor):
@@ -66,12 +66,12 @@ def build_variables(cursor):
 
         namespace = f"vars/{agent_ip}"
         for key, value in values.items():
-            kv_manager.put_key_value(namespace, key, value)
+            kv_manager.put(namespace, key, value)
 
         all_keys = kv_manager.get_keys(namespace)
         missing_keys = list(set(all_keys) ^ set(values.keys()))
         for key in missing_keys:
-            kv_manager.delete_key(namespace, key)
+            kv_manager.delete(namespace, key)
 
 
 def build():
@@ -92,12 +92,12 @@ def build():
             namespace = f"certs/{agent_ip}"
             keys = kv_manager.get_keys(namespace)
             for key in keys:
-                kv_manager.delete_key(namespace, key)
+                kv_manager.delete(namespace, key)
 
             namespace = f"vars/{agent_ip}"
             keys = kv_manager.get_keys(namespace)
             for key in keys:
-                kv_manager.delete_key(namespace, key)
+                kv_manager.delete(namespace, key)
 
 
 if __name__ == "__main__":

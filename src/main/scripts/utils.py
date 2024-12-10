@@ -11,25 +11,6 @@ log_manager = LoggerManager()
 def get_logger(ns="maand"):
     return log_manager.get_logger(ns)
 
-def get_args_agents_jobs_concurrency():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--agents', default="")
-    parser.add_argument('--jobs', default="")
-    parser.add_argument('--concurrency', default="4", type=int)
-    args = parser.parse_args()
-
-    if args.agents:
-        args.agents = args.agents.split(',')
-    else:
-        args.agents = []
-    if args.jobs:
-        args.jobs = args.jobs.split(',')
-    else:
-        args.jobs = []
-
-    return args
-
-
 def get_args_agents_roles_concurrency(allow_no_check=False):
     parser = argparse.ArgumentParser()
     parser.add_argument('--agents', default="")
@@ -46,18 +27,6 @@ def get_args_agents_roles_concurrency(allow_no_check=False):
         args.agents = args.agents.split(',')
     if args.roles:
         args.roles = args.roles.split(',')
-
-    return args
-
-
-def get_args_jobs_concurrency():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--jobs', default="", required=False)
-    parser.add_argument('--concurrency', default="1", type=int)
-    args = parser.parse_args()
-
-    if args.jobs:
-        args.jobs = args.jobs.split(',')
 
     return args
 

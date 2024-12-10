@@ -27,7 +27,7 @@ def get_agent_env(agent_ip):
     for ns in ["variables.env", "secrets.env", "ports.env", f"vars/{agent_ip}"]:
         keys = kv_manager.get_keys(ns)
         for key in keys:
-            env[key] = kv_manager.get_value(ns, key)
+            env[key] = kv_manager.get(ns, key)
     return env
 
 

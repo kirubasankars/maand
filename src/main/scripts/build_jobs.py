@@ -102,13 +102,13 @@ def build_maand_jobs_conf(cursor, path):
                 for key in keys:
                     key = key.upper()
                     value =  config_parser.get(name, key)
-                    kv_manager.put_key_value(namespace, key, value)
+                    kv_manager.put(namespace, key, value)
 
             keys = [key.upper() for key in keys]
             all_keys = kv_manager.get_keys(namespace)
             missing_keys = list(set(all_keys) ^ set(keys))
             for key in missing_keys:
-                kv_manager.delete_key(namespace, key)
+                kv_manager.delete(namespace, key)
 
         agents = maand.get_agents(cursor, roles_filter=None)
         for agent_ip in agents:
@@ -117,7 +117,7 @@ def build_maand_jobs_conf(cursor, path):
                 for namespace in [f"job/{job}", f"vars/job/{job}"]:
                     deleted_keys = kv_manager.get_keys(namespace)
                     for key in deleted_keys:
-                        kv_manager.delete_key(namespace, key)
+                        kv_manager.delete(namespace, key)
 
 
 def build():

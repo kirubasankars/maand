@@ -1,11 +1,11 @@
 import argparse
 import copy
 import os
-
 from concurrent.futures import ThreadPoolExecutor, wait
+
+import alloc_command_executor
 import command_helper
 import context_manager
-import alloc_command_executor
 import job_health_check
 import maand
 
@@ -86,13 +86,11 @@ def main():
                     allocations = list(set(allocations) & set(args.agents))
 
                 if args.target != "stop":
-                    allocations_clone = copy.deepcopy(allocations)
-                    allocations = []
-                    for agent_ip in allocations_clone:
-                        agent_jobs = maand.get_agent_jobs(cursor, agent_ip)
-                        agent_jobs = {key: value for key, value in agent_jobs.items() if value.get("disabled") == 0}
-                        if job in agent_jobs:
-                            allocations.append(agent_ip)
+                    allocations = [
+                        agent_ip for agent_ip in allocations
+                        if job in maand.get_agent_jobs(cursor, agent_ip).keys()
+                        and maand.get_agent_jobs(cursor, agent_ip)[job].get("disabled") == 0
+                    ]
 
                 if allocations:
                     job_allocations[job] = allocations

@@ -15,7 +15,7 @@ def setup():
         cursor.execute('CREATE TABLE IF NOT EXISTS key_value (key, value, namespace, version, ttl, created_date, rotatable, deleted)')
         connection.commit()
 
-def put_key_value(namespace, key, value, ttl=-1, rotatable=0):
+def put(namespace, key, value, ttl=-1, rotatable=0):
     if type(value) is not str:
         raise TypeError('value must be a string')
 
@@ -35,14 +35,14 @@ def put_key_value(namespace, key, value, ttl=-1, rotatable=0):
         cursor.execute('INSERT INTO key_value (key, value, namespace, version, ttl, created_date, rotatable, deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', (key, value, namespace, version + 1, ttl, get_global_unix_epoch(), rotatable, 0,))
         connection.commit()
 
-def get_value(namespace, key):
+def get(namespace, key):
     with get_db() as connection:
         cursor = connection.cursor()
         cursor.execute('SELECT value FROM key_value WHERE namespace = ? AND key = ? AND version = (SELECT max(version) FROM key_value WHERE namespace = ? AND key = ?) AND deleted = 0', (namespace, key, namespace, key))
         row = cursor.fetchone()
         return row[0] if row else None
 
-def delete_key(namespace, key):
+def delete(namespace, key):
     with get_db() as connection:
         c = connection.cursor()
         c.execute('INSERT INTO key_value (key, value, namespace, version, ttl, created_date, rotatable, deleted) SELECT key, value, namespace, max(version) + 1 as version, ttl, created_date, rotatable, 1 FROM key_value WHERE namespace = ? AND key = ? GROUP BY key, namespace', (namespace, key,))

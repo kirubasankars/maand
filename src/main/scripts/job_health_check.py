@@ -2,8 +2,9 @@ import time
 
 import alloc_command_executor
 import job_data
-import utils
 import maand
+import utils
+
 
 def health_check(cursor, jobs_filter, wait, interval=5, times=10):
     logger = utils.get_logger()
