@@ -1,9 +1,4 @@
-import importlib.util
-import json
 import os
-import subprocess
-
-import sys
 
 
 def setup_job_database(cursor):
@@ -65,6 +60,7 @@ def copy_job(cursor, name, agent_dir):
             continue
         with open(f"{agent_dir}/jobs/{path}", "wb") as f:
             f.write(content)
+
 
 def copy_job_modules(cursor, job):
     cursor.execute("SELECT path, content, isdir FROM job_db.job_files WHERE job_id = (SELECT job_id FROM job_db.job WHERE name = ?) AND path like ? ORDER BY isdir DESC", (job, f"{job}/_modules%"))

@@ -5,6 +5,7 @@ from datetime import datetime
 
 import const
 
+
 def get_db():
     return sqlite3.connect(const.KV_DB_PATH)
 

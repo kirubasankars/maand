@@ -1,47 +1,47 @@
 import time
-import job_command_executor
 
+import alloc_command_executor
 import job_data
 import utils
+import maand
 
-def health_check(cursor, jobs_filter, no_wait, interval=5, times=10):
+def health_check(cursor, jobs_filter, wait, interval=5, times=10):
     logger = utils.get_logger()
-    event = 'health_check'
 
     jobs = job_data.get_jobs(cursor)
     if jobs_filter:
         jobs = set(jobs_filter) & set(jobs)
 
-    failed = False
-
     def execute_health_check(job):
-        nonlocal failed
+        result = True
         try:
-            job_commands = job_data.get_job_commands(cursor, job, event)
+            job_commands = job_data.get_job_commands(cursor, job, 'health_check')
             for command in job_commands:
-                if not job_command_executor.execute_job_event_command(cursor, job, command, event, {}):
-                    failed = True
-                    return False
-            logger.info(f'Health check succeeded: {job}')
-            return True
+                alloc_command_executor.prepare_command(cursor, job, command)
+                allocations = maand.get_allocations(cursor, job)
+                for agent_ip in allocations:
+                    result = result and alloc_command_executor.execute_alloc_command(job, command, agent_ip, {})
+            return result
         except Exception as e:
-            logger.error(f'Exception during health check for {job}: {str(e)}')
-            failed = True
+            logger.error(f'Health check failed job : {job} and {str(e)}')
             return False
 
-    if not no_wait:
+    if wait:
+        # Perform health checks with retries
         for job in jobs:
             for attempt in range(times):
                 if execute_health_check(job):
+                    logger.info(f'Health check succeeded: {job}')
                     break
                 logger.info(f'Health check failed for {job}. Retrying... ({attempt + 1}/{times})')
                 time.sleep(interval)
             else:
                 logger.info(f'Health check permanently failed for {job} after {times} retries.')
-
     else:
         # Perform health checks without retries
         for job in jobs:
-            execute_health_check(job)
-
-    return failed
+            failed = execute_health_check(job)
+            if not failed:
+                logger.info(f'Health check succeeded: {job}')
+            else:
+                logger.info(f'Health check failed: {job}')

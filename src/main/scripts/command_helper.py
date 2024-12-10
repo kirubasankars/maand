@@ -1,8 +1,9 @@
 import subprocess
 import uuid
 
-import utils
 import const
+import utils
+
 
 def capture_command_local(cmd, env, prefix):
     file_id = uuid.uuid4()

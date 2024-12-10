@@ -1,18 +1,16 @@
 import base64
 import json
-
 from copy import deepcopy
 from pathlib import Path
 from string import Template
 
-import maand
 import command_helper
+import const
 import context_manager
+import kv_manager
+import maand
 import system_manager
 import utils
-import const
-import kv_manager
-
 
 logger = utils.get_logger()
 
@@ -197,7 +195,7 @@ def update():
 
         update_seq = maand.get_update_seq(cursor)
         next_update_seq = int(update_seq) + 1
-        maand.update_seq(cursor, next_update_seq)
+        maand.update_update_seq(cursor, next_update_seq)
 
         db.commit()
 

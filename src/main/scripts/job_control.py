@@ -1,33 +1,69 @@
+import argparse
 import copy
 import os
 
-import job_command_executor
-import job_health_check
-import utils
-import maand
 import command_helper
 import context_manager
+import alloc_command_executor
+import job_health_check
+import maand
+import utils
+
+
+def get_args_agents_jobs_health_check():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--agents', default="")
+    parser.add_argument('--jobs', default="")
+    parser.add_argument('--target', default="", required=True)
+    parser.add_argument('--job_health_check', action='store_true')
+    parser.add_argument('--alloc_health_check', action='store_true')
+    parser.set_defaults(job_health_check=False)
+    parser.set_defaults(alloc_health_check=False)
+
+    args = parser.parse_args()
+
+    if args.agents:
+        args.agents = args.agents.split(',')
+    else:
+        args.agents = []
+    if args.jobs:
+        args.jobs = args.jobs.split(',')
+    else:
+        args.jobs = []
+
+    return args
 
 
 def run_target(target, job, allocations):
-    args = utils.get_args_agents_jobs_health_check()
-
+    args = get_args_agents_jobs_health_check()
+    alloc_work_items = utils.split_list(allocations, 1)
     with maand.get_db() as db:
         cursor = db.cursor()
-
-        work_items = utils.split_list(allocations, 1)
-        for work_item in work_items:
-            for agent_ip in work_item:
-                bucket = os.getenv("BUCKET")
-                agent_env = context_manager.get_agent_minimal_env(agent_ip)
-                command_helper.capture_command_remote(f"python3 /opt/agent/{bucket}/bin/runner.py {bucket} {target} --jobs {job}", env=agent_env, prefix=agent_ip)
-
-            if args.health_check:
-                job_health_check.health_check(cursor, [job], False)
+        job_commands = maand.get_job_commands(cursor, job, "job_control")
+        if len(job_commands) == 0:
+            for work_item in alloc_work_items:
+                for agent_ip in work_item:
+                    bucket = os.getenv("BUCKET")
+                    agent_env = context_manager.get_agent_minimal_env(agent_ip)
+                    command_helper.capture_command_remote(f"python3 /opt/agent/{bucket}/bin/runner.py {bucket} {target} --jobs {job}", env=agent_env, prefix=agent_ip)
+                    if args.alloc_health_check:
+                        job_health_check.health_check(cursor, [job], wait=True)
+            if args.job_health_check:
+                job_health_check.health_check(cursor, [job], wait=True)
+        else:
+            alloc_command_executor.prepare_command(cursor, job, "job_control")
+            for command in job_commands:
+                for work_item in alloc_work_items:
+                    for agent_ip in work_item:
+                        alloc_command_executor.execute_alloc_command(job, command, agent_ip, {"TARGET": args.target})
+                        if args.alloc_health_check:
+                            job_health_check.health_check(cursor, [job], wait=True)
+                if args.job_health_check:
+                    job_health_check.health_check(cursor, [job], wait=True)
 
 
 def main():
-    args = utils.get_args_agents_jobs_health_check()
+    args = get_args_agents_jobs_health_check()
 
     with maand.get_db() as db:
         cursor = db.cursor()
@@ -43,7 +79,6 @@ def main():
 
             job_allocations = {}
             for job in jobs:
-
                 allocations = maand.get_allocations(cursor, job)
                 if args.agents:
                     allocations = list(set(allocations) & set(args.agents))
@@ -61,13 +96,7 @@ def main():
                     job_allocations[job] = allocations
 
             for job, allocations in job_allocations.items():
-                event = "job_control"
-                job_commands = maand.get_job_commands(cursor, job, event)
-                if job_commands:
-                    for command in job_commands:
-                        job_command_executor.execute_job_event_command(cursor, job, command, event, { "TARGET": args.target})
-                else:
-                    run_target(args.target, job, allocations)
+                run_target(args.target, job, allocations)
 
 
 if __name__ == "__main__":

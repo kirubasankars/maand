@@ -2,8 +2,8 @@ from datetime import datetime, timedelta
 
 from OpenSSL import crypto
 
-from command_helper import *
 import const
+from command_helper import *
 
 
 def generate_ca_private():

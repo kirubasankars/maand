@@ -56,12 +56,12 @@ case "$OPERATION" in
   "health_check")
     run_python_script "health_check.py" "$@"
     ;;
-  "job_command")
+  "alloc_command")
     export JOB=$1
     shift
     export COMMAND=$1
     shift
-    run_python_script "job_command_executor.py" "$@"
+    run_python_script "alloc_command_executor.py" "$@"
     ;;
   "cat")
     run_python_script "cat.py" "$@"

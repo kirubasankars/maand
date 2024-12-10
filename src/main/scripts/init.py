@@ -17,7 +17,6 @@ try:
     db = maand.get_db()
     cursor = db.cursor()
     maand.setup_maand_database(cursor)
-    maand.setup_agent_database(cursor)
     maand.setup_job_database(cursor)
     kv_manager.setup()
 except Exception as e:

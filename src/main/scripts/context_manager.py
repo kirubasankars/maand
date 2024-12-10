@@ -2,8 +2,8 @@ import os
 import subprocess
 
 import command_helper
-import utils
 import kv_manager
+import utils
 
 
 def get_agent_dir(agent_ip):

@@ -1,13 +1,12 @@
-import configparser
 import copy
 import os.path
 import uuid
 
-import kv_manager
 from dotenv import dotenv_values
 
-import maand
 import const
+import kv_manager
+import maand
 
 
 def build_env(path):
@@ -85,7 +84,7 @@ def build():
 
         build_variables(cursor)
 
-        cursor.execute("SELECT agent_ip FROM agent_db.agent WHERE detained = 1")
+        cursor.execute("SELECT agent_ip FROM agent WHERE detained = 1")
         rows = cursor.fetchall()
         agents_ip = {row[0] for row in rows}
 

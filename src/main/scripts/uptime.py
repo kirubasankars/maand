@@ -1,8 +1,9 @@
 import command_helper
 import context_manager
-import system_manager
 import maand
+import system_manager
 import utils
+
 
 def run_command(agent_ip):
     agent_env = context_manager.get_agent_minimal_env(agent_ip)
