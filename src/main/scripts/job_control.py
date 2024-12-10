@@ -2,6 +2,7 @@ import argparse
 import copy
 import os
 
+from concurrent.futures import ThreadPoolExecutor, wait
 import command_helper
 import context_manager
 import alloc_command_executor
@@ -36,28 +37,25 @@ def get_args_agents_jobs_health_check():
 
 def run_target(target, job, allocations):
     args = get_args_agents_jobs_health_check()
-    alloc_work_items = utils.split_list(allocations, 1)
     with maand.get_db() as db:
         cursor = db.cursor()
         job_commands = maand.get_job_commands(cursor, job, "job_control")
         if len(job_commands) == 0:
-            for work_item in alloc_work_items:
-                for agent_ip in work_item:
-                    bucket = os.getenv("BUCKET")
-                    agent_env = context_manager.get_agent_minimal_env(agent_ip)
-                    command_helper.capture_command_remote(f"python3 /opt/agent/{bucket}/bin/runner.py {bucket} {target} --jobs {job}", env=agent_env, prefix=agent_ip)
-                    if args.alloc_health_check:
-                        job_health_check.health_check(cursor, [job], wait=True)
+            for agent_ip in allocations:
+                bucket = os.getenv("BUCKET")
+                agent_env = context_manager.get_agent_minimal_env(agent_ip)
+                command_helper.capture_command_remote(f"python3 /opt/agent/{bucket}/bin/runner.py {bucket} {target} --jobs {job}", env=agent_env, prefix=agent_ip)
+                if args.alloc_health_check:
+                    job_health_check.health_check(cursor, [job], wait=True)
             if args.job_health_check:
                 job_health_check.health_check(cursor, [job], wait=True)
         else:
             alloc_command_executor.prepare_command(cursor, job, "job_control")
             for command in job_commands:
-                for work_item in alloc_work_items:
-                    for agent_ip in work_item:
-                        alloc_command_executor.execute_alloc_command(job, command, agent_ip, {"TARGET": args.target})
-                        if args.alloc_health_check:
-                            job_health_check.health_check(cursor, [job], wait=True)
+                for agent_ip in allocations:
+                    alloc_command_executor.execute_alloc_command(job, command, agent_ip, {"TARGET": args.target})
+                    if args.alloc_health_check:
+                        job_health_check.health_check(cursor, [job], wait=True)
                 if args.job_health_check:
                     job_health_check.health_check(cursor, [job], wait=True)
 
@@ -95,9 +93,18 @@ def main():
                 if allocations:
                     job_allocations[job] = allocations
 
-            for job, allocations in job_allocations.items():
-                run_target(args.target, job, allocations)
+            with ThreadPoolExecutor() as executor:
+                futures = []
+                for job, allocations in job_allocations.items():
+                    futures.append(executor.submit(run_target, args.target, job, allocations))
 
+                wait(futures)
+
+                for future in futures:
+                    try:
+                        future.result()
+                    except Exception as e:
+                        raise e
 
 if __name__ == "__main__":
     main()
