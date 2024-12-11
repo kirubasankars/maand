@@ -44,7 +44,7 @@ def execute_alloc_command(job, command, agent_ip, env):
 
 
 def prepare_command(cursor, job, command):
-    maand.export_env_bucket_update_seq(cursor)
+    context_manager.export_env_bucket_update_seq(cursor)
     maand.copy_job_modules(cursor, job)
 
     shutil.copy("/scripts/demands.py", f"/modules/{job}/_modules/demands.py")

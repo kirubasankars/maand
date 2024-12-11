@@ -71,7 +71,7 @@ def main():
     with maand.get_db() as db:
         cursor = db.cursor()
 
-        maand.export_env_bucket_update_seq(cursor)
+        context_manager.export_env_bucket_update_seq(cursor)
         max_deployment_seq = maand.get_max_deployment_seq(cursor)
 
         for seq in range(0, max_deployment_seq + 1):

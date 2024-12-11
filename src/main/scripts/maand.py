@@ -94,10 +94,3 @@ def get_agent_id(cursor, agent_ip):
     cursor.execute("SELECT agent_id FROM agent WHERE agent_ip = ?", (agent_ip,))
     row = cursor.fetchone()
     return row[0]
-
-
-def export_env_bucket_update_seq(cursor):
-    bucket = get_bucket_id(cursor)
-    os.environ.setdefault("BUCKET", bucket)
-    update_seq = get_update_seq(cursor)
-    os.environ.setdefault("UPDATE_SEQ", str(update_seq))

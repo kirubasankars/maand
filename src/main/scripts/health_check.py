@@ -3,6 +3,7 @@ import sys
 
 import job_health_check
 import maand
+import context_manager
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -16,7 +17,8 @@ if __name__ == '__main__':
 
     with maand.get_db() as db:
         cursor = db.cursor()
-        maand.export_env_bucket_update_seq(cursor)
+
+        context_manager.export_env_bucket_update_seq(cursor)
         failed = job_health_check.health_check(cursor, args.jobs, wait=args.wait)
         if failed:
             sys.exit(1)

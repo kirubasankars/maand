@@ -40,7 +40,7 @@ if __name__ == "__main__":
     with maand.get_db() as db:
         cursor = db.cursor()
 
-        maand.export_env_bucket_update_seq(cursor)
+        context_manager.export_env_bucket_update_seq(cursor)
         system_manager.run(cursor, command_helper.scan_agent)
 
         if not args.no_check:

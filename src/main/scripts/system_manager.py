@@ -11,9 +11,7 @@ def split_list(input_list, chunk_size=3):
         input_list[i : i + chunk_size] for i in range(0, len(input_list), chunk_size)
     ]
 
-def run(
-    cursor, func, agents=None, concurrency=None, roles_filter=None, agents_filter=None
-):
+def run(cursor, func, agents=None, concurrency=None, roles_filter=None, agents_filter=None):
     agents = agents or maand.get_agents(cursor, roles_filter)
 
     if agents_filter:
