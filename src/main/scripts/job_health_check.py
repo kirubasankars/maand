@@ -42,7 +42,7 @@ def health_check(cursor, jobs_filter, wait, interval=5, times=10):
         # Perform health checks without retries
         for job in jobs:
             failed = execute_health_check(job)
-            if not failed:
+            if failed:
                 logger.info(f'Health check succeeded: {job}')
             else:
                 logger.info(f'Health check failed: {job}')
