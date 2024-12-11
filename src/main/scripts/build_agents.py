@@ -65,7 +65,6 @@ def build_allocated_jobs(cursor):
         assigned_jobs = [row[0] for row in cursor.fetchall()]
 
         for job in assigned_jobs:
-
             disabled = agent_ip in disabled_agents
             if not disabled:
                 job_disabled_agents = disabled_jobs.get(job, {}).get("agents", [])

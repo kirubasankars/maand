@@ -30,5 +30,5 @@ if __name__ == "__main__":
         cursor = db.cursor()
 
         context_manager.export_env_bucket_update_seq(cursor)
-        system_manager.run(cursor, command_helper.scan_agent, concurrency=args.concurrency, roles_filter=args.roles, agents_filter=args.agents)
-        system_manager.run(cursor, run_command, concurrency=args.concurrency, roles_filter=args.roles, agents_filter=args.agents)
+        system_manager.run(cursor, command_helper.scan_agent, roles_filter=args.roles, agents_filter=args.agents)
+        system_manager.run(cursor, run_command, roles_filter=args.roles, agents_filter=args.agents)

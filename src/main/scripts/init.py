@@ -55,4 +55,6 @@ if not os.path.isfile(f'{const.BUCKET_PATH}/secrets/ca.key'):
 
 db.commit()
 
-command_helper.command_local("chmod -R 700 /bucket; chmod -R 600 /bucket/secrets/*")
+command_helper.command_local("chmod -R 755 /bucket")
+command_helper.command_local("chmod -R 600 /bucket/secrets/*")
+

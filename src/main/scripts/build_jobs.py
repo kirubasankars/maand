@@ -15,10 +15,20 @@ import workspace
 logger = utils.get_logger()
 
 
+def delete_job(cursor, job):
+    cursor.execute("DELETE FROM job_db.job_roles WHERE job_id = (SELECT job_id FROM job_db.job WHERE name = ?)", (job,))
+    cursor.execute("DELETE FROM job_db.job_certs WHERE job_id = (SELECT job_id FROM job_db.job WHERE name = ?)", (job,))
+    cursor.execute("DELETE FROM job_db.job_commands WHERE job_id = (SELECT job_id FROM job_db.job WHERE name = ?)", (job,))
+    cursor.execute("DELETE FROM job_db.job_files WHERE job_id = (SELECT job_id FROM job_db.job WHERE name = ?)", (job,))
+    cursor.execute("DELETE FROM job_db.job WHERE name = ?", (job,))
+
+
 def build_jobs(cursor):
     jobs = workspace.get_jobs()
 
     for job in jobs:
+        delete_job(cursor, job)
+
         manifest = workspace.get_job_manifest(job)
         files = workspace.get_job_files(job)
 
@@ -85,6 +95,12 @@ def build_jobs(cursor):
 
     cursor.executescript(sql)
 
+    cursor.execute("SELECT name FROM job_db.job")
+    all_jobs = [row[0] for row in cursor.fetchall()]
+    missing_jobs = list(set(jobs) ^ set(all_jobs))
+    for job in missing_jobs:
+        delete_job(cursor, job)
+
 
 def build_maand_jobs_conf(cursor, path):
     # TODO: reversed key check
@@ -121,10 +137,6 @@ def build_maand_jobs_conf(cursor, path):
 
 
 def build():
-    jobs = workspace.get_jobs()
-    if jobs:
-        command_helper.command_local(f"rm -rf {const.JOBS_DB_PATH}")
-
     with maand.get_db() as db:
         cursor = db.cursor()
         job_data.setup_job_database(cursor)
