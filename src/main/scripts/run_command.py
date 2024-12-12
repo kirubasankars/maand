@@ -1,6 +1,7 @@
 import argparse
 import os
-import sys
+import time
+from os import times
 
 import job_health_check
 import command_helper
@@ -8,7 +9,7 @@ import const
 import context_manager
 import maand
 import system_manager
-
+import utils
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -36,11 +37,12 @@ def run_command(agent_ip):
         cursor = db.cursor()
         jobs = maand.get_agent_jobs(cursor, agent_ip)
 
-        if args.health_check and not job_health_check.health_check(cursor, jobs, False):
-            sys.exit(1)
+        if args.health_check and not job_health_check.health_check(cursor, jobs, False, times=20, interval=5):
+            utils.stop_the_world()
         command_helper.capture_command_file_remote(f"{const.WORKSPACE_PATH}/command.sh", env, prefix=agent_ip)
-        if args.health_check and not job_health_check.health_check(cursor, jobs, False):
-            sys.exit(1)
+        time.sleep(5)
+        if args.health_check and not job_health_check.health_check(cursor, jobs, True, times=20, interval=5):
+            utils.stop_the_world()
 
 if __name__ == "__main__":
     if not os.path.exists(f"{const.WORKSPACE_PATH}/command.sh"):
