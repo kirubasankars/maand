@@ -27,6 +27,8 @@ def health_check(cursor, jobs_filter, wait, interval=5, times=10):
             logger.error(f'Health check failed job : {job} and {str(e)}')
             return False
 
+    result = True
+
     if wait:
         # Perform health checks with retries
         for job in jobs:
@@ -38,11 +40,14 @@ def health_check(cursor, jobs_filter, wait, interval=5, times=10):
                 time.sleep(interval)
             else:
                 logger.info(f'Health check permanently failed for {job} after {times} retries.')
+                result = False
     else:
         # Perform health checks without retries
         for job in jobs:
-            failed = execute_health_check(job)
-            if failed:
+            if execute_health_check(job):
                 logger.info(f'Health check succeeded: {job}')
             else:
                 logger.info(f'Health check failed: {job}')
+                result = False
+
+    return result

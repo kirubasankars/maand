@@ -75,9 +75,6 @@ case "$OPERATION" in
   "run_command_local")
     run_python_script "run_command_local.py" "$@"
     ;;
-  "run_command_with_health_check")
-    run_python_script "run_command_with_health_check.py" "$@"
-    ;;
   "gc")
     run_python_script "gc.py"
     ;;

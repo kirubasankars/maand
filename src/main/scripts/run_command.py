@@ -1,6 +1,8 @@
 import argparse
 import os
+import sys
 
+import job_health_check
 import command_helper
 import const
 import context_manager
@@ -14,7 +16,9 @@ def get_args():
     parser.add_argument('--roles', default="")
     parser.add_argument('--concurrency', default="4", type=int)
     parser.add_argument('--no-check', action='store_true')
+    parser.add_argument('--health_check', action='store_true')
     parser.set_defaults(no_check=False)
+    parser.set_defaults(health_check=False)
     args = parser.parse_args()
 
     if args.agents:
@@ -26,10 +30,17 @@ def get_args():
 
 
 def run_command(agent_ip):
+    args = get_args()
     env = context_manager.get_agent_minimal_env(agent_ip)
-    command_helper.capture_command_file_remote(
-        f"{const.WORKSPACE_PATH}/command.sh", env, prefix=agent_ip)
+    with maand.get_db() as db:
+        cursor = db.cursor()
+        jobs = maand.get_agent_jobs(cursor, agent_ip)
 
+        if args.health_check and not job_health_check.health_check(cursor, jobs, False):
+            sys.exit(1)
+        command_helper.capture_command_file_remote(f"{const.WORKSPACE_PATH}/command.sh", env, prefix=agent_ip)
+        if args.health_check and not job_health_check.health_check(cursor, jobs, False):
+            sys.exit(1)
 
 if __name__ == "__main__":
     if not os.path.exists(f"{const.WORKSPACE_PATH}/command.sh"):
