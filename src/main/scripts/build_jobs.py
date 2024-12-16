@@ -4,7 +4,6 @@ import json
 import os
 import uuid
 
-import command_helper
 import const
 import job_data
 import kv_manager
@@ -37,10 +36,15 @@ def build_jobs(cursor):
         commands = manifest.get("commands")
 
         job_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(job)))
+        min_memory_limit = float(utils.extract_size_in_mb(manifest.get("resources", {}).get("memory", {}).get("min", 0)))
+        max_memory_limit = float(utils.extract_size_in_mb(manifest.get("resources", {}).get("memory", {}).get("max", 0)))
+        min_cpu_limit = float(manifest.get("resources", {}).get("cpu", {}).get("min", 0))
+        max_cpu_limit = float(manifest.get("resources", {}).get("cpu", {}).get("max", 0))
+        ports = ",".join(set(manifest.get("resources", {}).get("ports", [])))
         certs_hash = hashlib.md5(json.dumps(certs).encode()).hexdigest()
 
-        cursor.execute("INSERT INTO job_db.job (job_id, name, certs_md5_hash, deployment_seq) VALUES (?, ?, ?, 0)",
-                       (job_id, job, certs_hash))
+        cursor.execute("INSERT INTO job_db.job (job_id, name, min_memory_mb, max_memory_mb, min_cpu, max_cpu, ports, certs_md5_hash, deployment_seq) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)",
+                        (job_id, job, min_memory_limit, max_memory_limit, min_cpu_limit, max_cpu_limit, ports, certs_hash))
 
         for role in roles:
             cursor.execute("INSERT INTO job_db.job_roles (job_id, role) VALUES (?, ?)", (job_id, role,))
@@ -102,47 +106,74 @@ def build_jobs(cursor):
         delete_job(cursor, job)
 
 
-def build_maand_jobs_conf(cursor, path):
+def get_job_variables(job):
+    path = "/bucket/workspace/maand.jobs.conf"
+    if not os.path.exists(path):
+        return {}
+
+    config_parser = configparser.ConfigParser()
+    config_parser.read(path)
+
+    name = f"{job}.variables"
+    job_kv = {}
+    if config_parser.has_section(name):
+        keys = config_parser.options(name)
+        for key in keys:
+            key = key.upper()
+            value =  config_parser.get(name, key)
+            job_kv[key] = value
+
+    job_kv["MEMORY"] = float(utils.extract_size_in_mb(job_kv.get("MEMORY", 0)))
+    job_kv["CPU"] = float(job_kv.get("CPU", 0))
+
+    return job_kv
+
+
+def build_maand_jobs_conf(cursor):
     # TODO: reversed key check
-    if os.path.exists(path):
-        config_parser = configparser.ConfigParser()
-        config_parser.read(path)
+    path = "/bucket/workspace/maand.jobs.conf"
+    if not os.path.exists(path):
+        return
 
-        jobs = maand.get_jobs(cursor)
-        for job in jobs:
-            namespace = f"vars/job/{job}"
-            name = f"{job}.variables"
-            keys = []
-            if config_parser.has_section(name):
-                keys = config_parser.options(name)
-                for key in keys:
-                    key = key.upper()
-                    value =  config_parser.get(name, key)
-                    kv_manager.put(namespace, key, value)
+    config_parser = configparser.ConfigParser()
+    config_parser.read(path)
 
-            keys = [key.upper() for key in keys]
-            all_keys = kv_manager.get_keys(namespace)
-            missing_keys = list(set(all_keys) ^ set(keys))
-            for key in missing_keys:
-                kv_manager.delete(namespace, key)
+    jobs = maand.get_jobs(cursor)
+    for job in jobs:
+        namespace = f"vars/job/{job}"
 
-        agents = maand.get_agents(cursor, roles_filter=None)
-        for agent_ip in agents:
-            agent_removed_jobs = maand.get_agent_removed_jobs(cursor, agent_ip)
-            for job in agent_removed_jobs:
-                for namespace in [f"job/{job}", f"vars/job/{job}"]:
-                    deleted_keys = kv_manager.get_keys(namespace)
-                    for key in deleted_keys:
-                        kv_manager.delete(namespace, key)
+        job_kv = get_job_variables(job)
+        for key, value in job_kv.items():
+            kv_manager.put(namespace, key, str(value))
+
+        keys = job_kv.keys()
+        keys = [key.upper() for key in keys]
+        all_keys = kv_manager.get_keys(namespace)
+        missing_keys = list(set(all_keys) ^ set(keys))
+        for key in missing_keys:
+            kv_manager.delete(namespace, key)
+
+    agents = maand.get_agents(cursor, roles_filter=None)
+    for agent_ip in agents:
+        agent_removed_jobs = maand.get_agent_removed_jobs(cursor, agent_ip)
+        for job in agent_removed_jobs:
+            for namespace in [f"job/{job}", f"vars/job/{job}"]:
+                deleted_keys = kv_manager.get_keys(namespace)
+                for key in deleted_keys:
+                    kv_manager.delete(namespace, key)
 
 
 def build():
     with maand.get_db() as db:
-        cursor = db.cursor()
-        job_data.setup_job_database(cursor)
-        build_jobs(cursor)
-        db.commit()
-    db.execute("vacuum")
+        try:
+            cursor = db.cursor()
+            job_data.setup_job_database(cursor)
+            build_jobs(cursor)
+            build_maand_jobs_conf(cursor)
+            db.commit()
+        except Exception as e:
+            logger.fatal(e)
+            db.rollback()
 
 
 if __name__ == '__main__':

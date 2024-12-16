@@ -1,3 +1,4 @@
+import resource
 import glob
 import json
 import os
@@ -21,14 +22,16 @@ def get_jobs():
 def get_job_manifest(job_name):
     manifest_path = os.path.join(f"{const.WORKSPACE_PATH}/jobs", job_name, "manifest.json")
     with open(manifest_path, "r") as f:
-        metadata = json.loads(f.read())
-        if "roles" not in metadata:
-            metadata["roles"] = []
-        if "certs" not in metadata:
-            metadata["certs"] = []
-        if "commands" not in metadata:
-            metadata["commands"] = {}
-        return metadata
+        manifest = json.loads(f.read())
+        if "roles" not in manifest:
+            manifest["roles"] = []
+        if "certs" not in manifest:
+            manifest["certs"] = []
+        if "commands" not in manifest:
+            manifest["commands"] = {}
+        if "resources" not in manifest:
+            manifest["resources"] = {}
+        return manifest
 
 
 def get_job_files(job_name):

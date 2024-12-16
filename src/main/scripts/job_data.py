@@ -2,7 +2,7 @@ import os
 
 
 def setup_job_database(cursor):
-    cursor.execute("CREATE TABLE IF NOT EXISTS job_db.job (job_id TEXT PRIMARY KEY, name TEXT, certs_md5_hash TEXT, deployment_seq INT)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS job_db.job (job_id TEXT PRIMARY KEY, name TEXT, min_memory_mb TEXT, max_memory_mb TEXT, min_cpu TEXT, max_cpu TEXT, ports TEXT, certs_md5_hash TEXT, deployment_seq INT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS job_db.job_roles (job_id TEXT, role TEXT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS job_db.job_certs (job_id TEXT, name TEXT, pkcs8 INT, subject TEXT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS job_db.job_files (job_id TEXT, path TEXT, content BLOB, isdir BOOL)")
@@ -29,6 +29,7 @@ def get_max_deployment_seq(cursor):
     row = cursor.fetchone()
     return row[0]
 
+
 def get_job_certs_config(cursor, job):
     cursor.execute("SELECT jc.name, jc.pkcs8, jc.subject FROM job_db.job_certs jc JOIN job j ON j.job_id = jc.job_id WHERE j.name = ?", (job,))
     rows = cursor.fetchall()
@@ -48,6 +49,13 @@ def get_job_commands(cursor, job, event):
     for command_name, in rows:
         commands.append(command_name)
     return commands
+
+
+def get_job_resource_limits(cursor, job):
+    cursor.execute("SELECT min_memory_mb, max_memory_mb, min_cpu, max_cpu, ports FROM job_db.job WHERE name = ?", (job,))
+    min_memory_mb, max_memory_mb, min_cpu, max_cpu, ports = cursor.fetchone()
+    min_memory_mb, max_memory_mb, min_cpu, max_cpu, ports = (float(min_memory_mb), float(max_memory_mb), float(min_cpu), float(max_cpu), ports.split(","),)
+    return (min_memory_mb, max_memory_mb, min_cpu, max_cpu, ports, )
 
 
 def copy_job(cursor, name, agent_dir):

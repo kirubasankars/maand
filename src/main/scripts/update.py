@@ -152,7 +152,9 @@ def sync(agent_ip):
                 value = values.get(key)
                 f.write("{}={}\n".format(key, value))
 
-        command_helper.command_local(f"rsync -r /scripts/agent/bin {agent_dir}/")
+        command_helper.command_local(f"mkdir -p {agent_dir}/bin")
+        command_helper.command_local(f"rsync -r /scripts/agent/bin/ {agent_dir}/bin/")
+        command_helper.command_local(f"rsync -r /bucket/bin/ {agent_dir}/bin/")
 
         agent_jobs = maand.get_agent_jobs(cursor, agent_ip)
         with open(f"{agent_dir}/jobs.json", "w") as f:

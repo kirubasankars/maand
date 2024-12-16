@@ -77,7 +77,6 @@ def build_variables(cursor):
 def build():
     build_env(f"{const.WORKSPACE_PATH}/secrets.env")
     build_env(f"{const.WORKSPACE_PATH}/variables.env")
-    build_env(f"{const.WORKSPACE_PATH}/ports.env")
 
     with maand.get_db() as db:
         cursor = db.cursor()

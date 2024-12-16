@@ -13,7 +13,7 @@ def get_db():
 
 def setup_maand_database(cursor):
     cursor.execute("CREATE TABLE IF NOT EXISTS bucket (bucket_id TEXT, update_seq INT)")
-    cursor.execute("CREATE TABLE IF NOT EXISTS agent (agent_id TEXT, agent_ip TEXT, detained INT, position INT)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS agent (agent_id TEXT, agent_ip TEXT, available_memory_mb TEXT, available_cpu TEXT, detained INT, position INT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS agent_roles (agent_id TEXT, role TEXT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS agent_tags (agent_id TEXT, key TEXT, value INT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS agent_jobs (agent_id TEXT, job TEXT, disabled INT, removed INT)")

@@ -1,3 +1,4 @@
+import re
 import argparse
 import configparser
 import subprocess
@@ -42,6 +43,26 @@ def split_list(input_list, chunk_size=3):
     return [
         input_list[i : i + chunk_size] for i in range(0, len(input_list), chunk_size)
     ]
+
+
+def extract_size_in_mb(size_string):
+    # If input is an integer, directly return it as MB
+    if isinstance(size_string, int):
+        return float(size_string)
+    unit_to_mb = {
+        "MB": 1,
+        "GB": 1024,
+        "TB": 1024 ** 2,
+    }
+    match = re.match(r"([\d.]+)\s*([a-zA-Z]+)", size_string)
+    if not match:
+        raise ValueError(f"Invalid size string: {size_string}")
+    size = float(match.group(1))
+    unit = match.group(2).upper()
+    if unit not in unit_to_mb:
+        raise ValueError(f"Unit smaller than MB or invalid: {unit}")
+    size_in_mb = size * unit_to_mb[unit]
+    return size_in_mb
 
 
 def stop_the_world():

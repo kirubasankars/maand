@@ -1,16 +1,20 @@
 import uuid
 
 import maand
+import kv_manager
+import utils
 import workspace
 
+logger = utils.get_logger()
 
 def build_agents(cursor):
     agents = workspace.get_agents()
     for index, agent in enumerate(agents):
-        agent_ip = agent["host"]
-        position = index + 1
+        agent_ip = agent.get("host")
+        available_memory = float(utils.extract_size_in_mb(agent.get("memory", 0)))
+        available_cpu = float(agent.get("cpu", 0))
 
-        cursor.execute("SELECT * FROM agent WHERE agent_ip = ?", (agent_ip,))
+        cursor.execute("SELECT agent_id FROM agent WHERE agent_ip = ?", (agent_ip,))
         row = cursor.fetchone()
 
         if row:
@@ -19,10 +23,9 @@ def build_agents(cursor):
             agent_id = str(uuid.uuid4())
 
         if row:
-            cursor.execute("UPDATE agent SET position = ?, detained = 0 WHERE agent_id = ?", (position, agent_id,))
+            cursor.execute("UPDATE agent SET available_memory_mb = ?, available_cpu = ?, position = ?, detained = 0 WHERE agent_id = ?", (available_memory, available_cpu, index, agent_id, ))
         else:
-            cursor.execute("INSERT INTO agent (agent_id, agent_ip, detained, position) VALUES (?, ?, 0, ?)", (agent_id, agent_ip, position,))
-
+            cursor.execute("INSERT INTO agent (agent_id, agent_ip, available_memory_mb, available_cpu, detained, position) VALUES (?, ?, ?, ?, 0, ?)", (agent_id, agent_ip, available_memory, available_cpu, index,))
 
         cursor.execute("DELETE FROM agent_roles WHERE agent_id = ?", (agent_id,))
         roles = agent.get("roles", [])
@@ -88,12 +91,72 @@ def build_allocated_jobs(cursor):
         cursor.execute("UPDATE agent_jobs SET disabled = 1 WHERE agent_id IN (SELECT agent_id FROM agent WHERE agent_ip = ? AND detained = 1)",(agent_ip,))
 
 
+def validate_resource_limit(cursor):
+    cursor.execute("SELECT agent_ip, CAST(available_memory_mb AS FLOAT) AS available_memory_mb, CAST(available_cpu AS FLOAT) AS available_cpu FROM agent")
+    agents = cursor.fetchall()
+
+    for agent_ip, available_memory_mb, available_cpu  in agents:
+        jobs = maand.get_agent_jobs(cursor, agent_ip).keys()
+
+        total_allocated_memory = 0
+        total_allocated_cpu = 0
+        for job in jobs:
+            min_memory_mb, max_memory_mb, min_cpu, max_cpu, ports = maand.get_job_resource_limits(cursor, job)
+
+            namespace = f"vars/job/{job}"
+            job_cpu = float(kv_manager.get(namespace, "CPU") or "0") or max_cpu
+            job_memory = float(kv_manager.get(namespace, "MEMORY") or "0") or max_memory_mb
+
+            if min_memory_mb > 0 and job_memory <= min_memory_mb:
+                raise Exception(
+                    f"Memory allocation for job {job} is invalid. "
+                    f"Minimum allowed: {min_memory_mb} MB, Allocated: {job_memory} MB."
+                )
+
+            if max_memory_mb > 0 and job_memory > max_memory_mb:
+                raise Exception(
+                    f"Memory allocation for job {job} is invalid. "
+                    f"Maximum allowed: {max_memory_mb} MB, Allocated: {job_memory} MB."
+                )
+
+            if min_cpu > 0 and job_cpu <= min_cpu:
+                raise Exception(
+                    f"CPU allocation for job {job} is invalid. "
+                    f"Minimum allowed: {min_cpu}, Allocated: {job_cpu}."
+                )
+
+            if max_cpu > 0 and job_cpu > max_cpu:
+                raise Exception(
+                    f"CPU allocation for job {job} is invalid. "
+                    f"Maximum allowed: {max_cpu}, Allocated: {job_cpu}."
+                )
+
+            total_allocated_memory += job_memory
+            total_allocated_cpu += job_cpu
+
+            if total_allocated_memory > available_memory_mb:
+                raise Exception(
+                    f"Agent {agent_ip} has insufficient memory. "
+                    f"Available: {available_memory_mb} MB, Required: {total_allocated_memory} MB."
+                )
+            if total_allocated_cpu > available_cpu:
+                raise Exception(
+                    f"Agent {agent_ip} has insufficient CPU. "
+                    f"Available: {available_cpu}, Required: {total_allocated_cpu}."
+                )
+
+
 def build():
     with maand.get_db() as db:
-        cursor = db.cursor()
-        build_agents(cursor)
-        build_allocated_jobs(cursor)
-        db.commit()
+        try:
+            cursor = db.cursor()
+            build_agents(cursor)
+            build_allocated_jobs(cursor)
+            validate_resource_limit(cursor)
+            db.commit()
+        except Exception as e:
+            logger.fatal(e)
+            db.rollback()
 
 
 if __name__ == "__main__":
