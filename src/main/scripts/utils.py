@@ -46,23 +46,57 @@ def split_list(input_list, chunk_size=3):
 
 
 def extract_size_in_mb(size_string):
-    # If input is an integer, directly return it as MB
-    if isinstance(size_string, int):
-        return float(size_string)
     unit_to_mb = {
         "MB": 1,
         "GB": 1024,
         "TB": 1024 ** 2,
     }
-    match = re.match(r"([\d.]+)\s*([a-zA-Z]+)", size_string)
+
+    if isinstance(size_string, (int, float)):
+        return float(size_string)
+    if isinstance(size_string, str) and size_string.strip().isdigit():
+        return float(size_string)
+
+    match = re.match(r"([\d.]+)\s*([a-zA-Z]*)", size_string)
     if not match:
-        raise ValueError(f"Invalid size string: {size_string}")
+        raise ValueError(f"Invalid size input: {size_string}")
+
     size = float(match.group(1))
-    unit = match.group(2).upper()
+    unit = match.group(2).upper() if match.group(2) else "MB"  # Default to MB if no unit is provided
+
     if unit not in unit_to_mb:
         raise ValueError(f"Unit smaller than MB or invalid: {unit}")
+
     size_in_mb = size * unit_to_mb[unit]
     return size_in_mb
+
+
+
+def extract_cpu_frequency_in_mhz(freq_string):
+    unit_to_mhz = {
+        "MHZ": 1,          # Megahertz
+        "GHZ": 10**3,      # Gigahertz to MHz
+        "THZ": 10**6,      # Terahertz to MHz
+    }
+
+    if isinstance(freq_string, (int, float)):
+        return float(freq_string)
+    if isinstance(freq_string, str) and freq_string.strip().isdigit():
+        return float(freq_string)
+
+    match = re.match(r"([\d.]+)\s*([a-zA-Z]+)", freq_string)
+    if not match:
+        raise ValueError(f"Invalid frequency string format: '{freq_string}'")
+
+    frequency = float(match.group(1))
+    unit = match.group(2).upper()
+
+    if unit not in unit_to_mhz:
+        raise ValueError(f"Unsupported or invalid unit: '{unit}' (unit must be MHz or larger)")
+
+    frequency_in_mhz = frequency * unit_to_mhz[unit]
+    return frequency_in_mhz
+
 
 
 def stop_the_world():

@@ -36,10 +36,10 @@ def build_jobs(cursor):
         commands = manifest.get("commands")
 
         job_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(job)))
-        min_memory_limit = float(utils.extract_size_in_mb(manifest.get("resources", {}).get("memory", {}).get("min", 0)))
-        max_memory_limit = float(utils.extract_size_in_mb(manifest.get("resources", {}).get("memory", {}).get("max", 0)))
-        min_cpu_limit = float(manifest.get("resources", {}).get("cpu", {}).get("min", 0))
-        max_cpu_limit = float(manifest.get("resources", {}).get("cpu", {}).get("max", 0))
+        min_memory_limit = float(utils.extract_size_in_mb(manifest.get("resources", {}).get("memory", {}).get("min", "0 MB")))
+        max_memory_limit = float(utils.extract_size_in_mb(manifest.get("resources", {}).get("memory", {}).get("max", "0 MB")))
+        min_cpu_limit = float(utils.extract_cpu_frequency_in_mhz(manifest.get("resources", {}).get("cpu", {}).get("min", "0 MHZ")))
+        max_cpu_limit = float(utils.extract_cpu_frequency_in_mhz(manifest.get("resources", {}).get("cpu", {}).get("max", "0 MHZ")))
         ports = ",".join(set(manifest.get("resources", {}).get("ports", [])))
         certs_hash = hashlib.md5(json.dumps(certs).encode()).hexdigest()
 
@@ -123,8 +123,8 @@ def get_job_variables(job):
             value =  config_parser.get(name, key)
             job_kv[key] = value
 
-    job_kv["MEMORY"] = float(utils.extract_size_in_mb(job_kv.get("MEMORY", 0)))
-    job_kv["CPU"] = float(job_kv.get("CPU", 0))
+    job_kv["MEMORY"] = float(utils.extract_size_in_mb(job_kv.get("MEMORY", "0 MB")))
+    job_kv["CPU"] = float(utils.extract_cpu_frequency_in_mhz(job_kv.get("CPU", "0 MHZ")))
 
     return job_kv
 

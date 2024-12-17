@@ -42,8 +42,9 @@ case "$OPERATION" in
     run_python_script "cat.py" info
     ;;
   "build")
-    run_python_script "build_jobs.py"
     run_python_script "build_agents.py"
+    run_python_script "build_jobs.py"
+    run_python_script "build_allocations.py"
     run_python_script "build_variables.py"
     run_python_script "build_certs.py"
     ;;
