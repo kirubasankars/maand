@@ -37,30 +37,32 @@ def build_variables(cursor):
             agents = maand.get_agents(cursor, [role])
             values[key_nodes] = ",".join(agents)
 
-            other_agents = copy.deepcopy(agents)
-            if agent_ip in other_agents:
-                other_agents.remove(agent_ip)
-
             key = f"{role}_length".upper()
             values[key] = str(len(agents))
 
+            for idx, host in enumerate(agents):
+                key = f"{role}_{idx}".upper()
+                values[key] = host
+
             if role not in agent_roles:
                 continue
+
+            other_agents = copy.deepcopy(agents)
+            if agent_ip in other_agents:
+                other_agents.remove(agent_ip)
 
             key_peers = f"{role}_peers".upper()
             if other_agents:
                 values[key_peers] = ",".join(other_agents)
 
             for idx, host in enumerate(agents):
-                key = f"{role}_{idx}".upper()
-                values[key] = host
-
                 if host == agent_ip:
                     key = f"{role}_allocation_index".upper()
                     values[key] = str(idx)
 
             key = f"{role}_role_id".upper()
             values[key] = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(role)))
+
 
         values["ROLES"] = ",".join(sorted(agent_roles))
 
@@ -75,7 +77,6 @@ def build_variables(cursor):
 
 
 def build():
-    build_env(f"{const.WORKSPACE_PATH}/secrets.env")
     build_env(f"{const.WORKSPACE_PATH}/variables.env")
 
     with maand.get_db() as db:

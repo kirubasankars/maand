@@ -84,7 +84,7 @@ def process_templates(values, jobs):
     agent_ip = values["AGENT_IP"]
     agent_dir = context_manager.get_agent_dir(agent_ip)
     logger.debug("Processing templates...")
-    for ext in ["*.json", "*.service", "*.conf", "*.yml", "*.yaml", "*.env", "*.txt"]:
+    for ext in ["*.json", "*.service", "*.conf", "*.yml", "*.yaml", "*.env", "*.txt", "Makefile"]:
         for job in jobs:
             values = deepcopy(values)
 
@@ -141,20 +141,8 @@ def sync(agent_ip):
         with open(f"{agent_dir}/roles.txt", "w") as f:
             f.writelines("\n".join(agent_roles))
 
-        values = {}
-        maand_vars = kv_manager.get_keys(f"vars/{agent_ip}")
-        for key in maand_vars:
-            values[key] = kv_manager.get(f"vars/{agent_ip}", key)
-        values["AGENT_IP"] = agent_ip
-        with open(f"{agent_dir}/context.env", "w") as f:
-            keys = sorted(values.keys())
-            for key in keys:
-                value = values.get(key)
-                f.write("{}={}\n".format(key, value))
-
         command_helper.command_local(f"mkdir -p {agent_dir}/bin")
         command_helper.command_local(f"rsync -r /scripts/agent/bin/ {agent_dir}/bin/")
-        command_helper.command_local(f"rsync -r /bucket/bin/ {agent_dir}/bin/")
 
         agent_jobs = maand.get_agent_jobs(cursor, agent_ip)
         with open(f"{agent_dir}/jobs.json", "w") as f:

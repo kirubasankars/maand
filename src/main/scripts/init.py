@@ -23,7 +23,7 @@ except Exception as e:
     print(f"ERROR: {e}", flush=True)
     sys.exit(1)
 
-command_helper.command_local(f"touch {const.WORKSPACE_PATH}/{{variables.env,secrets.env,command.sh,agents.json}}")
+command_helper.command_local(f"touch {const.WORKSPACE_PATH}/{{variables.env,command.sh,agents.json}}")
 
 with open(f"{const.WORKSPACE_PATH}/agents.json", "r") as f:
     data = f.read().strip()
@@ -57,4 +57,3 @@ db.commit()
 
 command_helper.command_local("chmod -R 755 /bucket")
 command_helper.command_local("chmod -R 600 /bucket/secrets/*")
-
