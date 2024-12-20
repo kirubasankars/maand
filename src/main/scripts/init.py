@@ -32,17 +32,17 @@ def build_maand_conf():
 
 def init():
     try:
-        if os.path.exists(const.MAAND_DB_PATH):
+        if os.path.isfile(const.MAAND_DB_PATH):
             raise Exception("bucket is already initialized")
 
         with maand.get_db() as db:
             command_helper.command_local(f"mkdir -p {const.BUCKET_PATH}/{{workspace,secrets,logs,data}}")
-            command_helper.command_local(f"touch {const.WORKSPACE_PATH}/{{variables.env,command.sh,agents.json}}")
+            command_helper.command_local(f"touch {const.WORKSPACE_PATH}/{{agents.json}}")
 
             cursor = db.cursor()
             maand.setup_maand_database(cursor)
             maand.setup_job_database(cursor)
-            kv_manager.setup(cursor)
+            kv_manager.setup_kv_database(cursor)
 
             with open(f"{const.WORKSPACE_PATH}/agents.json", "r") as f:
                 data = f.read().strip()
@@ -52,10 +52,9 @@ def init():
             build_maand_conf()
 
             if not os.path.isfile(f'{const.BUCKET_PATH}/secrets/ca.key'):
-                ca_ttl = 3650
                 cert_provider.generate_ca_private()
                 bucket_id = maand.get_bucket_id(cursor)
-                cert_provider.generate_ca_public(bucket_id, ca_ttl)
+                cert_provider.generate_ca_public(bucket_id, 3650)
 
             command_helper.command_local("chmod -R 755 /bucket")
             command_helper.command_local("chmod -R 600 /bucket/secrets/*")

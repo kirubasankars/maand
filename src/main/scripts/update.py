@@ -27,6 +27,7 @@ def get_args():
 
     return args
 
+
 def write_cert(cursor, location, namespace, kv_path):
     content = kv_manager.get(cursor, namespace, kv_path)
     if content:

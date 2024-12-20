@@ -4,7 +4,7 @@ import sqlite3
 from datetime import datetime
 
 
-def setup(cursor):
+def setup_kv_database(cursor):
     cursor.execute('CREATE TABLE IF NOT EXISTS kv_db.key_value (key, value, namespace, version, ttl, created_date, deleted)')
 
 def put(cursor, namespace, key, value, ttl=-1):
