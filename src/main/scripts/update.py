@@ -85,7 +85,7 @@ def process_templates(cursor, values, jobs):
     agent_ip = values["AGENT_IP"]
     agent_dir = context_manager.get_agent_dir(agent_ip)
     logger.debug("Processing templates...")
-    for ext in ["*.json", "*.service", "*.conf", "*.yml", "*.yaml", "*.env", "*.txt", "Makefile"]:
+    for ext in ["*.json", "*.service", "*.conf", "*.yml", "*.yaml", "*.env", "*.txt"]:
         for job in jobs:
             values = deepcopy(values)
 

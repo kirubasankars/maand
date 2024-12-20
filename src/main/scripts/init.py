@@ -35,10 +35,10 @@ def init():
         if os.path.isfile(const.MAAND_DB_PATH):
             raise Exception("bucket is already initialized")
 
-        with maand.get_db() as db:
-            command_helper.command_local(f"mkdir -p {const.BUCKET_PATH}/{{workspace,secrets,logs,data}}")
-            command_helper.command_local(f"touch {const.WORKSPACE_PATH}/{{agents.json}}")
+        command_helper.command_local(f"mkdir -p {const.BUCKET_PATH}/{{workspace,secrets,logs,data}}")
+        command_helper.command_local(f"touch {const.WORKSPACE_PATH}/agents.json")
 
+        with maand.get_db() as db:
             cursor = db.cursor()
             maand.setup_maand_database(cursor)
             maand.setup_job_database(cursor)

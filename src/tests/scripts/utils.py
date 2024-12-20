@@ -21,9 +21,9 @@ def command(cmd, env=None, stdout=None, stderr=None):
 
 def clean():
     command("rm -rf /bucket/*")
-    command("mkdir -p /bucket/workspace")
+    command("mkdir -p /bucket/{secrets,data,workspace}")
     shutil.copy("/tests/fixtures/agents.json", "/bucket/workspace/agents.json")
-    shutil.copy("/tests/fixtures/homelab.key", "/bucket/homelab.key")
+    shutil.copy("/tests/fixtures/homelab.key", "/bucket/secrets/homelab.key")
     shutil.copy("/tests/fixtures/maand.conf", "/bucket/maand.conf")
 
     scan_agent()
@@ -31,15 +31,15 @@ def clean():
     agents_ip = workspace.get_agents_ip()
     for agent in agents_ip:
         command("mkdir -p /bucket/tmp")
-        command(f"ssh -i /bucket/homelab.key agent@{agent} 'sudo rm -rf /opt/agent'")
-        command(f"ssh -i /bucket/homelab.key agent@{agent} 'sudo mkdir -p /opt/agent'")
+        command(f"ssh -i /bucket/secrets/homelab.key agent@{agent} 'sudo rm -rf /opt/agent'")
+        command(f"ssh -i /bucket/secrets/homelab.key agent@{agent} 'sudo mkdir -p /opt/agent'")
 
 
 def sync():
     agents_ip = workspace.get_agents_ip()
     for agent in agents_ip:
         command("mkdir -p /bucket/tmp")
-        command(f'rsync -vr --delete --rsync-path="sudo rsync" --rsh="ssh -i /bucket/homelab.key" agent@{agent}:/opt/agent/ /bucket/tmp/{agent};', stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        command(f'rsync -vr --delete --rsync-path="sudo rsync" --rsh="ssh -i /bucket/secrets/homelab.key" agent@{agent}:/opt/agent/ /bucket/tmp/{agent};')
 
 
 def read_file_content(file_path):
