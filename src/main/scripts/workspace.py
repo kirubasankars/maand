@@ -1,4 +1,3 @@
-import resource
 import glob
 import json
 import os

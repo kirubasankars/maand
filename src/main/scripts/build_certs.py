@@ -50,9 +50,9 @@ def build_agent_certs(cursor):
             subject_alt_name = f"DNS.1:localhost,IP.1:127.0.0.1,IP.2:{agent_ip}"
             cert_provider.generate_site_public("agent", subject_alt_name, 60, agent_cert_location)
 
-            put_cert(cursor, f"{agent_cert_path}.key", namespace, f"certs/agent.key")
-            put_cert(cursor, f"{agent_cert_path}.crt", namespace, f"certs/agent.crt")
-            put_cert(cursor, f"{agent_cert_path}.pem", namespace, f"certs/agent.pem")
+            put_cert(cursor, f"{agent_cert_path}.key", namespace, "certs/agent.key")
+            put_cert(cursor, f"{agent_cert_path}.crt", namespace, "certs/agent.crt")
+            put_cert(cursor, f"{agent_cert_path}.pem", namespace, "certs/agent.pem")
 
 
 def build_job_certs(cursor):
@@ -82,9 +82,9 @@ def build_job_certs(cursor):
                 name = cert.get("name")
                 job_cert_path = f"{job_cert_location}/{name}"
 
-                get_cert_if_available(f"{job_cert_path}.key", namespace, f"{job_cert_kv_location}/{name}.key")
-                get_cert_if_available(f"{job_cert_path}.crt", namespace, f"{job_cert_kv_location}/{name}.crt")
-                get_cert_if_available(f"{job_cert_path}.pem", namespace, f"{job_cert_kv_location}/{name}.pem")
+                get_cert_if_available(cursor, f"{job_cert_path}.key", namespace, f"{job_cert_kv_location}/{name}.key")
+                get_cert_if_available(cursor, f"{job_cert_path}.crt", namespace, f"{job_cert_kv_location}/{name}.crt")
+                get_cert_if_available(cursor, f"{job_cert_path}.pem", namespace, f"{job_cert_kv_location}/{name}.pem")
 
                 found = (os.path.isfile(f"{job_cert_path}.key") and os.path.isfile(f"{job_cert_path}.crt"))
                 if cert.get("pkcs8", False):
@@ -102,11 +102,11 @@ def build_job_certs(cursor):
                     cert_provider.generate_site_public(name, subject_alt_name, ttl, job_cert_location)
                     command_helper.command_local(f"rm -f {job_cert_path}.csr")
 
-                    put_cert(f"{job_cert_path}.key", namespace, f"{job_cert_kv_location}/{name}.key")
-                    put_cert(f"{job_cert_path}.crt", namespace, f"{job_cert_kv_location}/{name}.crt")
+                    put_cert(cursor, f"{job_cert_path}.key", namespace, f"{job_cert_kv_location}/{name}.key")
+                    put_cert(cursor, f"{job_cert_path}.crt", namespace, f"{job_cert_kv_location}/{name}.crt")
 
                     if cert.get("pkcs8", False):
-                        put_cert(f"{job_cert_path}.pem", namespace, f"{job_cert_kv_location}/{name}.pem")
+                        put_cert(cursor, f"{job_cert_path}.pem", namespace, f"{job_cert_kv_location}/{name}.pem")
 
 
 def build(cursor):

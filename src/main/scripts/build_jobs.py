@@ -82,11 +82,9 @@ def build_jobs(cursor):
             cursor.execute("INSERT INTO job_db.job_files (job_id, path, content, isdir) VALUES (?, ?, ?, ?)",
                            (job_id, file, content, isdir))
 
-        kv_namespace = f"vars/job/{job}"
         for name, port in ports.items():
             name = name.upper()
             cursor.execute("INSERT INTO job_db.job_ports (job_id, name, port) VALUES (?, ?, ?)", (job_id, name, port,))
-            kv_manager.put(cursor, kv_namespace, f"PORT_{name}", str(port))
 
     sql = '''
             WITH RECURSIVE job_command_seq AS (
@@ -172,7 +170,16 @@ def build_maand_jobs_conf(cursor):
                     kv_manager.delete(cursor, namespace, key)
 
 
+def build_ports(cursor):
+    cursor.execute("SELECT (SELECT name FROM job_db.job WHERE job_id = jp.job_id) AS job, name, port FROM job_db.job_ports jp")
+    rows = cursor.fetchall()
+    for job, name, port in rows:
+        kv_namespace = f"vars/job/{job}"
+        kv_manager.put(cursor, kv_namespace, f"PORT_{name}", str(port))
+
+
 def build(cursor):
     job_data.setup_job_database(cursor)
     build_jobs(cursor)
-    #build_maand_jobs_conf(cursor)
+    build_maand_jobs_conf(cursor)
+    build_ports(cursor)
