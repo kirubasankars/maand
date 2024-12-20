@@ -4,6 +4,7 @@ import os
 import cert_provider
 import command_helper
 import const
+import utils
 import context_manager
 import kv_manager
 import maand
@@ -59,6 +60,7 @@ def build_job_certs(cursor):
     bucket_id = maand.get_bucket_id(cursor)
     agents = maand.get_agents(cursor, roles_filter=None)
     jobs = maand.get_jobs(cursor)
+    config_parser = utils.get_maand_conf()
 
     for agent_ip in agents:
         for job in jobs:
@@ -91,7 +93,7 @@ def build_job_certs(cursor):
                     found = found and os.path.isfile(f"{job_cert_path}.pem")
 
                 if update_certs or not found or cert_provider.is_certificate_expiring_soon(f"{job_cert_path}.crt"):
-                    ttl = cert.get("ttl", 60)
+                    ttl = config_parser.get("default", "certs_ttl") or 60
                     cert_provider.generate_site_private(name, job_cert_location)
                     if cert.get("pkcs8", 0) == 1:
                         cert_provider.generate_private_pem_pkcs_8(name, job_cert_location)

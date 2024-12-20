@@ -22,7 +22,7 @@ def setup_maand_database(cursor):
     if cursor.fetchone() is None:
         cursor.execute("INSERT INTO bucket (bucket_id, update_seq) VALUES (?, ?)", (str(uuid.uuid4()), 0))
     else:
-        raise Exception("cluster is already initialized")
+        raise Exception("bucket is already initialized")
 
 
 def get_bucket_id(cursor):
