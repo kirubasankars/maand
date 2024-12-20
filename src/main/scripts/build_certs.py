@@ -9,18 +9,18 @@ import kv_manager
 import maand
 
 
-def get_cert_if_available(file_path, namespace, key):
-    content = kv_manager.get(namespace, key)
+def get_cert_if_available(cursor, file_path, namespace, key):
+    content = kv_manager.get(cursor, namespace, key)
     if content:
         content = base64.b64decode(content)
         with open(file_path, "wb") as f:
              f.write(content)
 
 
-def put_cert(file_path, namespace, key):
+def put_cert(cursor, file_path, namespace, key):
     with open(file_path, "rb") as f:
         content = base64.b64encode(f.read()).decode('utf-8')
-        kv_manager.put(namespace, key, content)
+        kv_manager.put(cursor, namespace, key, content)
 
 
 def build_agent_certs(cursor):
@@ -36,9 +36,9 @@ def build_agent_certs(cursor):
         namespace = f"certs/{agent_ip}"
         agent_cert_path = f"{agent_cert_location}/agent"
 
-        get_cert_if_available(f"{agent_cert_path}.key", namespace, "certs/agent.key")
-        get_cert_if_available(f"{agent_cert_path}.crt", namespace, "certs/agent.crt")
-        get_cert_if_available(f"{agent_cert_path}.pem", namespace, "certs/agent.pem")
+        get_cert_if_available(cursor, f"{agent_cert_path}.key", namespace, "certs/agent.key")
+        get_cert_if_available(cursor, f"{agent_cert_path}.crt", namespace, "certs/agent.crt")
+        get_cert_if_available(cursor, f"{agent_cert_path}.pem", namespace, "certs/agent.pem")
 
         found = (os.path.isfile(f"{agent_cert_path}.key") and os.path.isfile(f"{agent_cert_path}.crt")
                  and os.path.isfile(f"{agent_cert_path}.pem"))
@@ -50,9 +50,9 @@ def build_agent_certs(cursor):
             subject_alt_name = f"DNS.1:localhost,IP.1:127.0.0.1,IP.2:{agent_ip}"
             cert_provider.generate_site_public("agent", subject_alt_name, 60, agent_cert_location)
 
-            put_cert(f"{agent_cert_path}.key", namespace, f"certs/agent.key")
-            put_cert(f"{agent_cert_path}.crt", namespace, f"certs/agent.crt")
-            put_cert(f"{agent_cert_path}.pem", namespace, f"certs/agent.pem")
+            put_cert(cursor, f"{agent_cert_path}.key", namespace, f"certs/agent.key")
+            put_cert(cursor, f"{agent_cert_path}.crt", namespace, f"certs/agent.crt")
+            put_cert(cursor, f"{agent_cert_path}.pem", namespace, f"certs/agent.pem")
 
 
 def build_job_certs(cursor):
@@ -71,10 +71,10 @@ def build_job_certs(cursor):
 
             update_certs = False
             if job_certs:
-                current_hash = kv_manager.get(namespace, f"{job_cert_kv_location}/md5.hash")
+                current_hash = kv_manager.get(cursor, namespace, f"{job_cert_kv_location}/md5.hash")
                 new_hash = maand.get_job_md5_hash(cursor, job)
                 if current_hash != new_hash:
-                    kv_manager.put(namespace, f"{job_cert_kv_location}/md5.hash", new_hash)
+                    kv_manager.put(cursor, namespace, f"{job_cert_kv_location}/md5.hash", new_hash)
                     update_certs = True
 
             for cert in job_certs:
@@ -109,14 +109,7 @@ def build_job_certs(cursor):
                         put_cert(f"{job_cert_path}.pem", namespace, f"{job_cert_kv_location}/{name}.pem")
 
 
-def build():
-    with maand.get_db() as db:
-        cursor = db.cursor()
-        build_agent_certs(cursor)
-        build_job_certs(cursor)
-        db.commit()
+def build(cursor):
+    build_agent_certs(cursor)
+    build_job_certs(cursor)
     command_helper.command_local(f"rm -f {const.SECRETS_PATH}/ca.srl")
-
-
-if __name__ == "__main__":
-    build()

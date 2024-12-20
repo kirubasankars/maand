@@ -2,8 +2,9 @@ import os
 
 
 def setup_job_database(cursor):
-    cursor.execute("CREATE TABLE IF NOT EXISTS job_db.job (job_id TEXT PRIMARY KEY, name TEXT, min_memory_mb TEXT, max_memory_mb TEXT, min_cpu TEXT, max_cpu TEXT, ports TEXT, certs_md5_hash TEXT, deployment_seq INT)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS job_db.job (job_id TEXT PRIMARY KEY, name TEXT, version TEXT, min_memory_mb TEXT, max_memory_mb TEXT, min_cpu TEXT, max_cpu TEXT, ports TEXT, certs_md5_hash TEXT, deployment_seq INT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS job_db.job_roles (job_id TEXT, role TEXT)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS job_db.job_ports (job_id TEXT, name TEXT, port INT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS job_db.job_certs (job_id TEXT, name TEXT, pkcs8 INT, subject TEXT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS job_db.job_files (job_id TEXT, path TEXT, content BLOB, isdir BOOL)")
     cursor.execute("CREATE TABLE IF NOT EXISTS job_db.job_commands (job_id TEXT, job_name TEXT, name TEXT, executed_on TEXT, depend_on_job TEXT, depend_on_command TEXT, depend_on_config TEXT)")
@@ -52,10 +53,10 @@ def get_job_commands(cursor, job, event):
 
 
 def get_job_resource_limits(cursor, job):
-    cursor.execute("SELECT min_memory_mb, max_memory_mb, min_cpu, max_cpu, ports FROM job_db.job WHERE name = ?", (job,))
-    min_memory_mb, max_memory_mb, min_cpu, max_cpu, ports = cursor.fetchone()
-    min_memory_mb, max_memory_mb, min_cpu, max_cpu, ports = (float(min_memory_mb), float(max_memory_mb), float(min_cpu), float(max_cpu), ports.split(","),)
-    return (min_memory_mb, max_memory_mb, min_cpu, max_cpu, ports, )
+    cursor.execute("SELECT min_memory_mb, max_memory_mb, min_cpu, max_cpu FROM job_db.job WHERE name = ?", (job,))
+    min_memory_mb, max_memory_mb, min_cpu, max_cpu = cursor.fetchone()
+    min_memory_mb, max_memory_mb, min_cpu, max_cpu = (float(min_memory_mb), float(max_memory_mb), float(min_cpu), float(max_cpu),)
+    return (min_memory_mb, max_memory_mb, min_cpu, max_cpu, )
 
 
 def copy_job(cursor, name, agent_dir):

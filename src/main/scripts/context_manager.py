@@ -23,12 +23,12 @@ def get_agent_minimal_env(agent_ip):
     }
 
 
-def get_agent_env(agent_ip):
+def get_agent_env(cursor, agent_ip):
     env = get_agent_minimal_env(agent_ip)
     for ns in ["variables.env", "secrets.env", "ports.env", f"vars/{agent_ip}"]:
-        keys = kv_manager.get_keys(ns)
+        keys = kv_manager.get_keys(cursor, ns)
         for key in keys:
-            env[key] = kv_manager.get(ns, key)
+            env[key] = kv_manager.get(cursor, ns, key)
     return env
 
 

@@ -1,7 +1,6 @@
 import argparse
 import os
 import time
-from os import times
 
 import job_health_check
 import command_helper
@@ -43,6 +42,7 @@ def run_command(agent_ip):
         time.sleep(5)
         if args.health_check and not job_health_check.health_check(cursor, jobs, True, times=20, interval=5):
             utils.stop_the_world()
+
 
 if __name__ == "__main__":
     if not os.path.exists(f"{const.WORKSPACE_PATH}/command.sh"):

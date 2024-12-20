@@ -11,10 +11,9 @@ if [ -z "${1+x}" ]; then
   echo "  run_command                   Run a command on the agents"
   echo "  run_command_local             Run a command locally"
   echo "  job                           Run job control operations (start, stop and restart)"
-  echo "  run_job_command               Run job-related commands"
+  echo "  alloc_command                 Run job-related commands"
   echo "  cat                           Cat info from build action (agents, jobs, allocations, kv)"
-  echo "  run_command_with_health_check Run command with health check"
-  echo "  health_check                  Run health checks"
+  echo "  health_check                   Run health checks"
   echo "  gc                            Garbage collect"
   exit 1
 fi
@@ -36,17 +35,13 @@ function run_python_script {
 case "$OPERATION" in
   "init")
     run_python_script "init.py"
-    bash /scripts/start.sh build
+    #bash /scripts/start.sh build
     ;;
   "info")
     run_python_script "cat.py" info
     ;;
   "build")
-    run_python_script "build_agents.py"
-    run_python_script "build_jobs.py"
-    run_python_script "build_allocations.py"
-    run_python_script "build_variables.py"
-    run_python_script "build_certs.py"
+    run_python_script "build.py"
     ;;
   "update")
     run_python_script "update.py" "$@"

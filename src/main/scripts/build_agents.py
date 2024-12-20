@@ -1,8 +1,8 @@
 import uuid
 
-import maand
 import utils
 import workspace
+import kv_manager
 
 logger = utils.get_logger()
 
@@ -50,17 +50,21 @@ def build_agents(cursor):
     for agent_ip in missing_agents:
         cursor.execute("UPDATE agent SET detained = 1 WHERE agent_ip = ?", (agent_ip,))
 
+    cursor.execute("SELECT agent_ip FROM agent WHERE detained = 1")
+    rows = cursor.fetchall()
+    agents_ip = {row[0] for row in rows}
 
-def build():
-    with maand.get_db() as db:
-        try:
-            cursor = db.cursor()
-            build_agents(cursor)
-            db.commit()
-        except Exception as e:
-            logger.fatal(e)
-            db.rollback()
+    for agent_ip in agents_ip:
+        namespace = f"certs/{agent_ip}"
+        keys = kv_manager.get_keys(cursor, namespace)
+        for key in keys:
+            kv_manager.delete(cursor, namespace, key)
+
+        namespace = f"vars/{agent_ip}"
+        keys = kv_manager.get_keys(cursor, namespace)
+        for key in keys:
+            kv_manager.delete(cursor, namespace, key)
 
 
-if __name__ == "__main__":
-    build()
+def build(cursor):
+    build_agents(cursor)

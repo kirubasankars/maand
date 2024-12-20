@@ -11,8 +11,8 @@ import utils
 logger = utils.get_logger()
 
 
-def execute_alloc_command(job, command, agent_ip, env):
-    allocation_env = context_manager.get_agent_env(agent_ip)
+def execute_alloc_command(cursor, job, command, agent_ip, env):
+    allocation_env = context_manager.get_agent_env(cursor, agent_ip)
     allocation_env["JOB"] = job
     for k, v in env.items():
         allocation_env[k] = v
@@ -48,7 +48,6 @@ def prepare_command(cursor, job, command):
     maand.copy_job_modules(cursor, job)
 
     shutil.copy("/scripts/demands.py", f"/modules/{job}/_modules/demands.py")
-    shutil.copy("/scripts/kv_manager.py", f"/modules/{job}/_modules/kv_manager.py")
     cursor.execute("SELECT job_name, name, depend_on_config FROM job_db.job_commands WHERE depend_on_job = ? AND depend_on_command = ?", (job, command))
     rows = cursor.fetchall()
     demands = []
@@ -75,7 +74,7 @@ def main():
         result = True
         allocations = maand.get_allocations(cursor, job)
         for agent_ip in allocations:
-            result = result and execute_alloc_command(job, command, agent_ip, {})
+            result = result and execute_alloc_command(cursor, job, command, agent_ip, {})
 
         if not result:
             sys.exit(1)

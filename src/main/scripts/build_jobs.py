@@ -15,6 +15,7 @@ logger = utils.get_logger()
 
 
 def delete_job(cursor, job):
+    cursor.execute("DELETE FROM job_db.job_ports WHERE job_id = (SELECT job_id FROM job_db.job WHERE name = ?)", (job,))
     cursor.execute("DELETE FROM job_db.job_roles WHERE job_id = (SELECT job_id FROM job_db.job WHERE name = ?)", (job,))
     cursor.execute("DELETE FROM job_db.job_certs WHERE job_id = (SELECT job_id FROM job_db.job WHERE name = ?)", (job,))
     cursor.execute("DELETE FROM job_db.job_commands WHERE job_id = (SELECT job_id FROM job_db.job WHERE name = ?)", (job,))
@@ -33,6 +34,7 @@ def build_jobs(cursor):
 
         roles = manifest.get("roles")
         certs = manifest.get("certs")
+        version = manifest.get("version", "unknown")
         commands = manifest.get("commands")
 
         job_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(job)))
@@ -40,11 +42,11 @@ def build_jobs(cursor):
         max_memory_limit = float(utils.extract_size_in_mb(manifest.get("resources", {}).get("memory", {}).get("max", "0 MB")))
         min_cpu_limit = float(utils.extract_cpu_frequency_in_mhz(manifest.get("resources", {}).get("cpu", {}).get("min", "0 MHZ")))
         max_cpu_limit = float(utils.extract_cpu_frequency_in_mhz(manifest.get("resources", {}).get("cpu", {}).get("max", "0 MHZ")))
-        ports = ",".join(set(manifest.get("resources", {}).get("ports", [])))
+        ports = manifest.get("resources", {}).get("ports", {})
         certs_hash = hashlib.md5(json.dumps(certs).encode()).hexdigest()
 
-        cursor.execute("INSERT INTO job_db.job (job_id, name, min_memory_mb, max_memory_mb, min_cpu, max_cpu, ports, certs_md5_hash, deployment_seq) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)",
-                        (job_id, job, min_memory_limit, max_memory_limit, min_cpu_limit, max_cpu_limit, ports, certs_hash))
+        cursor.execute("INSERT INTO job_db.job (job_id, name, version, min_memory_mb, max_memory_mb, min_cpu, max_cpu, certs_md5_hash, deployment_seq) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)",
+                        (job_id, job, version, min_memory_limit, max_memory_limit, min_cpu_limit, max_cpu_limit, certs_hash))
 
         for role in roles:
             cursor.execute("INSERT INTO job_db.job_roles (job_id, role) VALUES (?, ?)", (job_id, role,))
@@ -57,7 +59,7 @@ def build_jobs(cursor):
                                (job_id, name, pkcs8, subject,))
 
         for command, command_obj in commands.items():
-            executed_on = command_obj.get("executed_on")
+            executed_on = command_obj.get("executed_on", ["direct"])
             depend_on = command_obj.get("depend_on", {})
             if executed_on:
                 depend_on_job = depend_on.get("job")
@@ -65,8 +67,9 @@ def build_jobs(cursor):
                     logger.error(f"{depend_on_job} job not found: command: {command}, depend on job: {depend_on_job}")
                 depend_on_command = depend_on.get("command")
                 depend_on_config = json.dumps(depend_on.get("config", {}))
-                cursor.execute("INSERT INTO job_db.job_commands (job_id, job_name, name, executed_on, depend_on_job, depend_on_command, depend_on_config) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                               (job_id, job, command, executed_on, depend_on_job, depend_on_command, depend_on_config))
+                for on in executed_on:
+                    cursor.execute("INSERT INTO job_db.job_commands (job_id, job_name, name, executed_on, depend_on_job, depend_on_command, depend_on_config) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                                  (job_id, job, command, on, depend_on_job, depend_on_command, depend_on_config))
             else:
                 logger.error(f"The commands must include an 'executed_on'. job: {job}, command: {command}")
 
@@ -78,6 +81,12 @@ def build_jobs(cursor):
                     content = f.read()
             cursor.execute("INSERT INTO job_db.job_files (job_id, path, content, isdir) VALUES (?, ?, ?, ?)",
                            (job_id, file, content, isdir))
+
+        kv_namespace = f"vars/job/{job}"
+        for name, port in ports.items():
+            name = name.upper()
+            cursor.execute("INSERT INTO job_db.job_ports (job_id, name, port) VALUES (?, ?, ?)", (job_id, name, port,))
+            kv_manager.put(cursor, kv_namespace, f"PORT_{name}", str(port))
 
     sql = '''
             WITH RECURSIVE job_command_seq AS (
@@ -97,7 +106,7 @@ def build_jobs(cursor):
             ORDER BY deployment_seq) t WHERE job.name = t.job_name;
         '''
 
-    cursor.executescript(sql)
+    cursor.execute(sql)
 
     cursor.execute("SELECT name FROM job_db.job")
     all_jobs = [row[0] for row in cursor.fetchall()]
@@ -140,41 +149,30 @@ def build_maand_jobs_conf(cursor):
 
     jobs = maand.get_jobs(cursor)
     for job in jobs:
-        namespace = f"vars/job/{job}"
+        kv_namespace = f"vars/job/{job}"
 
         job_kv = get_job_variables(job)
         for key, value in job_kv.items():
-            kv_manager.put(namespace, key, str(value))
+            kv_manager.put(cursor, kv_namespace, key, str(value))
 
         keys = job_kv.keys()
         keys = [key.upper() for key in keys]
-        all_keys = kv_manager.get_keys(namespace)
+        all_keys = kv_manager.get_keys(cursor, kv_namespace)
         missing_keys = list(set(all_keys) ^ set(keys))
         for key in missing_keys:
-            kv_manager.delete(namespace, key)
+            kv_manager.delete(cursor, kv_namespace, key)
 
     agents = maand.get_agents(cursor, roles_filter=None)
     for agent_ip in agents:
         agent_removed_jobs = maand.get_agent_removed_jobs(cursor, agent_ip)
         for job in agent_removed_jobs:
             for namespace in [f"job/{job}", f"vars/job/{job}"]:
-                deleted_keys = kv_manager.get_keys(namespace)
+                deleted_keys = kv_manager.get_keys(cursor, namespace)
                 for key in deleted_keys:
-                    kv_manager.delete(namespace, key)
+                    kv_manager.delete(cursor, namespace, key)
 
 
-def build():
-    with maand.get_db() as db:
-        try:
-            cursor = db.cursor()
-            job_data.setup_job_database(cursor)
-            build_jobs(cursor)
-            build_maand_jobs_conf(cursor)
-            db.commit()
-        except Exception as e:
-            logger.fatal(e)
-            db.rollback()
-
-
-if __name__ == '__main__':
-    build()
+def build(cursor):
+    job_data.setup_job_database(cursor)
+    build_jobs(cursor)
+    #build_maand_jobs_conf(cursor)

@@ -18,7 +18,7 @@ try:
     cursor = db.cursor()
     maand.setup_maand_database(cursor)
     maand.setup_job_database(cursor)
-    kv_manager.setup()
+    kv_manager.setup(cursor)
 except Exception as e:
     print(f"ERROR: {e}", flush=True)
     sys.exit(1)

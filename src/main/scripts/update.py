@@ -27,8 +27,8 @@ def get_args():
 
     return args
 
-def write_cert(location, namespace, kv_path):
-    content = kv_manager.get(namespace, kv_path)
+def write_cert(cursor, location, namespace, kv_path):
+    content = kv_manager.get(cursor, namespace, kv_path)
     if content:
         content = base64.b64decode(content)
         with open(location, "wb") as f:
@@ -44,13 +44,13 @@ def update_certificates(cursor, jobs, agent_ip):
     agent_cert_kv_path = f"certs/{name}"
 
     write_cert(
-        f"{agent_cert_path}.key", f"certs/{agent_ip}", f"{agent_cert_kv_path}.key"
+        cursor, f"{agent_cert_path}.key", f"certs/{agent_ip}", f"{agent_cert_kv_path}.key"
     )
     write_cert(
-        f"{agent_cert_path}.crt", f"certs/{agent_ip}", f"{agent_cert_kv_path}.crt"
+        cursor, f"{agent_cert_path}.crt", f"certs/{agent_ip}", f"{agent_cert_kv_path}.crt"
     )
     write_cert(
-        f"{agent_cert_path}.pem", f"certs/{agent_ip}", f"{agent_cert_kv_path}.pem"
+        cursor, f"{agent_cert_path}.pem", f"certs/{agent_ip}", f"{agent_cert_kv_path}.pem"
     )
 
     for job in jobs:
@@ -71,13 +71,13 @@ def update_certificates(cursor, jobs, agent_ip):
             job_cert_path = f"{job_cert_location}/{name}"
             job_cert_kv_path = f"{job_cert_kv_location}/{name}"
 
-            write_cert(f"{job_cert_path}.key", namespace, f"{job_cert_kv_path}.key")
-            write_cert(f"{job_cert_path}.crt", namespace, f"{job_cert_kv_path}.crt")
+            write_cert(cursor, f"{job_cert_path}.key", namespace, f"{job_cert_kv_path}.key")
+            write_cert(cursor, f"{job_cert_path}.crt", namespace, f"{job_cert_kv_path}.crt")
             if cert.get("pkcs8", False):
-                write_cert(f"{job_cert_path}.pem", namespace, f"{job_cert_kv_path}.pem")
+                write_cert(cursor, f"{job_cert_path}.pem", namespace, f"{job_cert_kv_path}.pem")
 
 
-def process_templates(values, jobs):
+def process_templates(cursor, values, jobs):
     values = deepcopy(values)
     for k, v in values.items():
         values[k] = v.replace("$$", "$")
@@ -89,9 +89,9 @@ def process_templates(values, jobs):
             values = deepcopy(values)
 
             job_namespace = f"vars/job/{job}"
-            job_keys = kv_manager.get_keys(job_namespace)
+            job_keys = kv_manager.get_keys(cursor, job_namespace)
             for key in job_keys:
-                values[key] = kv_manager.get(job_namespace, key)
+                values[key] = kv_manager.get(cursor, job_namespace, key)
 
             for f in Path(f"{agent_dir}/jobs/{job}").rglob(ext):
                 try:
@@ -108,10 +108,10 @@ def process_templates(values, jobs):
                     raise e
 
 
-def transpile(agent_ip, jobs):
+def transpile(cursor, agent_ip, jobs):
     logger.debug("Transpiling templates...")
-    values = context_manager.get_agent_env(agent_ip)
-    process_templates(values, jobs)
+    values = context_manager.get_agent_env(cursor, agent_ip)
+    process_templates(cursor, values, jobs)
 
 
 def sync(agent_ip):
@@ -154,7 +154,7 @@ def sync(agent_ip):
             for job in agent_jobs:
                 maand.copy_job(cursor, job, agent_dir)
 
-        transpile(agent_ip, agent_jobs.keys())
+        transpile(cursor, agent_ip, agent_jobs.keys())
         update_certificates(cursor, agent_jobs, agent_ip)
 
         command_helper.command_local(f"chown -R 1061:1062 {agent_dir}")

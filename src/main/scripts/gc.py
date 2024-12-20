@@ -11,8 +11,9 @@ def clean():
     with maand.get_db() as db:
         cursor = db.cursor()
         clean_agents(cursor)
+        kv_manager.gc(cursor)
         db.commit()
-    kv_manager.gc()
+
 
 
 if __name__ == '__main__':

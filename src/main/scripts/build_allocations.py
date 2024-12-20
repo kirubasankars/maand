@@ -56,11 +56,11 @@ def validate_resource_limit(cursor):
         total_allocated_memory = 0
         total_allocated_cpu = 0
         for job in jobs:
-            min_memory_mb, max_memory_mb, min_cpu, max_cpu, ports = maand.get_job_resource_limits(cursor, job)
+            min_memory_mb, max_memory_mb, min_cpu, max_cpu = maand.get_job_resource_limits(cursor, job)
 
             namespace = f"vars/job/{job}"
-            job_cpu = float(kv_manager.get(namespace, "CPU") or "0") or max_cpu
-            job_memory = float(kv_manager.get(namespace, "MEMORY") or "0") or max_memory_mb
+            job_cpu = float(kv_manager.get(cursor, namespace, "CPU") or "0") or max_cpu
+            job_memory = float(kv_manager.get(cursor, namespace, "MEMORY") or "0") or max_memory_mb
 
             if min_memory_mb > 0 and job_memory <= min_memory_mb:
                 raise Exception(
@@ -100,18 +100,15 @@ def validate_resource_limit(cursor):
                     f"Available: {available_cpu} MHZ, Required: {total_allocated_cpu} MHZ."
                 )
 
+        cursor.execute("SELECT GROUP_CONCAT(job) AS jobs, port FROM (SELECT (SELECT name AS job FROM job WHERE job_id = jp.job_id) AS job, name, port FROM job_ports jp WHERE port IN (SELECT port FROM job_ports GROUP BY port HAVING COUNT(port) > 1)) GROUP BY port;")
+        rows = cursor.fetchall()
+        msg = []
+        for (jobs, port,) in rows:
+            msg.append(f"jobs: {jobs}, on port: {port}")
+        if msg:
+            msg = ",".join(msg)
+            raise Exception(f"port collision detected: {msg}")
 
-def build():
-    with maand.get_db() as db:
-        try:
-            cursor = db.cursor()
-            build_allocated_jobs(cursor)
-            validate_resource_limit(cursor)
-            db.commit()
-        except Exception as e:
-            logger.fatal(e)
-            db.rollback()
-
-
-if __name__ == "__main__":
-    build()
+def build(cursor):
+    build_allocated_jobs(cursor)
+    validate_resource_limit(cursor)

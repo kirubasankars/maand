@@ -9,18 +9,18 @@ import kv_manager
 import maand
 
 
-def build_env(path):
+def build_env(cursor, path):
     namespace = os.path.basename(path)
     key_values = dotenv_values(path)
 
     for key, value in key_values.items():
         key = key.upper()
-        kv_manager.put(namespace, key, value)
+        kv_manager.put(cursor, namespace, key, value)
 
-    all_keys = kv_manager.get_keys(namespace)
+    all_keys = kv_manager.get_keys(cursor, namespace)
     missing_keys = list(set(all_keys) ^ set(key_values.keys()))
     for key in missing_keys:
-        kv_manager.delete(namespace, key)
+        kv_manager.delete(cursor, namespace, key)
 
 
 def build_variables(cursor):
@@ -68,37 +68,14 @@ def build_variables(cursor):
 
         namespace = f"vars/{agent_ip}"
         for key, value in values.items():
-            kv_manager.put(namespace, key, value)
+            kv_manager.put(cursor, namespace, key, value)
 
-        all_keys = kv_manager.get_keys(namespace)
+        all_keys = kv_manager.get_keys(cursor, namespace)
         missing_keys = list(set(all_keys) ^ set(values.keys()))
         for key in missing_keys:
-            kv_manager.delete(namespace, key)
+            kv_manager.delete(cursor, namespace, key)
 
 
-def build():
-    build_env(f"{const.WORKSPACE_PATH}/variables.env")
-
-    with maand.get_db() as db:
-        cursor = db.cursor()
-
-        build_variables(cursor)
-
-        cursor.execute("SELECT agent_ip FROM agent WHERE detained = 1")
-        rows = cursor.fetchall()
-        agents_ip = {row[0] for row in rows}
-
-        for agent_ip in agents_ip:
-            namespace = f"certs/{agent_ip}"
-            keys = kv_manager.get_keys(namespace)
-            for key in keys:
-                kv_manager.delete(namespace, key)
-
-            namespace = f"vars/{agent_ip}"
-            keys = kv_manager.get_keys(namespace)
-            for key in keys:
-                kv_manager.delete(namespace, key)
-
-
-if __name__ == "__main__":
-    build()
+def build(cursor):
+    build_env(cursor, f"{const.WORKSPACE_PATH}/variables.env")
+    build_variables(cursor)

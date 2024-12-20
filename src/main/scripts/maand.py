@@ -8,6 +8,7 @@ from job_data import *
 def get_db():
     db = sqlite3.connect(const.MAAND_DB_PATH)
     db.execute(f"ATTACH DATABASE '{const.JOBS_DB_PATH}' AS job_db;")
+    db.execute(f"ATTACH DATABASE '{const.KV_DB_PATH}' AS kv_db;")
     return db
 
 

@@ -37,7 +37,7 @@ def run_target(target, job, allocations):
         for command in job_commands:
             alloc_command_executor.prepare_command(cursor, job, command)
             for agent_ip in allocations:
-                alloc_command_executor.execute_alloc_command(job, command, agent_ip, {"TARGET": args.target})
+                alloc_command_executor.execute_alloc_command(cursor, job, command, agent_ip, {"TARGET": args.target})
 
         job_commands = maand.get_job_commands(cursor, job, "job_control")
         if len(job_commands) == 0:
@@ -51,7 +51,7 @@ def run_target(target, job, allocations):
             alloc_command_executor.prepare_command(cursor, job, "job_control")
             for command in job_commands:
                 for agent_ip in allocations:
-                    alloc_command_executor.execute_alloc_command(job, command, agent_ip, {"TARGET": args.target})
+                    alloc_command_executor.execute_alloc_command(cursor, job, command, agent_ip, {"TARGET": args.target})
                     if args.alloc_health_check:
                         job_health_check.health_check(cursor, [job], wait=True)
 
@@ -62,7 +62,7 @@ def run_target(target, job, allocations):
         for command in job_commands:
             alloc_command_executor.prepare_command(cursor, job, command)
             for agent_ip in allocations:
-                alloc_command_executor.execute_alloc_command(job, command, agent_ip, {"TARGET": args.target})
+                alloc_command_executor.execute_alloc_command(cursor, job, command, agent_ip, {"TARGET": args.target})
 
 
 def main():

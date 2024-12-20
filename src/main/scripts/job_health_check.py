@@ -21,7 +21,7 @@ def health_check(cursor, jobs_filter, wait, interval=5, times=10):
                 alloc_command_executor.prepare_command(cursor, job, command)
                 allocations = maand.get_allocations(cursor, job)
                 for agent_ip in allocations:
-                    result = result and alloc_command_executor.execute_alloc_command(job, command, agent_ip, {})
+                    result = result and alloc_command_executor.execute_alloc_command(cursor, job, command, agent_ip, {})
             return result
         except Exception as e:
             logger.error(f'Health check failed job : {job} and {str(e)}')
@@ -33,6 +33,10 @@ def health_check(cursor, jobs_filter, wait, interval=5, times=10):
         # Perform health checks with retries
         for job in jobs:
             for attempt in range(times):
+                job_commands = job_data.get_job_commands(cursor, job, 'health_check')
+                if len(job_commands) == 0:
+                    logger.info(f'Health check unknown: {job}')
+                    continue
                 if execute_health_check(job):
                     logger.info(f'Health check succeeded: {job}')
                     break
@@ -44,6 +48,10 @@ def health_check(cursor, jobs_filter, wait, interval=5, times=10):
     else:
         # Perform health checks without retries
         for job in jobs:
+            job_commands = job_data.get_job_commands(cursor, job, 'health_check')
+            if len(job_commands) == 0:
+                logger.info(f'Health check unknown: {job}')
+                continue
             if execute_health_check(job):
                 logger.info(f'Health check succeeded: {job}')
             else:
