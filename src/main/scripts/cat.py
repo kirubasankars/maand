@@ -10,7 +10,7 @@ def statement(sql, no_rows_found_msg):
         f.write(f"ATTACH DATABASE '{const.JOBS_DB_PATH}' AS job_db;\n")
         f.write(f"ATTACH DATABASE '{const.KV_DB_PATH}' AS kv_db;\n")
         f.write(".header on\n")
-        f.write(".mode table\n")
+        f.write(".mode column\n")
         f.write(f"{sql}\n")
 
     with maand.get_db() as db:

@@ -48,10 +48,11 @@ def rsync_upload_agent_files(agent_ip, jobs, agent_removed_jobs):
 
     bucket = agent_env.get("BUCKET", "")
     command_helper.command_remote(f"mkdir -p /opt/agent/{bucket}", env=agent_env)
-    command_helper.command_local(f"bash /scripts/rsync_upload.sh", env=agent_env)
+    command_helper.command_local("bash /scripts/rsync_upload.sh", env=agent_env)
 
 
 def validate_agent_bucket(agent_ip, fail_if_no_bucket_id=True):
+    logger = utils.get_logger(ns=agent_ip)
     try:
         agent_env = get_agent_minimal_env(agent_ip)
         bucket = os.environ.get("BUCKET")
@@ -59,12 +60,12 @@ def validate_agent_bucket(agent_ip, fail_if_no_bucket_id=True):
         if fail_if_no_bucket_id and res.returncode != 0:
             raise Exception(f"agent {agent_ip} : bucket not found.")
     except Exception as e:
-        logger = utils.get_logger(ns=agent_ip)
         logger.error(e)
         utils.stop_the_world()
 
 
 def validate_update_seq(agent_ip):
+    logger = utils.get_logger(ns=agent_ip)
     try:
         agent_env = get_agent_minimal_env(agent_ip)
         update_seq = os.environ.get("UPDATE_SEQ")
@@ -76,7 +77,6 @@ def validate_update_seq(agent_ip):
         if res.returncode == 0 and agent_update_seq != update_seq:
             raise AssertionError(f"Failed on update_seq validation: mismatch, agent {agent_ip}.")
     except Exception as e:
-        logger = utils.get_logger(ns=agent_ip)
         logger.error(e)
         utils.stop_the_world()
 

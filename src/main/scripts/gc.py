@@ -3,6 +3,8 @@ import maand
 
 
 def clean_agents(cursor):
+    cursor.execute("DELETE FROM agent_roles WHERE agent_id IN (SELECT agent_id FROM agent WHERE detained = 1)")
+    cursor.execute("DELETE FROM agent_tags WHERE agent_id IN (SELECT agent_id FROM agent WHERE detained = 1)")
     cursor.execute("DELETE FROM agent WHERE detained = 1")
     cursor.execute("DELETE FROM agent_jobs WHERE removed = 1")
 

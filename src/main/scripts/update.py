@@ -122,6 +122,7 @@ def sync(agent_ip):
         args = get_args()
         logger.debug("Starting sync process...")
         agent_dir = context_manager.get_agent_dir(agent_ip)
+        bucket_id = maand.get_bucket_id(cursor)
 
         command_helper.command_local(
             f"""
@@ -133,6 +134,9 @@ def sync(agent_ip):
         agent_id = maand.get_agent_id(cursor, agent_ip)
         with open(f"{agent_dir}/agent.txt", "w") as f:
             f.write(agent_id)
+
+        with open(f"{agent_dir}/bucket.txt", "w") as f:
+            f.write(bucket_id)
 
         update_seq = maand.get_update_seq(cursor)
         with open(f"{agent_dir}/update_seq.txt", "w") as f:
@@ -169,12 +173,12 @@ def sync(agent_ip):
             disabled_jobs = list(set(jobs) & set(disabled_jobs))
 
         agent_env = context_manager.get_agent_minimal_env(agent_ip)
-        bucket = agent_env.get("BUCKET")
+
         if removed_jobs:
-            command_helper.capture_command_remote(f"test -f /opt/agent/{bucket}/bin/runner.py && python3 /opt/agent/{bucket}/bin/runner.py {bucket} stop --jobs {','.join(removed_jobs)}", env=agent_env, prefix=agent_ip)
+            command_helper.capture_command_remote(f"test -f /opt/agent/{bucket_id}/bin/runner.py && python3 /opt/agent/{bucket_id}/bin/runner.py {bucket_id} stop --jobs {','.join(removed_jobs)}", env=agent_env, prefix=agent_ip)
 
         if disabled_jobs:
-            command_helper.capture_command_remote(f"test -f /opt/agent/{bucket}/bin/runner.py && python3 /opt/agent/{bucket}/bin/runner.py {bucket} stop --jobs {','.join(disabled_jobs)}", env=agent_env, prefix=agent_ip)
+            command_helper.capture_command_remote(f"test -f /opt/agent/{bucket_id}/bin/runner.py && python3 /opt/agent/{bucket_id}/bin/runner.py {bucket_id} stop --jobs {','.join(disabled_jobs)}", env=agent_env, prefix=agent_ip)
 
         context_manager.rsync_upload_agent_files(agent_ip, jobs, removed_jobs)
 

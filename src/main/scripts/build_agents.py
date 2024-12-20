@@ -1,10 +1,27 @@
 import uuid
-
 import utils
 import workspace
 import kv_manager
 
 logger = utils.get_logger()
+
+
+def build_agent_tags(cursor, agent_id, agent_ip, agent):
+    namespace = f"tags/{agent_ip}"
+    cursor.execute("DELETE FROM agent_tags WHERE agent_id = ?", (agent_id,))
+    tags = agent.get("tags", {})
+    for key, value in tags.items():
+        key = key.upper()
+        value = str(value)
+        cursor.execute("INSERT INTO agent_tags (agent_id, key, value) VALUES (?, ?, ?)", (agent_id, key, value,))
+        kv_manager.put(cursor, namespace, key, value)
+
+    available_tags_keys = [x.upper() for x in tags.keys()]
+    all_keys = kv_manager.get_keys(cursor, namespace)
+    missing_tags = set(available_tags_keys) ^ set(all_keys)
+    for key in missing_tags:
+        kv_manager.delete(cursor, namespace, key)
+
 
 def build_agents(cursor):
     agents = workspace.get_agents()
@@ -31,14 +48,10 @@ def build_agents(cursor):
         roles = agent.get("roles", [])
         roles.append("agent")
         roles = list(set(roles))
-
         for role in roles:
             cursor.execute("INSERT INTO agent_roles (agent_id, role) VALUES (?, ?)", (agent_id, role,))
 
-        cursor.execute("DELETE FROM agent_tags WHERE agent_id = ?", (agent_id,))
-        tags = agent.get("tags", {})
-        for key, value in tags.items():
-            cursor.execute("INSERT INTO agent_tags (agent_id, key, value) VALUES (?, ?, ?)", (agent_id, key, str(value),))
+        build_agent_tags(cursor, agent_id, agent_ip, agent)
 
     cursor.execute("SELECT agent_ip FROM agent")
     rows = cursor.fetchall()
@@ -55,15 +68,10 @@ def build_agents(cursor):
     agents_ip = {row[0] for row in rows}
 
     for agent_ip in agents_ip:
-        namespace = f"certs/{agent_ip}"
-        keys = kv_manager.get_keys(cursor, namespace)
-        for key in keys:
-            kv_manager.delete(cursor, namespace, key)
-
-        namespace = f"vars/{agent_ip}"
-        keys = kv_manager.get_keys(cursor, namespace)
-        for key in keys:
-            kv_manager.delete(cursor, namespace, key)
+        for namespace in [ f"certs/{agent_ip}", f"vars/{agent_ip}", f"tags/{agent_ip}"]:
+            keys = kv_manager.get_keys(cursor, namespace)
+            for key in keys:
+                kv_manager.delete(cursor, namespace, key)
 
 
 def build(cursor):

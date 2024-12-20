@@ -13,7 +13,7 @@ if [ -z "${1+x}" ]; then
   echo "  job                           Run job control operations (start, stop and restart)"
   echo "  alloc_command                 Run job-related commands"
   echo "  cat                           Cat info from build action (agents, jobs, allocations, kv)"
-  echo "  health_check                   Run health checks"
+  echo "  health_check                  Run health checks"
   echo "  gc                            Garbage collect"
   exit 1
 fi

@@ -12,6 +12,7 @@ def put(cursor, namespace, key, value, ttl=-1):
         raise TypeError('value must be a string')
 
     version = 0
+    cursor.execute("SELECT max(version), value, deleted FROM key_value WHERE namespace = ? AND key = ? GROUP BY key, namespace", (namespace, key))
     row = cursor.fetchone()
     if row:
         version = int(row[0])
