@@ -35,7 +35,7 @@ def get_keys(cursor, namespace):
     rows = cursor.fetchall()
     return [row[0] for row in rows]
 
-def gc(cursor):
+def gc(cursor, max_days):
     cursor.execute('SELECT namespace, key, max(version), deleted, created_date FROM kv_db.key_value group by key, namespace')
     rows = cursor.fetchall()
 
@@ -47,7 +47,7 @@ def gc(cursor):
         created_datetime = datetime.fromtimestamp(int(created_date))
         date_diff = current_datetime - created_datetime
 
-        if deleted == 1 and date_diff.days >= 15: # delete all versions if latest version is deleted and older then 15 days
+        if deleted == 1 and date_diff.days >= max_days: # delete all versions if latest version is deleted and older then 15 days
             cursor.execute("DELETE FROM kv_db.key_value WHERE namespace = ? AND key = ?", (namespace, key,))
 
         version = version - 7

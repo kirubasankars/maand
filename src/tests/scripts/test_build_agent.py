@@ -360,3 +360,41 @@ def test_build_resources():
         cursor = db.cursor()
         assert kv_manager.get(cursor, "vars/192.0.0.1", "AVAILABLE_MEMORY") == "2024.0"
         assert kv_manager.get(cursor, "vars/192.0.0.1", "AVAILABLE_CPU") == "200.0"
+
+
+def test_build_role_id_same():
+    pass
+
+
+def test_build_role_removed():
+    clean_bucket()
+
+    agents = [{"host":"192.0.0.1", "roles": ["a", "b"]}]
+    with open("/bucket/workspace/agents.json", "w") as f:
+        f.write(json.dumps(agents))
+
+    command(get_maand_command("init"))
+
+    with maand.get_db() as db:
+        cursor = db.cursor()
+        assert kv_manager.get(cursor, "vars/192.0.0.1", "ROLES") == "a,agent,b"
+
+    agents = [{"host":"192.0.0.1", "roles": ["a"]}]
+    with open("/bucket/workspace/agents.json", "w") as f:
+        f.write(json.dumps(agents))
+
+    command(get_maand_command("build"))
+
+    with maand.get_db() as db:
+        cursor = db.cursor()
+        assert kv_manager.get(cursor, "vars/192.0.0.1", "ROLES") == "a,agent"
+
+    agents = [{"host":"192.0.0.1", "roles": []}]
+    with open("/bucket/workspace/agents.json", "w") as f:
+        f.write(json.dumps(agents))
+
+    command(get_maand_command("build"))
+
+    with maand.get_db() as db:
+        cursor = db.cursor()
+        assert kv_manager.get(cursor, "vars/192.0.0.1", "ROLES") == "agent"

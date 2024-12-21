@@ -59,7 +59,7 @@ def build_agents(cursor):
     agents_ip = {row[0] for row in rows}
 
     for agent_ip in agents_ip:
-        for namespace in [ f"certs/{agent_ip}", f"vars/{agent_ip}", f"tags/{agent_ip}"]:
+        for namespace in [ f"certs/{agent_ip}", f"vars/{agent_ip}"]:
             keys = kv_manager.get_keys(cursor, namespace)
             for key in keys:
                 kv_manager.delete(cursor, namespace, key)
