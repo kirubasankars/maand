@@ -20,7 +20,7 @@ def test_update_seq():
             f"/bucket/tmp/{agent}/{bucket_id}/certs/ca.crt",
             f"/bucket/tmp/{agent}/{bucket_id}/jobs.json",
             f"/bucket/tmp/{agent}/{bucket_id}/bin/runner.py",
-            f"/bucket/tmp/{agent}/{bucket_id}/roles.txt",
+            f"/bucket/tmp/{agent}/{bucket_id}/labels.txt",
             f"/bucket/tmp/{agent}/{bucket_id}/update_seq.txt",
             f"/bucket/tmp/{agent}/{bucket_id}/agent.txt",
             f"/bucket/tmp/{agent}/{bucket_id}/bucket.txt",
@@ -121,7 +121,7 @@ def test_update_a_job():
         assert read_file_content(f"/bucket/tmp/{agent}/{bucket_id}/update_seq.txt") == "4"
 
 
-def test_update_add_a_job_with_agent_role():
+def test_update_add_a_job_with_agent_label():
     clean()
 
     command(get_maand_command("init"))
@@ -134,11 +134,11 @@ def test_update_add_a_job_with_agent_role():
     command(get_maand_command("update"))
     sync()
 
-    agents_ip = workspace.get_agent_ip_by_role("group1")
+    agents_ip = workspace.get_agent_ip_by_label("group1")
     for agent in agents_ip:
         assert os.path.exists(f"/bucket/tmp/{agent}/{bucket_id}/jobs/a/manifest.json")
 
-    agents_ip = workspace.get_agent_ip_by_role("group2")
+    agents_ip = workspace.get_agent_ip_by_label("group2")
     for agent in agents_ip:
         assert os.path.exists(f"/bucket/tmp/{agent}/{bucket_id}/jobs/b/manifest.json")
 
@@ -151,15 +151,15 @@ def test_update_add_a_job_with_agent_role():
     command(get_maand_command("update --jobs=a"))
     sync()
 
-    agents_ip = workspace.get_agent_ip_by_role("group1")
+    agents_ip = workspace.get_agent_ip_by_label("group1")
     for agent in agents_ip:
         assert os.path.exists(f"/bucket/tmp/{agent}/{bucket_id}/jobs/a/test_file")
 
-    agents_ip = workspace.get_agent_ip_by_role("group2")
+    agents_ip = workspace.get_agent_ip_by_label("group2")
     for agent in agents_ip:
         assert not os.path.exists(f"/bucket/tmp/{agent}/{bucket_id}/jobs/b/test_file")
 
-    agents_ip = workspace.get_agent_ip_by_role("group3")
+    agents_ip = workspace.get_agent_ip_by_label("group3")
     for agent in agents_ip:
         assert not os.path.exists(f"/bucket/tmp/{agent}/{bucket_id}/jobs/c/test_file")
 
@@ -168,30 +168,30 @@ def test_update_add_a_job_with_agent_role():
     command(get_maand_command("update --jobs=b"))
     sync()
 
-    agents_ip = workspace.get_agent_ip_by_role("group1")
+    agents_ip = workspace.get_agent_ip_by_label("group1")
     for agent in agents_ip:
         assert os.path.exists(f"/bucket/tmp/{agent}/{bucket_id}/jobs/a/test_file")
 
-    agents_ip = workspace.get_agent_ip_by_role("group2")
+    agents_ip = workspace.get_agent_ip_by_label("group2")
     for agent in agents_ip:
         assert os.path.exists(f"/bucket/tmp/{agent}/{bucket_id}/jobs/b/test_file")
 
-    agents_ip = workspace.get_agent_ip_by_role("group3")
+    agents_ip = workspace.get_agent_ip_by_label("group3")
     for agent in agents_ip:
         assert not os.path.exists(f"/bucket/tmp/{agent}/{bucket_id}/jobs/c/test_file")
 
     command(get_maand_command("update --jobs=a,b"))
     sync()
 
-    agents_ip = workspace.get_agent_ip_by_role("group1")
+    agents_ip = workspace.get_agent_ip_by_label("group1")
     for agent in agents_ip:
         assert not os.path.exists(f"/bucket/tmp/{agent}/{bucket_id}/jobs/a/test_file")
 
-    agents_ip = workspace.get_agent_ip_by_role("group2")
+    agents_ip = workspace.get_agent_ip_by_label("group2")
     for agent in agents_ip:
         assert os.path.exists(f"/bucket/tmp/{agent}/{bucket_id}/jobs/b/test_file")
 
-    agents_ip = workspace.get_agent_ip_by_role("group3")
+    agents_ip = workspace.get_agent_ip_by_label("group3")
     for agent in agents_ip:
         assert not os.path.exists(f"/bucket/tmp/{agent}/{bucket_id}/jobs/c/test_file")
 
@@ -204,8 +204,8 @@ def test_update_remove_job():
     clean()
     command(get_maand_command("init"))
 
-    make_job("a", roles=["group1"])
-    make_job("b", roles=["group2"])
+    make_job("a", labels=["group1"])
+    make_job("b", labels=["group2"])
 
     command(get_maand_command("build"))
     command(get_maand_command("update"))
@@ -219,10 +219,10 @@ def test_update_remove_job():
     sync()
 
     bucket_id = workspace.get_bucket_id()
-    agents_ip = workspace.get_agent_ip_by_role("group1")
+    agents_ip = workspace.get_agent_ip_by_label("group1")
     for agent in agents_ip:
         assert os.path.exists(f"/bucket/tmp/{agent}/{bucket_id}/jobs/a/Makefile")
 
-    agents_ip = workspace.get_agent_ip_by_role("group2")
+    agents_ip = workspace.get_agent_ip_by_label("group2")
     for agent in agents_ip:
         assert not os.path.exists(f"/bucket/tmp/{agent}/{bucket_id}/jobs/b/Makefile")

@@ -26,7 +26,7 @@ def put_cert(cursor, file_path, namespace, key):
 
 def build_agent_certs(cursor):
     bucket_id = maand.get_bucket_id(cursor)
-    agents = maand.get_agents(cursor, roles_filter=None)
+    agents = maand.get_agents(cursor, labels_filter=None)
 
     for agent_ip in agents:
 
@@ -58,7 +58,7 @@ def build_agent_certs(cursor):
 
 def build_job_certs(cursor):
     bucket_id = maand.get_bucket_id(cursor)
-    agents = maand.get_agents(cursor, roles_filter=None)
+    agents = maand.get_agents(cursor, labels_filter=None)
     jobs = maand.get_jobs(cursor)
     config_parser = utils.get_maand_conf()
 

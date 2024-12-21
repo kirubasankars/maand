@@ -142,9 +142,9 @@ def sync(agent_ip):
         with open(f"{agent_dir}/update_seq.txt", "w") as f:
             f.write(str(update_seq))
 
-        agent_roles = maand.get_agent_roles(cursor, agent_ip)
-        with open(f"{agent_dir}/roles.txt", "w") as f:
-            f.writelines("\n".join(agent_roles))
+        agent_labels = maand.get_agent_labels(cursor, agent_ip)
+        with open(f"{agent_dir}/labels.txt", "w") as f:
+            f.writelines("\n".join(agent_labels))
 
         command_helper.command_local(f"mkdir -p {agent_dir}/bin")
         command_helper.command_local(f"rsync -r /scripts/agent/bin/ {agent_dir}/bin/")

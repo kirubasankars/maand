@@ -11,7 +11,7 @@ import system_manager
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--agents', default="")
-    parser.add_argument('--roles', default="")
+    parser.add_argument('--labels', default="")
     parser.add_argument('--concurrency', default="4", type=int)
     parser.add_argument('--no-check', action='store_true')
     parser.set_defaults(no_check=False)
@@ -19,8 +19,8 @@ def get_args():
 
     if args.agents:
         args.agents = args.agents.split(',')
-    if args.roles:
-        args.roles = args.roles.split(',')
+    if args.labels:
+        args.labels = args.labels.split(',')
 
     return args
 
@@ -45,4 +45,4 @@ if __name__ == "__main__":
         system_manager.run(cursor, command_helper.scan_agent)
         if not args.no_check:
             system_manager.run(cursor, context_manager.validate_cluster_update_seq)
-        system_manager.run(cursor, run_command, concurrency=args.concurrency, roles_filter=args.roles, agents_filter=args.agents)
+        system_manager.run(cursor, run_command, concurrency=args.concurrency, labels_filter=args.labels, agents_filter=args.agents)

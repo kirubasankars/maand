@@ -24,46 +24,46 @@ def build_env(cursor, path):
 
 
 def build_agent_variables(cursor):
-    agents = maand.get_agents(cursor, roles_filter=None)
+    agents = maand.get_agents(cursor, labels_filter=None)
 
     for agent_ip in agents:
-        roles = maand.get_agent_roles(cursor, agent_ip=None)
-        agent_roles = maand.get_agent_roles(cursor, agent_ip=agent_ip)
+        labels = maand.get_agent_labels(cursor, agent_ip=None)
+        agent_labels = maand.get_agent_labels(cursor, agent_ip=agent_ip)
 
         values = {}
-        for role in roles:
-            key_nodes = f"{role}_nodes".upper()
+        for label in labels:
+            key_nodes = f"{label}_nodes".upper()
 
-            agents = maand.get_agents(cursor, [role])
+            agents = maand.get_agents(cursor, [label])
             values[key_nodes] = ",".join(agents)
 
-            key = f"{role}_length".upper()
+            key = f"{label}_length".upper()
             values[key] = str(len(agents))
 
             for idx, host in enumerate(agents):
-                key = f"{role}_{idx}".upper()
+                key = f"{label}_{idx}".upper()
                 values[key] = host
 
-            if role not in agent_roles:
+            if label not in agent_labels:
                 continue
 
             other_agents = copy.deepcopy(agents)
             if agent_ip in other_agents:
                 other_agents.remove(agent_ip)
 
-            key_peers = f"{role}_peers".upper()
+            key_peers = f"{label}_peers".upper()
             if other_agents:
                 values[key_peers] = ",".join(other_agents)
 
             for idx, host in enumerate(agents):
                 if host == agent_ip:
-                    key = f"{role}_allocation_index".upper()
+                    key = f"{label}_allocation_index".upper()
                     values[key] = str(idx)
 
-            key = f"{role}_role_id".upper()
-            values[key] = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(role)))
+            key = f"{label}_label_id".upper()
+            values[key] = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(label)))
 
-        values["ROLES"] = ",".join(sorted(agent_roles))
+        values["LABELS"] = ",".join(sorted(agent_labels))
 
         agent_tags = maand.get_agent_tags(cursor, agent_ip)
         for key, value in agent_tags.items():

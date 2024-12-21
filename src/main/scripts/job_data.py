@@ -3,7 +3,7 @@ import os
 
 def setup_job_database(cursor):
     cursor.execute("CREATE TABLE IF NOT EXISTS job_db.job (job_id TEXT PRIMARY KEY, name TEXT, version TEXT, min_memory_mb TEXT, max_memory_mb TEXT, min_cpu TEXT, max_cpu TEXT, ports TEXT, certs_md5_hash TEXT, deployment_seq INT)")
-    cursor.execute("CREATE TABLE IF NOT EXISTS job_db.job_roles (job_id TEXT, role TEXT)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS job_db.job_labels (job_id TEXT, label TEXT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS job_db.job_ports (job_id TEXT, name TEXT, port INT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS job_db.job_certs (job_id TEXT, name TEXT, pkcs8 INT, subject TEXT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS job_db.job_files (job_id TEXT, path TEXT, content BLOB, isdir BOOL)")

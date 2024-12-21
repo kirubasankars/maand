@@ -14,11 +14,11 @@ def get_agents_ip():
     return [agent.get("host") for agent in agents_config]
 
 
-def get_agent_ip_by_role(role):
+def get_agent_ip_by_label(label):
     agents_config = get_agents()
     agents_ip = []
     for agent in agents_config:
-        if role in agent.get("roles", []):
+        if label in agent.get("labels", []):
             agents_ip.append(agent["host"])
     return agents_ip
 
@@ -37,8 +37,8 @@ def get_job_manifest(job_name):
         metadata = json.loads(f.read())
         if "order" not in metadata:
             metadata["order"] = 99
-        if "roles" not in metadata:
-            metadata["roles"] = []
+        if "labels" not in metadata:
+            metadata["labels"] = []
         if "certs" not in metadata:
             metadata["certs"] = []
         if "commands" not in metadata:

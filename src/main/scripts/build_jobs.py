@@ -16,7 +16,7 @@ logger = utils.get_logger()
 
 def delete_job(cursor, job):
     cursor.execute("DELETE FROM job_db.job_ports WHERE job_id = (SELECT job_id FROM job_db.job WHERE name = ?)", (job,))
-    cursor.execute("DELETE FROM job_db.job_roles WHERE job_id = (SELECT job_id FROM job_db.job WHERE name = ?)", (job,))
+    cursor.execute("DELETE FROM job_db.job_labels WHERE job_id = (SELECT job_id FROM job_db.job WHERE name = ?)", (job,))
     cursor.execute("DELETE FROM job_db.job_certs WHERE job_id = (SELECT job_id FROM job_db.job WHERE name = ?)", (job,))
     cursor.execute("DELETE FROM job_db.job_commands WHERE job_id = (SELECT job_id FROM job_db.job WHERE name = ?)", (job,))
     cursor.execute("DELETE FROM job_db.job_files WHERE job_id = (SELECT job_id FROM job_db.job WHERE name = ?)", (job,))
@@ -32,7 +32,7 @@ def build_jobs(cursor):
         manifest = workspace.get_job_manifest(job)
         files = workspace.get_job_files(job)
 
-        roles = manifest.get("roles")
+        labels = manifest.get("labels")
         certs = manifest.get("certs")
         version = manifest.get("version", "unknown")
         commands = manifest.get("commands")
@@ -48,8 +48,8 @@ def build_jobs(cursor):
         cursor.execute("INSERT INTO job_db.job (job_id, name, version, min_memory_mb, max_memory_mb, min_cpu, max_cpu, certs_md5_hash, deployment_seq) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)",
                         (job_id, job, version, min_memory_limit, max_memory_limit, min_cpu_limit, max_cpu_limit, certs_hash))
 
-        for role in roles:
-            cursor.execute("INSERT INTO job_db.job_roles (job_id, role) VALUES (?, ?)", (job_id, role,))
+        for label in labels:
+            cursor.execute("INSERT INTO job_db.job_labels (job_id, label) VALUES (?, ?)", (job_id, label,))
 
         for cert in certs:
             for name, config in cert.items():
@@ -160,7 +160,7 @@ def build_maand_jobs_conf(cursor):
         for key in missing_keys:
             kv_manager.delete(cursor, kv_namespace, key)
 
-    agents = maand.get_agents(cursor, roles_filter=None)
+    agents = maand.get_agents(cursor, labels_filter=None)
     for agent_ip in agents:
         agent_removed_jobs = maand.get_agent_removed_jobs(cursor, agent_ip)
         for job in agent_removed_jobs:

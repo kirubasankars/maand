@@ -12,26 +12,6 @@ log_manager = LoggerManager()
 def get_logger(ns="maand"):
     return log_manager.get_logger(ns)
 
-def get_args_agents_roles_concurrency(allow_no_check=False):
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--agents', default="")
-    parser.add_argument('--roles', default="")
-    parser.add_argument('--concurrency', default="4", type=int)
-
-    if allow_no_check:
-        parser.add_argument('--no-check', action='store_true')
-        parser.set_defaults(no_check=False)
-
-    args = parser.parse_args()
-
-    if args.agents:
-        args.agents = args.agents.split(',')
-    if args.roles:
-        args.roles = args.roles.split(',')
-
-    return args
-
-
 @cache
 def get_maand_conf():
     config_parser = configparser.ConfigParser()

@@ -10,7 +10,7 @@ import workspace
 def get_agents():
     with maand.get_db() as db:
         cursor = db.cursor()
-        cursor.execute("SELECT agent_id, agent_ip, available_memory_mb, available_cpu, detained, position FROM agent WHERE detained = 0 ORDER BY position")
+        cursor.execute("SELECT agent_id, agent_ip, agent_memory_mb, agent_cpu, detained, position FROM agent WHERE detained = 0 ORDER BY position")
         return cursor.fetchall()
 
 
@@ -42,8 +42,8 @@ def test_build_agent_position():
         assert kv_manager.get(cursor, "vars/192.0.0.1", "AGENT_ALLOCATION_INDEX") == "0"
         assert kv_manager.get(cursor, "vars/192.0.0.1", "AGENT_PEERS") == "192.0.0.2,192.0.0.3"
         assert kv_manager.get(cursor, "vars/192.0.0.1", "AGENT_LENGTH") == "3"
-        assert kv_manager.get(cursor, "vars/192.0.0.1", "ROLES") == "agent"
-        assert kv_manager.get(cursor, "vars/192.0.0.1", "AGENT_ROLE_ID") is not None
+        assert kv_manager.get(cursor, "vars/192.0.0.1", "LABELS") == "agent"
+        assert kv_manager.get(cursor, "vars/192.0.0.1", "AGENT_LABEL_ID") is not None
 
         assert kv_manager.get(cursor, "vars/192.0.0.2", "AGENT_0") == "192.0.0.1"
         assert kv_manager.get(cursor, "vars/192.0.0.2", "AGENT_1") == "192.0.0.2"
@@ -52,8 +52,8 @@ def test_build_agent_position():
         assert kv_manager.get(cursor, "vars/192.0.0.2", "AGENT_ALLOCATION_INDEX") == "1"
         assert kv_manager.get(cursor, "vars/192.0.0.2", "AGENT_PEERS") == "192.0.0.1,192.0.0.3"
         assert kv_manager.get(cursor, "vars/192.0.0.2", "AGENT_LENGTH") == "3"
-        assert kv_manager.get(cursor, "vars/192.0.0.2", "ROLES") == "agent"
-        assert kv_manager.get(cursor, "vars/192.0.0.2", "AGENT_ROLE_ID") is not None
+        assert kv_manager.get(cursor, "vars/192.0.0.2", "LABELS") == "agent"
+        assert kv_manager.get(cursor, "vars/192.0.0.2", "AGENT_LABEL_ID") is not None
 
         assert kv_manager.get(cursor, "vars/192.0.0.3", "AGENT_0") == "192.0.0.1"
         assert kv_manager.get(cursor, "vars/192.0.0.3", "AGENT_1") == "192.0.0.2"
@@ -62,8 +62,8 @@ def test_build_agent_position():
         assert kv_manager.get(cursor, "vars/192.0.0.3", "AGENT_ALLOCATION_INDEX") == "2"
         assert kv_manager.get(cursor, "vars/192.0.0.3", "AGENT_PEERS") == "192.0.0.1,192.0.0.2"
         assert kv_manager.get(cursor, "vars/192.0.0.3", "AGENT_LENGTH") == "3"
-        assert kv_manager.get(cursor, "vars/192.0.0.3", "ROLES") == "agent"
-        assert kv_manager.get(cursor, "vars/192.0.0.3", "AGENT_ROLE_ID") is not None
+        assert kv_manager.get(cursor, "vars/192.0.0.3", "LABELS") == "agent"
+        assert kv_manager.get(cursor, "vars/192.0.0.3", "AGENT_LABEL_ID") is not None
 
 
 def test_build_agent_position_swap():
@@ -97,8 +97,8 @@ def test_build_agent_position_swap():
         assert kv_manager.get(cursor, "vars/192.0.0.1", "AGENT_ALLOCATION_INDEX") == "0"
         assert kv_manager.get(cursor, "vars/192.0.0.1", "AGENT_PEERS") == "192.0.0.3,192.0.0.2"
         assert kv_manager.get(cursor, "vars/192.0.0.1", "AGENT_LENGTH") == "3"
-        assert kv_manager.get(cursor, "vars/192.0.0.1", "ROLES") == "agent"
-        assert kv_manager.get(cursor, "vars/192.0.0.1", "AGENT_ROLE_ID") is not None
+        assert kv_manager.get(cursor, "vars/192.0.0.1", "LABELS") == "agent"
+        assert kv_manager.get(cursor, "vars/192.0.0.1", "AGENT_LABEL_ID") is not None
 
         assert kv_manager.get(cursor, "vars/192.0.0.2", "AGENT_0") == "192.0.0.1"
         assert kv_manager.get(cursor, "vars/192.0.0.2", "AGENT_1") == "192.0.0.3"
@@ -107,8 +107,8 @@ def test_build_agent_position_swap():
         assert kv_manager.get(cursor, "vars/192.0.0.2", "AGENT_ALLOCATION_INDEX") == "2"
         assert kv_manager.get(cursor, "vars/192.0.0.2", "AGENT_PEERS") == "192.0.0.1,192.0.0.3"
         assert kv_manager.get(cursor, "vars/192.0.0.2", "AGENT_LENGTH") == "3"
-        assert kv_manager.get(cursor, "vars/192.0.0.2", "ROLES") == "agent"
-        assert kv_manager.get(cursor, "vars/192.0.0.2", "AGENT_ROLE_ID") is not None
+        assert kv_manager.get(cursor, "vars/192.0.0.2", "LABELS") == "agent"
+        assert kv_manager.get(cursor, "vars/192.0.0.2", "AGENT_LABEL_ID") is not None
 
         assert kv_manager.get(cursor, "vars/192.0.0.3", "AGENT_0") == "192.0.0.1"
         assert kv_manager.get(cursor, "vars/192.0.0.3", "AGENT_1") == "192.0.0.3"
@@ -117,11 +117,11 @@ def test_build_agent_position_swap():
         assert kv_manager.get(cursor, "vars/192.0.0.3", "AGENT_ALLOCATION_INDEX") == "1"
         assert kv_manager.get(cursor, "vars/192.0.0.3", "AGENT_PEERS") == "192.0.0.1,192.0.0.2"
         assert kv_manager.get(cursor, "vars/192.0.0.3", "AGENT_LENGTH") == "3"
-        assert kv_manager.get(cursor, "vars/192.0.0.3", "ROLES") == "agent"
-        assert kv_manager.get(cursor, "vars/192.0.0.3", "AGENT_ROLE_ID") is not None
+        assert kv_manager.get(cursor, "vars/192.0.0.3", "LABELS") == "agent"
+        assert kv_manager.get(cursor, "vars/192.0.0.3", "AGENT_LABEL_ID") is not None
 
 
-def test_build_agent_update_roles():
+def test_build_agent_update_labels():
     clean_bucket()
 
     agents = [{"host":"192.0.0.1", "position": 0}, {"host":"192.0.0.2", "position": 1}, {"host":"192.0.0.3", "position": 2}]
@@ -132,9 +132,9 @@ def test_build_agent_update_roles():
 
     with maand.get_db() as db:
         cursor = db.cursor()
-        agent_role_id = kv_manager.get(cursor, "vars/192.0.0.1", "AGENT_ROLE_ID")
+        agent_label_id = kv_manager.get(cursor, "vars/192.0.0.1", "AGENT_LABEL_ID")
 
-    agents = [{"host":"192.0.0.1"}, {"host":"192.0.0.2", "roles": ["test"]}, {"host":"192.0.0.3", "roles": ["test"]}]
+    agents = [{"host":"192.0.0.1"}, {"host":"192.0.0.2", "labels": ["test"]}, {"host":"192.0.0.3", "labels": ["test"]}]
     with open("/bucket/workspace/agents.json", "w") as f:
         f.write(json.dumps(agents))
 
@@ -149,8 +149,8 @@ def test_build_agent_update_roles():
         assert kv_manager.get(cursor, "vars/192.0.0.1", "AGENT_ALLOCATION_INDEX") == "0"
         assert kv_manager.get(cursor, "vars/192.0.0.1", "AGENT_PEERS") == "192.0.0.2,192.0.0.3"
         assert kv_manager.get(cursor, "vars/192.0.0.1", "AGENT_LENGTH") == "3"
-        assert kv_manager.get(cursor, "vars/192.0.0.1", "ROLES") == "agent"
-        assert kv_manager.get(cursor, "vars/192.0.0.1", "AGENT_ROLE_ID") == agent_role_id
+        assert kv_manager.get(cursor, "vars/192.0.0.1", "LABELS") == "agent"
+        assert kv_manager.get(cursor, "vars/192.0.0.1", "AGENT_LABEL_ID") == agent_label_id
 
         assert kv_manager.get(cursor, "vars/192.0.0.1", "TEST_0") == "192.0.0.2"
         assert kv_manager.get(cursor, "vars/192.0.0.1", "TEST_1") == "192.0.0.3"
@@ -166,8 +166,8 @@ def test_build_agent_update_roles():
         assert kv_manager.get(cursor, "vars/192.0.0.2", "AGENT_ALLOCATION_INDEX") == "1"
         assert kv_manager.get(cursor, "vars/192.0.0.2", "AGENT_PEERS") == "192.0.0.1,192.0.0.3"
         assert kv_manager.get(cursor, "vars/192.0.0.2", "AGENT_LENGTH") == "3"
-        assert kv_manager.get(cursor, "vars/192.0.0.2", "ROLES") == "agent,test"
-        assert kv_manager.get(cursor, "vars/192.0.0.2", "AGENT_ROLE_ID") == agent_role_id
+        assert kv_manager.get(cursor, "vars/192.0.0.2", "LABELS") == "agent,test"
+        assert kv_manager.get(cursor, "vars/192.0.0.2", "AGENT_LABEL_ID") == agent_label_id
 
         assert kv_manager.get(cursor, "vars/192.0.0.2", "TEST_0") == "192.0.0.2"
         assert kv_manager.get(cursor, "vars/192.0.0.2", "TEST_1") == "192.0.0.3"
@@ -183,8 +183,8 @@ def test_build_agent_update_roles():
         assert kv_manager.get(cursor, "vars/192.0.0.3", "AGENT_ALLOCATION_INDEX") == "2"
         assert kv_manager.get(cursor, "vars/192.0.0.3", "AGENT_PEERS") == "192.0.0.1,192.0.0.2"
         assert kv_manager.get(cursor, "vars/192.0.0.3", "AGENT_LENGTH") == "3"
-        assert kv_manager.get(cursor, "vars/192.0.0.3", "ROLES") == "agent,test"
-        assert kv_manager.get(cursor, "vars/192.0.0.3", "AGENT_ROLE_ID") == agent_role_id
+        assert kv_manager.get(cursor, "vars/192.0.0.3", "LABELS") == "agent,test"
+        assert kv_manager.get(cursor, "vars/192.0.0.3", "AGENT_LABEL_ID") == agent_label_id
 
         assert kv_manager.get(cursor, "vars/192.0.0.3", "TEST_0") == "192.0.0.2"
         assert kv_manager.get(cursor, "vars/192.0.0.3", "TEST_1") == "192.0.0.3"
@@ -235,8 +235,8 @@ def test_build_agent_detailed():
         assert kv_manager.get(cursor, "vars/192.0.0.1", "AGENT_ALLOCATION_INDEX") == "0"
         assert kv_manager.get(cursor, "vars/192.0.0.1", "AGENT_PEERS") == "192.0.0.2,192.0.0.3"
         assert kv_manager.get(cursor, "vars/192.0.0.1", "AGENT_LENGTH") == "3"
-        assert kv_manager.get(cursor, "vars/192.0.0.1", "ROLES") == "agent"
-        assert kv_manager.get(cursor, "vars/192.0.0.1", "AGENT_ROLE_ID") is not None
+        assert kv_manager.get(cursor, "vars/192.0.0.1", "LABELS") == "agent"
+        assert kv_manager.get(cursor, "vars/192.0.0.1", "AGENT_LABEL_ID") is not None
 
         assert kv_manager.get(cursor, "vars/192.0.0.2", "AGENT_0") == "192.0.0.1"
         assert kv_manager.get(cursor, "vars/192.0.0.2", "AGENT_1") == "192.0.0.2"
@@ -245,8 +245,8 @@ def test_build_agent_detailed():
         assert kv_manager.get(cursor, "vars/192.0.0.2", "AGENT_ALLOCATION_INDEX") == "1"
         assert kv_manager.get(cursor, "vars/192.0.0.2", "AGENT_PEERS") == "192.0.0.1,192.0.0.3"
         assert kv_manager.get(cursor, "vars/192.0.0.2", "AGENT_LENGTH") == "3"
-        assert kv_manager.get(cursor, "vars/192.0.0.2", "ROLES") == "agent"
-        assert kv_manager.get(cursor, "vars/192.0.0.2", "AGENT_ROLE_ID") is not None
+        assert kv_manager.get(cursor, "vars/192.0.0.2", "LABELS") == "agent"
+        assert kv_manager.get(cursor, "vars/192.0.0.2", "AGENT_LABEL_ID") is not None
 
         assert kv_manager.get(cursor, "vars/192.0.0.3", "AGENT_0") == "192.0.0.1"
         assert kv_manager.get(cursor, "vars/192.0.0.3", "AGENT_1") == "192.0.0.2"
@@ -255,8 +255,8 @@ def test_build_agent_detailed():
         assert kv_manager.get(cursor, "vars/192.0.0.3", "AGENT_ALLOCATION_INDEX") == "2"
         assert kv_manager.get(cursor, "vars/192.0.0.3", "AGENT_PEERS") == "192.0.0.1,192.0.0.2"
         assert kv_manager.get(cursor, "vars/192.0.0.3", "AGENT_LENGTH") == "3"
-        assert kv_manager.get(cursor, "vars/192.0.0.3", "ROLES") == "agent"
-        assert kv_manager.get(cursor, "vars/192.0.0.3", "AGENT_ROLE_ID") is not None
+        assert kv_manager.get(cursor, "vars/192.0.0.3", "LABELS") == "agent"
+        assert kv_manager.get(cursor, "vars/192.0.0.3", "AGENT_LABEL_ID") is not None
 
 
 def test_build_remove_update_agent_id_remain_same():
@@ -329,7 +329,7 @@ def test_build_update_resources():
 
     with maand.get_db() as db:
         cursor = db.cursor()
-        assert kv_manager.get(cursor, "vars/192.0.0.1", "AVAILABLE_MEMORY") == "1024.0"
+        assert kv_manager.get(cursor, "vars/192.0.0.1", "AGENT_MEMORY") == "1024.0"
 
     agents = [{"host":"192.0.0.1", "cpu": "100", "memory": "1024"}]
     with open("/bucket/workspace/agents.json", "w") as f:
@@ -337,14 +337,14 @@ def test_build_update_resources():
     command(get_maand_command("build"))
 
     rows = get_agents()
-    for (agent_id, agent_ip, available_memory_mb, available_cpu, detained, position,) in rows:
-        assert available_memory_mb == "1024.0"
-        assert available_cpu == "100.0"
+    for (agent_id, agent_ip, agent_memory_mb, agent_cpu, detained, position,) in rows:
+        assert agent_memory_mb == "1024.0"
+        assert agent_cpu == "100.0"
 
     with maand.get_db() as db:
         cursor = db.cursor()
-        assert kv_manager.get(cursor, "vars/192.0.0.1", "AVAILABLE_MEMORY") == "1024.0"
-        assert kv_manager.get(cursor, "vars/192.0.0.1", "AVAILABLE_CPU") == "100.0"
+        assert kv_manager.get(cursor, "vars/192.0.0.1", "AGENT_MEMORY") == "1024.0"
+        assert kv_manager.get(cursor, "vars/192.0.0.1", "AGENT_CPU") == "100.0"
 
     agents = [{"host":"192.0.0.1", "cpu": "200", "memory": "2024"}]
     with open("/bucket/workspace/agents.json", "w") as f:
@@ -358,53 +358,53 @@ def test_build_update_resources():
 
     with maand.get_db() as db:
         cursor = db.cursor()
-        assert kv_manager.get(cursor, "vars/192.0.0.1", "AVAILABLE_MEMORY") == "2024.0"
-        assert kv_manager.get(cursor, "vars/192.0.0.1", "AVAILABLE_CPU") == "200.0"
+        assert kv_manager.get(cursor, "vars/192.0.0.1", "AGENT_MEMORY") == "2024.0"
+        assert kv_manager.get(cursor, "vars/192.0.0.1", "AGENT_CPU") == "200.0"
 
 
-def test_build_role_id_same():
+def test_build_label_id_same():
     clean_bucket()
 
-    agents = [{"host":"192.0.0.1", "roles": ["a"]}]
+    agents = [{"host":"192.0.0.1", "labels": ["a"]}]
     with open("/bucket/workspace/agents.json", "w") as f:
         f.write(json.dumps(agents))
 
     command(get_maand_command("init"))
 
-    a_role_id1 = None
+    a_label_id1 = None
     with maand.get_db() as db:
         cursor = db.cursor()
-        assert kv_manager.get(cursor, "vars/192.0.0.1", "ROLES") == "a,agent"
-        a_role_id1 = kv_manager.get(cursor, "vars/192.0.0.1", "A_ROLE_ID")
+        assert kv_manager.get(cursor, "vars/192.0.0.1", "LABELS") == "a,agent"
+        a_label_id1 = kv_manager.get(cursor, "vars/192.0.0.1", "A_LABEL_ID")
 
     command(get_maand_command("build"))
 
-    agents = [{"host":"192.0.0.1", "roles": []}]
+    agents = [{"host":"192.0.0.1", "labels": []}]
     with open("/bucket/workspace/agents.json", "w") as f:
         f.write(json.dumps(agents))
 
     command(get_maand_command("build"))
     command(get_maand_command("gc"))
 
-    agents = [{"host":"192.0.0.1", "roles": ["a"]}]
+    agents = [{"host":"192.0.0.1", "labels": ["a"]}]
     with open("/bucket/workspace/agents.json", "w") as f:
         f.write(json.dumps(agents))
 
     command(get_maand_command("build"))
 
-    a_role_id2 = None
+    a_label_id2 = None
     with maand.get_db() as db:
         cursor = db.cursor()
-        assert kv_manager.get(cursor, "vars/192.0.0.1", "ROLES") == "a,agent"
-        a_role_id2 = kv_manager.get(cursor, "vars/192.0.0.1", "A_ROLE_ID")
+        assert kv_manager.get(cursor, "vars/192.0.0.1", "LABELS") == "a,agent"
+        a_label_id2 = kv_manager.get(cursor, "vars/192.0.0.1", "A_LABEL_ID")
 
-    assert a_role_id2 == a_role_id2
+    assert a_label_id1 == a_label_id2
 
 
 def test_build_role_removed():
     clean_bucket()
 
-    agents = [{"host":"192.0.0.1", "roles": ["a", "b"]}]
+    agents = [{"host":"192.0.0.1", "labels": ["a", "b"]}]
     with open("/bucket/workspace/agents.json", "w") as f:
         f.write(json.dumps(agents))
 
@@ -412,9 +412,9 @@ def test_build_role_removed():
 
     with maand.get_db() as db:
         cursor = db.cursor()
-        assert kv_manager.get(cursor, "vars/192.0.0.1", "ROLES") == "a,agent,b"
+        assert kv_manager.get(cursor, "vars/192.0.0.1", "LABELS") == "a,agent,b"
 
-    agents = [{"host":"192.0.0.1", "roles": ["a"]}]
+    agents = [{"host":"192.0.0.1", "labels": ["a"]}]
     with open("/bucket/workspace/agents.json", "w") as f:
         f.write(json.dumps(agents))
 
@@ -422,9 +422,9 @@ def test_build_role_removed():
 
     with maand.get_db() as db:
         cursor = db.cursor()
-        assert kv_manager.get(cursor, "vars/192.0.0.1", "ROLES") == "a,agent"
+        assert kv_manager.get(cursor, "vars/192.0.0.1", "LABELS") == "a,agent"
 
-    agents = [{"host":"192.0.0.1", "roles": []}]
+    agents = [{"host":"192.0.0.1", "labels": []}]
     with open("/bucket/workspace/agents.json", "w") as f:
         f.write(json.dumps(agents))
 
@@ -432,4 +432,4 @@ def test_build_role_removed():
 
     with maand.get_db() as db:
         cursor = db.cursor()
-        assert kv_manager.get(cursor, "vars/192.0.0.1", "ROLES") == "agent"
+        assert kv_manager.get(cursor, "vars/192.0.0.1", "LABELS") == "agent"

@@ -13,7 +13,7 @@ import utils
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--agents', default="")
-    parser.add_argument('--roles', default="")
+    parser.add_argument('--labels', default="")
     parser.add_argument('--concurrency', default="4", type=int)
     parser.add_argument('--no-check', action='store_true')
     parser.add_argument('--health_check', action='store_true')
@@ -23,8 +23,8 @@ def get_args():
 
     if args.agents:
         args.agents = args.agents.split(',')
-    if args.roles:
-        args.roles = args.roles.split(',')
+    if args.labels:
+        args.labels = args.labels.split(',')
 
     return args
 
@@ -63,6 +63,6 @@ if __name__ == "__main__":
             cursor,
             run_command,
             concurrency=args.concurrency,
-            roles_filter=args.roles,
+            labels_filter=args.labels,
             agents_filter=args.agents,
         )

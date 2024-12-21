@@ -15,8 +15,8 @@ def build_allocated_jobs(cursor):
 
     for agent_id, agent_ip in agents:
         cursor.execute("""
-                       SELECT j.name FROM job_db.job j JOIN job_db.job_roles jr WHERE jr.job_id = j.job_id AND EXISTS(
-                            SELECT 1 FROM agent a JOIN agent_roles ar on a.agent_id = ar.agent_id AND jr.role = ar.role AND a.agent_ip = ?
+                       SELECT j.name FROM job_db.job j JOIN job_db.job_labels jl WHERE jl.job_id = j.job_id AND EXISTS(
+                            SELECT 1 FROM agent a JOIN agent_labels al on a.agent_id = al.agent_id AND jl.label = al.label AND a.agent_ip = ?
                        )
                        """, (agent_ip,))
 
@@ -47,10 +47,10 @@ def build_allocated_jobs(cursor):
 
 
 def validate_resource_limit(cursor):
-    cursor.execute("SELECT agent_ip, CAST(available_memory_mb AS FLOAT) AS available_memory_mb, CAST(available_cpu AS FLOAT) AS available_cpu FROM agent")
+    cursor.execute("SELECT agent_ip, CAST(agent_memory_mb AS FLOAT) AS agent_memory_mb, CAST(agent_cpu AS FLOAT) AS agent_cpu FROM agent")
     agents = cursor.fetchall()
 
-    for agent_ip, available_memory_mb, available_cpu  in agents:
+    for agent_ip, agent_memory_mb, agent_cpu  in agents:
         jobs = maand.get_agent_jobs(cursor, agent_ip).keys()
 
         total_allocated_memory = 0
@@ -89,15 +89,15 @@ def validate_resource_limit(cursor):
             total_allocated_memory += job_memory
             total_allocated_cpu += job_cpu
 
-            if total_allocated_memory > available_memory_mb:
+            if total_allocated_memory > agent_memory_mb:
                 raise Exception(
                     f"Agent {agent_ip} has insufficient memory. "
-                    f"Available: {available_memory_mb} MB, Required: {total_allocated_memory} MB."
+                    f"Available: {agent_memory_mb} MB, Required: {total_allocated_memory} MB."
                 )
-            if total_allocated_cpu > available_cpu:
+            if total_allocated_cpu > agent_cpu:
                 raise Exception(
                     f"Agent {agent_ip} has insufficient CPU. "
-                    f"Available: {available_cpu} MHZ, Required: {total_allocated_cpu} MHZ."
+                    f"Available: {agent_cpu} MHZ, Required: {total_allocated_cpu} MHZ."
                 )
 
         cursor.execute("SELECT GROUP_CONCAT(job) AS jobs, port FROM (SELECT (SELECT name AS job FROM job WHERE job_id = jp.job_id) AS job, name, port FROM job_ports jp WHERE port IN (SELECT port FROM job_ports GROUP BY port HAVING COUNT(port) > 1)) GROUP BY port;")

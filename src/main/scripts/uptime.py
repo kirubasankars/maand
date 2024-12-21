@@ -8,14 +8,14 @@ import system_manager
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--agents', default="")
-    parser.add_argument('--roles', default="")
+    parser.add_argument('--labels', default="")
     parser.set_defaults(no_check=False)
     args = parser.parse_args()
 
     if args.agents:
         args.agents = args.agents.split(',')
-    if args.roles:
-        args.roles = args.roles.split(',')
+    if args.labels:
+        args.labels = args.labels.split(',')
 
     return args
 
@@ -30,5 +30,5 @@ if __name__ == "__main__":
         cursor = db.cursor()
 
         context_manager.export_env_bucket_update_seq(cursor)
-        system_manager.run(cursor, command_helper.scan_agent, roles_filter=args.roles, agents_filter=args.agents)
-        system_manager.run(cursor, run_command, roles_filter=args.roles, agents_filter=args.agents)
+        system_manager.run(cursor, command_helper.scan_agent, labels_filter=args.labels, agents_filter=args.agents)
+        system_manager.run(cursor, run_command, labels_filter=args.labels, agents_filter=args.agents)

@@ -14,8 +14,8 @@ def get_db():
 
 def setup_maand_database(cursor):
     cursor.execute("CREATE TABLE IF NOT EXISTS bucket (bucket_id TEXT, update_seq INT)")
-    cursor.execute("CREATE TABLE IF NOT EXISTS agent (agent_id TEXT, agent_ip TEXT, available_memory_mb TEXT, available_cpu TEXT, detained INT, position INT)")
-    cursor.execute("CREATE TABLE IF NOT EXISTS agent_roles (agent_id TEXT, role TEXT)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS agent (agent_id TEXT, agent_ip TEXT, agent_memory_mb TEXT, agent_cpu TEXT, detained INT, position INT)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS agent_labels (agent_id TEXT, label TEXT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS agent_tags (agent_id TEXT, key TEXT, value INT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS agent_jobs (agent_id TEXT, job TEXT, disabled INT, removed INT)")
     cursor.execute("SELECT bucket_id FROM bucket")
@@ -59,13 +59,13 @@ def get_agent_disabled_jobs(cursor, agent_ip):
     return [row[0] for row in rows]
 
 
-def get_agents(cursor, roles_filter):
-    if not roles_filter:
-        roles_filter = ["agent"]
-    roles_filter = [f"'{role}'" for role in roles_filter]
-    roles_filter = ",".join(roles_filter)
+def get_agents(cursor, labels_filter):
+    if not labels_filter:
+        labels_filter = ["agent"]
+    labels_filter = [f"'{label}'" for label in labels_filter]
+    labels_filter = ",".join(labels_filter)
 
-    cursor.execute(f"SELECT DISTINCT agent_ip FROM agent a JOIN agent_roles ar ON a.agent_id = ar.agent_id WHERE a.detained = 0 AND ar.role IN ({roles_filter}) ORDER BY position;")
+    cursor.execute(f"SELECT DISTINCT agent_ip FROM agent a JOIN agent_labels ar ON a.agent_id = ar.agent_id WHERE a.detained = 0 AND ar.label IN ({labels_filter}) ORDER BY position;")
     rows = cursor.fetchall()
     return [row[0] for row in rows]
 
@@ -76,11 +76,11 @@ def get_allocations(cursor, job):
     return [row[0] for row in rows]
 
 
-def get_agent_roles(cursor, agent_ip):
+def get_agent_labels(cursor, agent_ip):
     if agent_ip:
-        cursor.execute("SELECT DISTINCT role FROM agent a JOIN agent_roles ar ON a.agent_id = ar.agent_id AND agent_ip = ?;", (agent_ip,))
+        cursor.execute("SELECT DISTINCT label FROM agent a JOIN agent_labels ar ON a.agent_id = ar.agent_id AND agent_ip = ?;", (agent_ip,))
     else:
-        cursor.execute("SELECT DISTINCT role FROM agent a JOIN agent_roles ar ON a.agent_id = ar.agent_id;",)
+        cursor.execute("SELECT DISTINCT label FROM agent a JOIN agent_labels ar ON a.agent_id = ar.agent_id;",)
     rows = cursor.fetchall()
     return [row[0] for row in rows]
 
@@ -98,6 +98,6 @@ def get_agent_id(cursor, agent_ip):
 
 
 def get_agent_available_resources(cursor, agent_ip):
-    cursor.execute("SELECT available_memory_mb, available_cpu FROM agent WHERE agent_ip = ?", (agent_ip,))
+    cursor.execute("SELECT agent_memory_mb, agent_cpu FROM agent WHERE agent_ip = ?", (agent_ip,))
     row = cursor.fetchone()
     return row
