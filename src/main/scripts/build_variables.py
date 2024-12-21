@@ -71,9 +71,9 @@ def build_agent_variables(cursor):
 
         available_memory, available_cpu = maand.get_agent_available_resources(cursor, agent_ip)
         if available_memory != "0.0":
-            values["AVAILABLE_MEMORY"] = available_memory
+            values["AGENT_MEMORY"] = available_memory
         if available_cpu != "0.0":
-            values["AVAILABLE_CPU"] = available_cpu
+            values["AGENT_CPU"] = available_cpu
 
         namespace = f"vars/{agent_ip}"
         for key, value in values.items():

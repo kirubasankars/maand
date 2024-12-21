@@ -319,7 +319,7 @@ def test_build_remove_gc_agent_agent_id_diff():
     assert len(output_agent) == 4
 
 
-def test_build_resources():
+def test_build_update_resources():
     clean_bucket()
 
     agents = [{"host":"192.0.0.1", "memory": "1024"}]
@@ -363,7 +363,42 @@ def test_build_resources():
 
 
 def test_build_role_id_same():
-    pass
+    clean_bucket()
+
+    agents = [{"host":"192.0.0.1", "roles": ["a"]}]
+    with open("/bucket/workspace/agents.json", "w") as f:
+        f.write(json.dumps(agents))
+
+    command(get_maand_command("init"))
+
+    a_role_id1 = None
+    with maand.get_db() as db:
+        cursor = db.cursor()
+        assert kv_manager.get(cursor, "vars/192.0.0.1", "ROLES") == "a,agent"
+        a_role_id1 = kv_manager.get(cursor, "vars/192.0.0.1", "A_ROLE_ID")
+
+    command(get_maand_command("build"))
+
+    agents = [{"host":"192.0.0.1", "roles": []}]
+    with open("/bucket/workspace/agents.json", "w") as f:
+        f.write(json.dumps(agents))
+
+    command(get_maand_command("build"))
+    command(get_maand_command("gc"))
+
+    agents = [{"host":"192.0.0.1", "roles": ["a"]}]
+    with open("/bucket/workspace/agents.json", "w") as f:
+        f.write(json.dumps(agents))
+
+    command(get_maand_command("build"))
+
+    a_role_id2 = None
+    with maand.get_db() as db:
+        cursor = db.cursor()
+        assert kv_manager.get(cursor, "vars/192.0.0.1", "ROLES") == "a,agent"
+        a_role_id2 = kv_manager.get(cursor, "vars/192.0.0.1", "A_ROLE_ID")
+
+    assert a_role_id2 == a_role_id2
 
 
 def test_build_role_removed():

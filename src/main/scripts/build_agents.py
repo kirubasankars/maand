@@ -2,6 +2,7 @@ import uuid
 import utils
 import workspace
 import kv_manager
+import maand
 
 logger = utils.get_logger()
 
@@ -13,6 +14,13 @@ def build_agent_tags(cursor, agent_id, agent_ip, agent):
         key = key.upper()
         value = str(value)
         cursor.execute("INSERT INTO agent_tags (agent_id, key, value) VALUES (?, ?, ?)", (agent_id, key, value,))
+
+    namespace = f"vars/{agent_ip}"
+    available_memory, available_cpu = maand.get_agent_available_resources(cursor, agent_ip)
+    if available_memory != "0.0":
+        kv_manager.put(cursor, namespace, "AGENT_MEMORY", available_memory)
+    if available_cpu != "0.0":
+        kv_manager.put(cursor, namespace, "AGENT_CPU", available_cpu)
 
 
 def build_agents(cursor):
