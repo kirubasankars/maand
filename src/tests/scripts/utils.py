@@ -54,7 +54,7 @@ def read_file_content(file_path):
 def make_job(name, labels=[], order=0):
     os.makedirs(f"/bucket/workspace/jobs/{name}", exist_ok=True)
     with open(f"/bucket/workspace/jobs/{name}/manifest.json", "w") as f:
-        f.write(json.dumps({"labels": labels, "order": order}))
+        f.write(json.dumps({"labels": labels}))
 
     with open("/tests/fixtures/Makefile.sample", "rb") as rf:
         with open(f"/bucket/workspace/jobs/{name}/Makefile", "wb") as wf:
