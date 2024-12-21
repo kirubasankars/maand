@@ -20,8 +20,7 @@ def command(cmd, env=None, stdout=None, stderr=None):
 
 
 def clean():
-    command("rm -rf /bucket/*")
-    command("mkdir -p /bucket/{secrets,data,workspace}")
+    clean_bucket()
     shutil.copy("/tests/fixtures/agents.json", "/bucket/workspace/agents.json")
     shutil.copy("/tests/fixtures/homelab.key", "/bucket/secrets/homelab.key")
     shutil.copy("/tests/fixtures/maand.conf", "/bucket/maand.conf")
@@ -33,6 +32,11 @@ def clean():
         command("mkdir -p /bucket/tmp")
         command(f"ssh -i /bucket/secrets/homelab.key agent@{agent} 'sudo rm -rf /opt/agent'")
         command(f"ssh -i /bucket/secrets/homelab.key agent@{agent} 'sudo mkdir -p /opt/agent'")
+
+
+def clean_bucket():
+    command("rm -rf /bucket/*")
+    command("mkdir -p /bucket/{secrets,data,workspace}")
 
 
 def sync():

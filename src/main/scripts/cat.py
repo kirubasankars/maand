@@ -31,7 +31,7 @@ if __name__ == "__main__":
         name = sys.argv[1]
 
     if name == "agents":
-        statement("SELECT agent_id, agent_ip, detained, (SELECT GROUP_CONCAT(role) FROM agent_roles ar WHERE ar.agent_id = a.agent_id ORDER BY role) as roles FROM agent a", "no agents found")
+        statement("SELECT agent_id, agent_ip, detained, (SELECT GROUP_CONCAT(role) FROM agent_roles ar WHERE ar.agent_id = a.agent_id ORDER BY role) as roles FROM agent a ORDER BY position", "no agents found")
 
     elif name == "jobs":
         statement("SELECT DISTINCT job_id, name, version, (CASE WHEN (SELECT COUNT(1) FROM agent_jobs aj WHERE j.name = aj.job AND aj.disabled = 0) > 0 THEN 0 ELSE 1 END) AS disabled, deployment_seq, (SELECT GROUP_CONCAT(role) FROM job_db.job_roles jr WHERE jr.job_id = j.job_id) as roles FROM job_db.job j ORDER BY deployment_seq, name", "no jobs found")

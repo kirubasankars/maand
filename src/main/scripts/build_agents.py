@@ -7,20 +7,12 @@ logger = utils.get_logger()
 
 
 def build_agent_tags(cursor, agent_id, agent_ip, agent):
-    namespace = f"tags/{agent_ip}"
     cursor.execute("DELETE FROM agent_tags WHERE agent_id = ?", (agent_id,))
     tags = agent.get("tags", {})
     for key, value in tags.items():
         key = key.upper()
         value = str(value)
         cursor.execute("INSERT INTO agent_tags (agent_id, key, value) VALUES (?, ?, ?)", (agent_id, key, value,))
-        kv_manager.put(cursor, namespace, key, value)
-
-    available_tags_keys = [x.upper() for x in tags.keys()]
-    all_keys = kv_manager.get_keys(cursor, namespace)
-    missing_tags = set(available_tags_keys) ^ set(all_keys)
-    for key in missing_tags:
-        kv_manager.delete(cursor, namespace, key)
 
 
 def build_agents(cursor):
@@ -55,11 +47,10 @@ def build_agents(cursor):
 
     cursor.execute("SELECT agent_ip FROM agent")
     rows = cursor.fetchall()
-
     host_ips = [agent["host"] for agent in agents]
     agent_ips = [row[0] for row in rows]
-    missing_agents = list(set(agent_ips) - set(host_ips))
 
+    missing_agents = list(set(agent_ips) - set(host_ips))
     for agent_ip in missing_agents:
         cursor.execute("UPDATE agent SET detained = 1 WHERE agent_ip = ?", (agent_ip,))
 

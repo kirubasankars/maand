@@ -23,6 +23,7 @@ def test_update_seq():
             f"/bucket/tmp/{agent}/{bucket_id}/roles.txt",
             f"/bucket/tmp/{agent}/{bucket_id}/update_seq.txt",
             f"/bucket/tmp/{agent}/{bucket_id}/agent.txt",
+            f"/bucket/tmp/{agent}/{bucket_id}/bucket.txt",
         ]
         for f in files:
             assert os.path.exists(f)

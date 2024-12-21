@@ -23,7 +23,7 @@ def build_env(cursor, path):
         kv_manager.delete(cursor, namespace, key)
 
 
-def build_variables(cursor):
+def build_agent_variables(cursor):
     agents = maand.get_agents(cursor, roles_filter=None)
 
     for agent_ip in agents:
@@ -63,8 +63,17 @@ def build_variables(cursor):
             key = f"{role}_role_id".upper()
             values[key] = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(role)))
 
-
         values["ROLES"] = ",".join(sorted(agent_roles))
+
+        agent_tags = maand.get_agent_tags(cursor, agent_ip)
+        for key, value in agent_tags.items():
+            values[key] = value
+
+        available_memory, available_cpu = maand.get_agent_available_resources(cursor, agent_ip)
+        if available_memory != "0.0":
+            values["AVAILABLE_MEMORY"] = available_memory
+        if available_cpu != "0.0":
+            values["AVAILABLE_CPU"] = available_cpu
 
         namespace = f"vars/{agent_ip}"
         for key, value in values.items():
@@ -78,4 +87,4 @@ def build_variables(cursor):
 
 def build(cursor):
     build_env(cursor, f"{const.WORKSPACE_PATH}/variables.env")
-    build_variables(cursor)
+    build_agent_variables(cursor)

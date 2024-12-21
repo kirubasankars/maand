@@ -95,3 +95,9 @@ def get_agent_id(cursor, agent_ip):
     cursor.execute("SELECT agent_id FROM agent WHERE agent_ip = ?", (agent_ip,))
     row = cursor.fetchone()
     return row[0]
+
+
+def get_agent_available_resources(cursor, agent_ip):
+    cursor.execute("SELECT available_memory_mb, available_cpu FROM agent WHERE agent_ip = ?", (agent_ip,))
+    row = cursor.fetchone()
+    return row
