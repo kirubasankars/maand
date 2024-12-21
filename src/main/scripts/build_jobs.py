@@ -10,6 +10,8 @@ import kv_manager
 import maand
 import utils
 import workspace
+import jsonschema
+from jsonschema import Draft202012Validator
 
 logger = utils.get_logger()
 
@@ -29,7 +31,90 @@ def build_jobs(cursor):
     for job in jobs:
         delete_job(cursor, job)
 
+        schema = {
+            "type": "object",
+            "properties": {
+                "version": {"type": "string"},
+                "labels": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
+                "resources": {
+                    "type": "object",
+                    "properties": {
+                        "memory": {
+                            "type": "object",
+                            "properties": {
+                                "min": {"type": "string"},
+                                "max": {"type": "string"}
+                            },
+                            "additionalProperties": False
+                        },
+                        "cpu": {
+                            "type": "object",
+                            "properties": {
+                                "min": {"type": "string"},
+                                "max": {"type": "string"}
+                            },
+                            "additionalProperties": False
+                        },
+                        "ports": {
+                            "type": "object",
+                            "patternProperties": {
+                                "^port_": {"type": ["string", "object"]}
+                            },
+                            "additionalProperties": False
+                        }
+                    },
+                    "additionalProperties": False
+                },
+                "certs": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "patternProperties": {
+                            ".*": {"type": ["string", "object"]}
+                        },
+                        "additionalProperties": False
+                    }
+                },
+                "commands": {
+                    "type": "object",
+                    "patternProperties": {
+                        "^command_": {
+                            "type": "object",
+                            "properties": {
+                                "config": {"type": "object"},
+                                "executed_on": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string",
+                                        "allOf": [
+                                            {"pattern": "^(direct|job_control|pre_build|post_build|pre_[a-zA-Z0-9_]+|post_[a-zA-Z0-9_]+)$"}
+                                        ]
+                                    }
+                                },
+                                "depend_on": {
+                                    "type": "object",
+                                    "properties": {
+                                        "job": {"type": "string"},
+                                        "command": {"type": "string"}
+                                    },
+                                    "additionalProperties": False
+                                }
+                            },
+                            "additionalProperties": False
+                        }
+                    },
+                    "additionalProperties": False
+                }
+            },
+            "additionalProperties": False
+        }
+
         manifest = workspace.get_job_manifest(job)
+        jsonschema.validate(instance=manifest, schema=schema, format_checker=Draft202012Validator.FORMAT_CHECKER,)
+
         files = workspace.get_job_files(job)
 
         labels = manifest.get("labels")
@@ -175,7 +260,7 @@ def build_ports(cursor):
     rows = cursor.fetchall()
     for job, name, port in rows:
         kv_namespace = f"vars/job/{job}"
-        kv_manager.put(cursor, kv_namespace, f"PORT_{name}", str(port))
+        kv_manager.put(cursor, kv_namespace, f"{name}", str(port))
 
 
 def build(cursor):

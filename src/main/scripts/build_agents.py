@@ -3,6 +3,8 @@ import utils
 import workspace
 import kv_manager
 import maand
+import jsonschema
+from jsonschema import Draft202012Validator
 
 logger = utils.get_logger()
 
@@ -25,6 +27,26 @@ def build_agent_tags(cursor, agent_id, agent_ip, agent):
 
 def build_agents(cursor):
     agents = workspace.get_agents()
+
+    schema = {
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "host": {"type": "string", "format": "ipv4"},
+                "labels": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
+                "cpu": {"type": "string"},
+                "memory": {"type": "string"}
+            },
+            "required": ["host"]
+        }
+    }
+
+    jsonschema.validate(instance=agents, schema=schema, format_checker=Draft202012Validator.FORMAT_CHECKER,)
+
     for index, agent in enumerate(agents):
         agent_ip = agent.get("host")
 

@@ -18,7 +18,7 @@ def execute_alloc_command(cursor, job, command, agent_ip, env):
         allocation_env[k] = v
 
     try:
-        args = ["python3", f"/modules/{job}/_modules/command_{command}.py"]
+        args = ["python3", f"/modules/{job}/_modules/{command}.py"]
         args.extend(sys.argv[1:])
         process = subprocess.Popen(
             args,

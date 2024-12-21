@@ -22,8 +22,8 @@ def get_job_manifest(job_name):
     manifest_path = os.path.join(f"{const.WORKSPACE_PATH}/jobs", job_name, "manifest.json")
     with open(manifest_path, "r") as f:
         manifest = json.loads(f.read())
-        if "selectors" not in manifest:
-            manifest["selectors"] = []
+        if "labels" not in manifest:
+            manifest["labels"] = []
         if "certs" not in manifest:
             manifest["certs"] = []
         if "commands" not in manifest:
